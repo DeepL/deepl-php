@@ -11,7 +11,7 @@ include:
       - '/templates/.gitlab-release.yml'
 
 variables:
-  DOCKER_IMAGE_PREFIX: ${HARBOR_REGISTRY}/${HARBOR_REGISTRY_PROJECT}/${CI_PROJECT_NAME}-build
+  DOCKER_IMAGE_PREFIX: ${CONTAINER_REGISTRY}/deepl/${HARBOR_REGISTRY_PROJECT}/${CI_PROJECT_NAME}-build
   COMPOSER_HOME: /.composer
 
 # Global --------------------------
