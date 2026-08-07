@@ -177,6 +177,156 @@ class RequestBodyShapeTest extends DeepLTestBase
         $this->assertStringContainsString('Hallo', $body['entries']);
     }
 
+    public function testGlossaryIdsAreSentAsArray(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $this->makeCapturingTranslator($client)->translateText('Hello', 'en', 'de', [
+            TranslateTextOptions::GLOSSARY_IDS => ['g1', 'g2', 'g3'],
+        ]);
+
+        $body = $client->decodeBody();
+        // The JSON translate body must send glossary_ids as an array (per the OpenAPI spec),
+        // not a comma-separated string.
+        $this->assertSame(['g1', 'g2', 'g3'], $body['glossary_ids']);
+        $this->assertArrayNotHasKey('glossary_id', $body);
+    }
+
+    public function testGlossaryIdsAcceptGlossaryInfoObjects(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $glossary = new GlossaryInfo('g-info-1', 'name', true, 'en', 'de', new \DateTime(), 1);
+        $this->makeCapturingTranslator($client)->translateText('Hello', 'en', 'de', [
+            TranslateTextOptions::GLOSSARY_IDS => [$glossary, 'g-str-2'],
+        ]);
+
+        $this->assertSame(['g-info-1', 'g-str-2'], $client->decodeBody()['glossary_ids']);
+    }
+
+    public function testGlossaryIdsRequireSourceLang(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $translator = $this->makeCapturingTranslator($client);
+        $this->assertExceptionContains('sourceLang is required', function () use ($translator) {
+            $translator->translateText('Hello', null, 'de', [
+                TranslateTextOptions::GLOSSARY_IDS => ['g1', 'g2'],
+            ]);
+        });
+    }
+
+    public function testGlossaryIdsCannotBeCombinedWithSingularGlossary(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $translator = $this->makeCapturingTranslator($client);
+        $this->assertExceptionContains('cannot be used together', function () use ($translator) {
+            $translator->translateText('Hello', 'en', 'de', [
+                TranslateTextOptions::GLOSSARY => 'g1',
+                TranslateTextOptions::GLOSSARY_IDS => ['g2', 'g3'],
+            ]);
+        });
+    }
+
+    public function testGlossaryIdsRejectMoreThanFive(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $translator = $this->makeCapturingTranslator($client);
+        $this->assertExceptionContains('maximum of 5', function () use ($translator) {
+            $translator->translateText('Hello', 'en', 'de', [
+                TranslateTextOptions::GLOSSARY_IDS => ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'],
+            ]);
+        });
+    }
+
+    public function testGlossaryIdsRejectInvalidElementType(): void
+    {
+        $client = $this->makeClient(self::translateResponse());
+        $translator = $this->makeCapturingTranslator($client);
+        // A glossary_ids entry that is neither a string nor a glossary object
+        // must raise a clear error instead of a property-access warning.
+        $this->assertExceptionContains('glossary_ids entry', function () use ($translator) {
+            $translator->translateText('Hello', 'en', 'de', [
+                TranslateTextOptions::GLOSSARY_IDS => ['g1', 123],
+            ]);
+        });
+    }
+
+    private static function uploadDocumentResponse(): string
+    {
+        return json_encode([
+            'document_id' => 'doc-123',
+            'document_key' => 'key-456',
+        ]);
+    }
+
+    private function uploadCapturedDocument(CapturingHttpClient $client, array $options): void
+    {
+        list(, $exampleDocument) = $this->tempFiles();
+        $this->makeCapturingTranslator($client)->uploadDocument($exampleDocument, 'en', 'de', $options);
+    }
+
+    public function testDocumentStyleIdIsSentInMultipartBody(): void
+    {
+        $client = $this->makeClient(self::uploadDocumentResponse());
+        $this->uploadCapturedDocument($client, [
+            TranslateDocumentOptions::STYLE_ID => 'style-abc',
+        ]);
+
+        $body = $client->getLastRequestBody();
+        $contentType = $client->getLastRequest()->getHeaderLine('Content-Type');
+        $this->assertStringContainsString('multipart/form-data', $contentType);
+        $this->assertStringContainsString('name="style_id"', $body);
+        $this->assertStringContainsString('style-abc', $body);
+    }
+
+    public function testDocumentStyleIdAcceptsStyleRuleInfoObject(): void
+    {
+        $client = $this->makeClient(self::uploadDocumentResponse());
+        $styleRule = new StyleRuleInfo('style-obj', 'name', new \DateTime(), new \DateTime(), 'de', 1, null, null);
+        $this->uploadCapturedDocument($client, [
+            TranslateDocumentOptions::STYLE_ID => $styleRule,
+        ]);
+
+        $this->assertStringContainsString('style-obj', $client->getLastRequestBody());
+    }
+
+    public function testDocumentTranslationMemoryIdAndThresholdAreSentInMultipartBody(): void
+    {
+        $client = $this->makeClient(self::uploadDocumentResponse());
+        $this->uploadCapturedDocument($client, [
+            TranslateDocumentOptions::TRANSLATION_MEMORY_ID => 'tm-789',
+            TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD => 75,
+        ]);
+
+        $body = $client->getLastRequestBody();
+        $this->assertStringContainsString('name="translation_memory_id"', $body);
+        $this->assertStringContainsString('tm-789', $body);
+        $this->assertStringContainsString('name="translation_memory_threshold"', $body);
+        $this->assertStringContainsString('75', $body);
+    }
+
+    public function testDocumentTranslationMemoryThresholdRequiresId(): void
+    {
+        $client = $this->makeClient(self::uploadDocumentResponse());
+        $expectedError = 'translation_memory_threshold requires translation_memory_id';
+        $this->assertExceptionContains($expectedError, function () use ($client) {
+            $this->uploadCapturedDocument($client, [
+                TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD => 75,
+            ]);
+        });
+    }
+
+    public function testDocumentGlossaryIdsAreSentAsCommaSeparatedString(): void
+    {
+        $client = $this->makeClient(self::uploadDocumentResponse());
+        $this->uploadCapturedDocument($client, [
+            TranslateDocumentOptions::GLOSSARY_IDS => ['g1', 'g2', 'g3'],
+        ]);
+
+        $body = $client->getLastRequestBody();
+        $this->assertStringContainsString('name="glossary_ids"', $body);
+        $this->assertStringContainsString('g1,g2,g3', $body);
+        $this->assertStringNotContainsString('name="glossary_id"', $body);
+    }
+
     public function testRephraseSendsTextAsJsonArray(): void
     {
         $client = $this->makeClient(json_encode([

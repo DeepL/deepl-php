@@ -40,6 +40,58 @@ class GlossaryTest extends DeepLTestBase
         }
     }
 
+    /**
+     * Waits until each of the given glossaries is retrievable via getGlossary, to work around
+     * eventual-consistency lag on the real API where a just-created glossary is not yet
+     * resolvable when referenced by glossary_ids. No-op against the mock server.
+     */
+    private function waitForGlossariesReady(Translator $translator, array $glossaryIds)
+    {
+        if ($this->isMockServer) {
+            return;
+        }
+        foreach ($glossaryIds as $glossaryId) {
+            $maxAttempts = 10;
+            for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+                try {
+                    $translator->getGlossary($glossaryId);
+                    break;
+                } catch (NotFoundException $exception) {
+                    if ($attempt === $maxAttempts - 1) {
+                        throw $exception;
+                    }
+                    usleep(500000); // 0.5s
+                }
+            }
+        }
+    }
+
+    /**
+     * Translates text using the given glossary_ids, retrying on NotFoundException to tolerate
+     * eventual-consistency lag on the real API where a just-created glossary is briefly not
+     * resolvable via glossary_ids. Against the mock server it translates without retrying.
+     */
+    private function translateTextWithGlossaryIds(Translator $translator, string $input, array $glossaryIds): TextResult
+    {
+        $maxAttempts = $this->isMockServer ? 1 : 10;
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            try {
+                return $translator->translateText(
+                    $input,
+                    $this->sourceLang,
+                    $this->targetLang,
+                    [TranslateTextOptions::GLOSSARY_IDS => $glossaryIds]
+                );
+            } catch (NotFoundException $exception) {
+                if ($attempt === $maxAttempts - 1) {
+                    throw $exception;
+                }
+                usleep(500000); // 0.5s
+            }
+        }
+        throw new \LogicException('unreachable');
+    }
+
     public function testGlossaryEntries()
     {
         $this->assertExceptionContains('no entries', function () {
@@ -473,6 +525,166 @@ class GlossaryTest extends DeepLTestBase
         } finally {
             $this->cleanupGlossary($translator, $glossaryNameEnDe);
             $this->cleanupGlossary($translator, $glossaryNameDeEn);
+        }
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     * @throws DeepLException
+     */
+    public function testGlossaryIdsTranslateText(?ClientInterface $httpClient)
+    {
+        $translator = $this->makeTranslator([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        $glossaryNameA = $this->getGlossaryName() . "A";
+        $glossaryNameB = $this->getGlossaryName() . "B";
+        try {
+            $glossaryA = $translator->createGlossary(
+                $glossaryNameA,
+                $this->sourceLang,
+                $this->targetLang,
+                GlossaryEntries::fromEntries(['artist' => 'Maler'])
+            );
+            $glossaryB = $translator->createGlossary(
+                $glossaryNameB,
+                $this->sourceLang,
+                $this->targetLang,
+                GlossaryEntries::fromEntries(['prize' => 'Gewinn'])
+            );
+            $input = "The artist was awarded a prize.";
+
+            // On the real API a just-created glossary may not yet be resolvable via glossary_ids
+            // due to eventual consistency. Wait until both glossaries are retrievable before
+            // translating so this test is not flaky.
+            $this->waitForGlossariesReady($translator, [$glossaryA->glossaryId, $glossaryB->glossaryId]);
+
+            // Multiple glossaries via GlossaryInfo objects
+            $result = $this->translateTextWithGlossaryIds(
+                $translator,
+                $input,
+                [$glossaryA, $glossaryB]
+            );
+            if (!$this->isMockServer) {
+                $this->assertStringContainsString('Maler', $result->text);
+                $this->assertStringContainsString('Gewinn', $result->text);
+            } else {
+                $this->assertEquals($this->sourceLang, $result->detectedSourceLang);
+            }
+
+            // Multiple glossaries via glossary ID strings
+            $result = $this->translateTextWithGlossaryIds(
+                $translator,
+                $input,
+                [$glossaryA->glossaryId, $glossaryB->glossaryId]
+            );
+            if (!$this->isMockServer) {
+                $this->assertStringContainsString('Maler', $result->text);
+                $this->assertStringContainsString('Gewinn', $result->text);
+            } else {
+                $this->assertEquals($this->sourceLang, $result->detectedSourceLang);
+            }
+        } finally {
+            $this->cleanupGlossary($translator, $glossaryNameA);
+            $this->cleanupGlossary($translator, $glossaryNameB);
+        }
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     * @throws DeepLException
+     */
+    public function testGlossaryIdsTranslateDocument(?ClientInterface $httpClient)
+    {
+        $translator = $this->makeTranslator([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        $glossaryNameA = $this->getGlossaryName() . "A";
+        $glossaryNameB = $this->getGlossaryName() . "B";
+        $inputText = "artist\nprize";
+        list(, $exampleDocument, , $outputDocumentPath) = $this->tempFiles();
+        $this->writeFile($exampleDocument, $inputText);
+
+        try {
+            $glossaryA = $translator->createGlossary(
+                $glossaryNameA,
+                $this->sourceLang,
+                $this->targetLang,
+                GlossaryEntries::fromEntries(['artist' => 'Maler'])
+            );
+            $glossaryB = $translator->createGlossary(
+                $glossaryNameB,
+                $this->sourceLang,
+                $this->targetLang,
+                GlossaryEntries::fromEntries(['prize' => 'Gewinn'])
+            );
+            $translator->translateDocument(
+                $exampleDocument,
+                $outputDocumentPath,
+                $this->sourceLang,
+                $this->targetLang,
+                [TranslateDocumentOptions::GLOSSARY_IDS => [$glossaryA, $glossaryB]]
+            );
+            $this->assertEquals("Maler\nGewinn", $this->readFile($outputDocumentPath));
+        } finally {
+            $this->cleanupGlossary($translator, $glossaryNameA);
+            $this->cleanupGlossary($translator, $glossaryNameB);
+        }
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     * @throws DeepLException
+     */
+    public function testGlossaryIdsTranslateTextInvalid(?ClientInterface $httpClient)
+    {
+        $translator = $this->makeTranslator([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        $glossaryNameA = $this->getGlossaryName() . "A";
+        $glossaryNameB = $this->getGlossaryName() . "B";
+        try {
+            $glossaryA = $translator->createGlossary(
+                $glossaryNameA,
+                'en',
+                'de',
+                GlossaryEntries::fromEntries($this->testEntries)
+            );
+            $glossaryB = $translator->createGlossary(
+                $glossaryNameB,
+                'en',
+                'de',
+                GlossaryEntries::fromEntries($this->testEntries)
+            );
+
+            // glossary_ids requires source language
+            $this->assertExceptionContains('sourceLang is required', function () use ($glossaryA, $translator) {
+                $translator->translateText('test', null, 'de', [
+                    TranslateTextOptions::GLOSSARY_IDS => [$glossaryA],
+                ]);
+            });
+
+            // glossary_ids cannot be combined with the singular glossary option
+            $this->assertExceptionContains(
+                'cannot be used together',
+                function () use ($glossaryA, $glossaryB, $translator) {
+                    $translator->translateText('test', 'en', 'de', [
+                        TranslateTextOptions::GLOSSARY => $glossaryA,
+                        TranslateTextOptions::GLOSSARY_IDS => [$glossaryB],
+                    ]);
+                }
+            );
+
+            // At most 5 glossary IDs are allowed
+            $this->assertExceptionContains('maximum of 5', function () use ($glossaryA, $translator) {
+                $translator->translateText('test', 'en', 'de', [
+                    TranslateTextOptions::GLOSSARY_IDS => [
+                        $glossaryA->glossaryId,
+                        $glossaryA->glossaryId,
+                        $glossaryA->glossaryId,
+                        $glossaryA->glossaryId,
+                        $glossaryA->glossaryId,
+                        $glossaryA->glossaryId,
+                    ],
+                ]);
+            });
+        } finally {
+            $this->cleanupGlossary($translator, $glossaryNameA);
+            $this->cleanupGlossary($translator, $glossaryNameB);
         }
     }
 }

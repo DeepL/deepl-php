@@ -73,4 +73,52 @@ class TranslationMemoryTest extends DeepLTestBase
 
         $this->assertNotNull($result);
     }
+
+    /**
+     * @dataProvider provideHttpClient
+     */
+    public function testTranslateDocumentWithTranslationMemoryId(?ClientInterface $httpClient)
+    {
+        $this->needsMockServer();
+        $client = $this->makeDeeplClient([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        list(, $exampleDocument, , $outputDocumentPath) = $this->tempFiles();
+        $this->writeFile($exampleDocument, DeepLTestBase::EXAMPLE_TEXT['de']);
+
+        // Default translation memory supports target languages en, es and fr.
+        $status = $client->translateDocument(
+            $exampleDocument,
+            $outputDocumentPath,
+            'de',
+            'en-US',
+            [TranslateDocumentOptions::TRANSLATION_MEMORY_ID => self::DEFAULT_TM_ID]
+        );
+
+        $this->assertNotNull($status);
+        $this->assertEquals('done', $status->status);
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     */
+    public function testTranslateDocumentWithTranslationMemoryIdAndThreshold(?ClientInterface $httpClient)
+    {
+        $this->needsMockServer();
+        $client = $this->makeDeeplClient([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        list(, $exampleDocument, , $outputDocumentPath) = $this->tempFiles();
+        $this->writeFile($exampleDocument, DeepLTestBase::EXAMPLE_TEXT['de']);
+
+        $status = $client->translateDocument(
+            $exampleDocument,
+            $outputDocumentPath,
+            'de',
+            'en-US',
+            [
+                TranslateDocumentOptions::TRANSLATION_MEMORY_ID => self::DEFAULT_TM_ID,
+                TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD => 80,
+            ]
+        );
+
+        $this->assertNotNull($status);
+        $this->assertEquals('done', $status->status);
+    }
 }

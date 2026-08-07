@@ -158,7 +158,8 @@ class Translator
             $sourceLang,
             $targetLang,
             $options[TranslateTextOptions::FORMALITY] ?? null,
-            $options[TranslateTextOptions::GLOSSARY] ?? null
+            $options[TranslateTextOptions::GLOSSARY] ?? null,
+            $options[TranslateTextOptions::GLOSSARY_IDS] ?? null
         );
         // Always send show_billed_characters=true, remove when the API default is changed to true
         $params["show_billed_characters"] = true;
@@ -269,8 +270,20 @@ class Translator
             $sourceLang,
             $targetLang,
             $options[TranslateDocumentOptions::FORMALITY] ?? null,
-            $options[TranslateDocumentOptions::GLOSSARY] ?? null
+            $options[TranslateDocumentOptions::GLOSSARY] ?? null,
+            $options[TranslateDocumentOptions::GLOSSARY_IDS] ?? null
         );
+
+        $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
+        // The document request body is sent as multipart/form-data, where every field must be a
+        // string. Unlike the JSON-encoded text request, the threshold must therefore be
+        // stringified, and glossary_ids must be sent as a comma-separated string.
+        if (isset($params['translation_memory_threshold'])) {
+            $params['translation_memory_threshold'] = (string)$params['translation_memory_threshold'];
+        }
+        if (isset($params['glossary_ids'])) {
+            $params['glossary_ids'] = implode(',', $params['glossary_ids']);
+        }
 
         $this->applyExtraBodyParameters(
             $params,
@@ -560,6 +573,8 @@ class Translator
      * @param string|null $formality Formality option, or null if not specified.
      * @param string|GlossaryInfo|MultilingualGlossaryInfo|null $glossary Glossary ID, GlossaryInfo,
      *  MultilingualGlossaryInfo, or null if not specified.
+     * @param (string|GlossaryInfo|MultilingualGlossaryInfo)[]|null $glossaryIds Array of up to 5 glossary IDs,
+     *  GlossaryInfos, or MultilingualGlossaryInfos, or null if not specified.
      * @return array Associative array of HTTP parameters.
      * @throws DeepLException
      */
@@ -567,7 +582,8 @@ class Translator
         ?string $sourceLang,
         string $targetLang,
         ?string $formality,
-        $glossary
+        $glossary,
+        ?array $glossaryIds = null
     ): array {
         $targetLang = LanguageCode::standardizeLanguageCode($targetLang);
         if (isset($sourceLang)) {
@@ -596,6 +612,37 @@ class Translator
                 $glossary = $glossary->glossaryId;
             }
             $params['glossary_id'] = $glossary;
+        }
+        if (isset($glossaryIds)) {
+            if (isset($glossary)) {
+                throw new DeepLException(
+                    'The glossary_ids option cannot be used together with the singular glossary option'
+                );
+            }
+            if (!isset($sourceLang)) {
+                throw new DeepLException('sourceLang is required if using glossary_ids');
+            }
+            if (count($glossaryIds) > 5) {
+                throw new DeepLException('A maximum of 5 glossary IDs can be specified in glossary_ids');
+            }
+            $ids = array_map(
+                function ($glossaryId) {
+                    if (is_string($glossaryId)) {
+                        return $glossaryId;
+                    }
+                    if (is_object($glossaryId) && isset($glossaryId->glossaryId)) {
+                        return $glossaryId->glossaryId;
+                    }
+                    throw new DeepLException(
+                        'Each glossary_ids entry must be a glossary ID string or a ' .
+                        'GlossaryInfo/MultilingualGlossaryInfo object'
+                    );
+                },
+                $glossaryIds
+            );
+            // The API expects glossary_ids as an array (a JSON array in the JSON translate
+            // body). The multipart/form-data document request stringifies it in uploadDocument.
+            $params['glossary_ids'] = array_values($ids);
         }
         return $params;
     }
@@ -687,6 +734,29 @@ class Translator
             $params[TranslateTextOptions::IGNORE_TAGS] =
                 $this->toTagList($options[TranslateTextOptions::IGNORE_TAGS]);
         }
+        $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
+        if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
+            $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
+        }
+        $this->applyExtraBodyParameters(
+            $params,
+            $options[TranslateTextOptions::EXTRA_BODY_PARAMETERS] ?? null
+        );
+    }
+
+    /**
+     * Validates and appends the style-rule and translation-memory options to HTTP request parameters.
+     * These options share the same constant values between text and document translation, so this
+     * helper is used by both the text and document request builders.
+     * @param array $params Parameters for HTTP request.
+     * @param array|null $options Options for the translate request.
+     * @throws DeepLException
+     */
+    private function appendStyleRuleAndTranslationMemoryOptions(array &$params, ?array $options): void
+    {
+        if ($options === null) {
+            return;
+        }
         if (isset($options[TranslateTextOptions::STYLE_ID])) {
             $styleRule = $options[TranslateTextOptions::STYLE_ID];
             if (is_string($styleRule)) {
@@ -696,9 +766,6 @@ class Translator
             } else {
                 throw new DeepLException('style_id must be a string or StyleRuleInfo object');
             }
-        }
-        if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
-            $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
             $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY_ID];
@@ -720,10 +787,6 @@ class Translator
             }
             $params['translation_memory_threshold'] = $threshold;
         }
-        $this->applyExtraBodyParameters(
-            $params,
-            $options[TranslateTextOptions::EXTRA_BODY_PARAMETERS] ?? null
-        );
     }
 
     /**

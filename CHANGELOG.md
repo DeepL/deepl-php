@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added support for using multiple glossaries in text and document translation
+  via the `TranslateTextOptions::GLOSSARY_IDS` and
+  `TranslateDocumentOptions::GLOSSARY_IDS` options (up to 5 glossary IDs).
+- Added support for style rules in document translation via the
+  `TranslateDocumentOptions::STYLE_ID` option.
+- Added support for translation memories in document translation via the
+  `TranslateDocumentOptions::TRANSLATION_MEMORY_ID` and
+  `TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD` options.
 
 ## [1.19.0] - 2026-06-24
 ### Added

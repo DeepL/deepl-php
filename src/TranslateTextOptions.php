@@ -73,6 +73,20 @@ class TranslateTextOptions
      */
     public const GLOSSARY = 'glossary';
 
+    /** Set to an array of up to 5 glossary IDs to apply multiple glossaries for translation.
+     *  Each element can be a string containing a glossary ID, a GlossaryInfo as returned by createGlossary,
+     *  getGlossary or listGlossaries, or a MultilingualGlossaryInfo as returned by
+     *  createMultilingualGlossary, getMultilingualGlossary or listMultilingualGlossaries.
+     *  Requires source_lang to be set, and cannot be combined with the singular GLOSSARY option.
+     *  @see \DeepL\Translator::createGlossary()
+     *  @see \DeepL\Translator::getGlossary()
+     *  @see \DeepL\Translator::listGlossaries()
+     *  @see \DeepL\DeepLClient::createMultilingualGlossary()
+     *  @see \DeepL\DeepLClient::getMultilingualGlossary()
+     *  @see \DeepL\DeepLClient::listMultilingualGlossaries()
+     */
+    public const GLOSSARY_IDS = 'glossary_ids';
+
     /** Sets the preferred model type in a text translation request.
      * - 'quality_optimized': Use translation models that have been optimized for translation quality
      *                        Please note that using this option will result in an error if the selected

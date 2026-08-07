@@ -147,6 +147,11 @@ using the following keys:
     `quality_optimized` model type as the default. Requests combining
     `custom_instructions` and `model_type: latency_optimized` will be rejected.
 -   `glossary`: glossary ID of glossary to use for translation.
+-   `glossary_ids`: an array of up to 5 glossaries to apply for translation, allowing
+    multiple glossaries to be used in a single request. Each element may be a glossary
+    ID string, a `GlossaryInfo`, or a `MultilingualGlossaryInfo` object. Requires the
+    `sourceLang` argument to be set, and cannot be combined with the singular `glossary`
+    option.
 -   `style_id`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
 -   `translation_memory_id`: specifies a translation memory to use with translation,
@@ -303,6 +308,17 @@ using the following keys:
 
 -   `formality`: same as in [Text translation options](#text-translation-options).
 -   `glossary`: same as in [Text translation options](#text-translation-options).
+-   `glossary_ids`: same as in [Text translation options](#text-translation-options).
+    Apply up to 5 glossaries in a single document translation request.
+-   `style_id`: same as in [Text translation options](#text-translation-options).
+    Specify a style rule to use for the document translation, either as a style rule
+    ID string or a `StyleRuleInfo` object.
+-   `translation_memory_id`: same as in [Text translation options](#text-translation-options).
+    Specify a translation memory to use for the document translation, either as a
+    translation memory ID string or a `TranslationMemoryInfo` object.
+-   `translation_memory_threshold`: same as in [Text translation options](#text-translation-options).
+    An integer from 0 to 100 controlling the minimum matching percentage for translation
+    memory matches.
 -   `minification`: A `bool` value. If set to `true`, the library will try to minify a document before translating it through the API, sending a smaller document if the file contains a lot of media. This is currently only supported for `pptx` files. See also [Document minification](#document-minification). Note that this only works in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in between.
 
 The `uploadDocument` function also supports these options.
@@ -558,6 +574,22 @@ $deeplClient->translateDocument(
 
 The `translateDocument()`  and `translateDocumentUpload()` functions both
 support the `glossary` argument.
+
+To apply multiple glossaries (up to 5) in a single request, use the
+`glossary_ids` option instead of `glossary`, for both text and document
+translation. Set it to an array of glossary IDs, `GlossaryInfo`, or
+`MultilingualGlossaryInfo` objects. The `sourceLang` argument is required, and
+`glossary_ids` cannot be combined with the singular `glossary` option:
+
+```php
+$deeplClient->translateText(
+    $text, 'en', 'de', ['glossary_ids' => [$glossaryA, $glossaryB]]
+);
+
+$deeplClient->translateDocument(
+    $inFile, $outFile, 'en', 'de', ['glossary_ids' => [$glossaryA, $glossaryB]]
+);
+```
 
 ### Checking account usage
 
@@ -819,6 +851,19 @@ $result = $deeplClient->translateText(
 );
 ```
 
+Style rules are also supported for document translation. Set the `style_id`
+option on `translateDocument()` (or `uploadDocument()`) in the same way:
+
+```php
+$deeplClient->translateDocument(
+    $inFile,
+    $outFile,
+    'de',
+    'en-US',
+    ['style_id' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
+);
+```
+
 ### Translation Memories
 
 Translation memories allow you to leverage previously translated segments to
@@ -872,6 +917,23 @@ $result = $deeplClient->translateText(
     'de',
     [
         'translation_memory_id' => $translationMemories[0],
+        'translation_memory_threshold' => 80,
+    ]
+);
+```
+
+Translation memories are also supported for document translation. Set the
+`translation_memory_id` (and optionally `translation_memory_threshold`) option
+on `translateDocument()` (or `uploadDocument()`) in the same way:
+
+```php
+$deeplClient->translateDocument(
+    $inFile,
+    $outFile,
+    'de',
+    'en-US',
+    [
+        'translation_memory_id' => 'tm-example-id-0001',
         'translation_memory_threshold' => 80,
     ]
 );

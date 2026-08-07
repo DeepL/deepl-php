@@ -93,6 +93,53 @@ class StyleRuleTest extends DeepLTestBase
     /**
      * @dataProvider provideHttpClient
      */
+    public function testTranslateDocumentWithStyleId(?ClientInterface $httpClient)
+    {
+        $this->needsMockServer();
+        $client = $this->makeDeeplClient([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        list(, $exampleDocument, , $outputDocumentPath) = $this->tempFiles();
+        $this->writeFile($exampleDocument, DeepLTestBase::EXAMPLE_TEXT['de']);
+
+        // Default style rule language is 'en', so the target language must be en-based.
+        $status = $client->translateDocument(
+            $exampleDocument,
+            $outputDocumentPath,
+            'de',
+            'en-US',
+            [TranslateDocumentOptions::STYLE_ID => self::DEFAULT_STYLE_ID]
+        );
+
+        $this->assertNotNull($status);
+        $this->assertEquals('done', $status->status);
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     */
+    public function testTranslateDocumentWithStyleRuleInfo(?ClientInterface $httpClient)
+    {
+        $this->needsMockServer();
+        $client = $this->makeDeeplClient([TranslatorOptions::HTTP_CLIENT => $httpClient]);
+        $styleRules = $client->getAllStyleRules();
+        $styleRule = $styleRules[0];
+        list(, $exampleDocument, , $outputDocumentPath) = $this->tempFiles();
+        $this->writeFile($exampleDocument, DeepLTestBase::EXAMPLE_TEXT['de']);
+
+        $status = $client->translateDocument(
+            $exampleDocument,
+            $outputDocumentPath,
+            'de',
+            'en-US',
+            [TranslateDocumentOptions::STYLE_ID => $styleRule]
+        );
+
+        $this->assertNotNull($status);
+        $this->assertEquals('done', $status->status);
+    }
+
+    /**
+     * @dataProvider provideHttpClient
+     */
     public function testStyleRuleValidation(?ClientInterface $httpClient)
     {
         $client = $this->makeDeeplClient([TranslatorOptions::HTTP_CLIENT => $httpClient]);
