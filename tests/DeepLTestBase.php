@@ -28,6 +28,7 @@ class DeepLTestBase extends TestCase
     protected $sessionDocQueueTime;
     protected $sessionDocTranslateTime;
     protected $sessionExpectProxy;
+    protected $sessionTmJobProcessingPolls;
 
     protected const EXAMPLE_TEXT = [
         'ar' => 'شعاع البروتون',
@@ -159,6 +160,9 @@ class DeepLTestBase extends TestCase
         }
         if ($this->sessionExpectProxy !== null) {
             $result['mock-server-session-expect-proxy'] = $this->sessionExpectProxy ? '1' : '0';
+        }
+        if ($this->sessionTmJobProcessingPolls !== null) {
+            $result['mock-server-session-tm-job-processing-polls'] = strval($this->sessionTmJobProcessingPolls);
         }
 
         if (count($result) > 0) {

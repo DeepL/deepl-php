@@ -870,11 +870,8 @@ Translation memories allow you to leverage previously translated segments to
 improve consistency and efficiency. Translation memories are managed on your
 account, each with a user-specified name and a uniquely-assigned ID.
 
-#### Uploading and managing translation memories
-
-Currently translation memories must be uploaded and managed in the DeepL UI via
-https://www.deepl.com/translation-memory. Full CRUD functionality via the APIs will
-come shortly.
+Translation memories can also be uploaded and managed in the DeepL UI via
+https://www.deepl.com/translation-memory.
 
 #### Listing all translation memories
 
@@ -891,6 +888,117 @@ foreach ($translationMemories as $tm) {
     echo "  Targets: " . implode(', ', $tm->targetLanguages) . "\n";
     echo "  Segments: {$tm->segmentCount}\n";
 }
+```
+
+#### Getting a translation memory
+
+Use `getTranslationMemory()` to retrieve a single translation memory by its ID
+or a `TranslationMemoryInfo` object:
+
+```php
+$tm = $deeplClient->getTranslationMemory('a74d88fb-ed2a-4943-a664-a4512398b994');
+echo "{$tm->name}: {$tm->segmentCount} segments\n";
+if ($tm->updatedTime !== null) {
+    echo "  Updated: " . $tm->updatedTime->format(DateTime::ATOM) . "\n";
+}
+```
+
+#### Listing the segments of a translation memory
+
+`listTranslationMemorySegments()` returns one page of segments as a
+`TranslationMemorySegments` object. Pagination is cursor-based: omit
+`page_cursor` on the first call, then pass the previous response's
+`nextPageCursor` until it is `null`. Optionally filter with `filter_text`
+(at least 2 characters, matched against both source and target text) and
+`filter_case_sensitive`. Note that `segmentCount` is the translation-memory
+total and is not reduced by the filter.
+
+```php
+$pageCursor = null;
+do {
+    $options = ['page_size' => 50];
+    if ($pageCursor !== null) {
+        $options['page_cursor'] = $pageCursor;
+    }
+    $page = $deeplClient->listTranslationMemorySegments('YOUR_TM_ID', $options);
+    foreach ($page->segments as $segment) {
+        echo "{$segment->sourceText}\n";
+        foreach ($segment->targets as $target) {
+            echo "  {$target->targetLanguage}: {$target->targetText}\n";
+        }
+    }
+    $pageCursor = $page->nextPageCursor;
+} while ($pageCursor !== null);
+```
+
+#### Importing a translation memory
+
+`importTranslationMemoryFromFilepath()` imports a TMX file as a new translation
+memory: it creates the import job, uploads the file, and waits for processing to
+finish. The returned `TranslationMemoryJob` carries the ID of the new translation
+memory. An import usually takes under a minute; the optional third argument is a
+maximum time in seconds to wait for it.
+
+```php
+$job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', 'Legal TM', 300);
+echo "Created translation memory {$job->result()->translationMemoryId}\n";
+echo "Skipped segments: {$job->result()->skippedSegmentCount}\n";
+```
+
+The three steps are also available separately, for example to upload the file
+yourself or to poll for progress. `createTranslationMemoryImport()` returns an
+upload URL that the file must be uploaded to before processing starts, then
+`getTranslationMemoryJob()` reports the status. Note that the upload URL is a
+pre-signed storage URL outside the DeepL API, so your authentication key is not
+sent to it.
+
+```php
+$fileContent = file_get_contents('/path/to/legal.tmx');
+$created = $deeplClient->createTranslationMemoryImport(
+    'legal.tmx',
+    strlen($fileContent),
+    null, // Content type, defaults to 'application/xml'
+    'Legal TM'
+);
+// Until the file is uploaded, the job status is 'awaiting_input'
+$deeplClient->uploadTranslationMemoryFile($created, $fileContent);
+
+$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, 300);
+```
+
+Note that the job keeps reporting `'awaiting_input'` for a while after the file
+has been uploaded, because the API detects the upload asynchronously.
+`waitUntilTranslationMemoryJobDone()` polls through that status like any other
+non-terminal one. A job whose file is never uploaded does not finish on its own,
+so pass a timeout in seconds as the second argument when that is a possibility.
+
+#### Exporting a translation memory
+
+`exportTranslationMemoryToFilepath()` exports a translation memory to a TMX file:
+it creates the export job, waits for it to finish, and writes the result.
+
+```php
+$job = $deeplClient->exportTranslationMemoryToFilepath('YOUR_TM_ID', '/path/to/exported.tmx');
+```
+
+As with import, the individual steps are available separately. Note that the API
+may reuse a previously completed export of an unchanged translation memory,
+indicated by `reusedExisting`.
+
+```php
+$created = $deeplClient->createTranslationMemoryExport('YOUR_TM_ID');
+echo $created->reusedExisting ? "Reused an existing export\n" : "Started a new export\n";
+$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId);
+$deeplClient->downloadTranslationMemoryExport($job, '/path/to/exported.tmx');
+```
+
+#### Deleting a translation memory
+
+Use `deleteTranslationMemory()` to delete a translation memory by its ID or a
+`TranslationMemoryInfo` object:
+
+```php
+$deeplClient->deleteTranslationMemory('YOUR_TM_ID');
 ```
 
 #### Using a translation memory for translation

@@ -6,7 +6,7 @@
 
 namespace DeepL;
 
-use JsonException;
+use DateTime;
 
 /**
  * Information about a translation memory.
@@ -28,18 +28,28 @@ class TranslationMemoryInfo
     /** @var int Number of segments in the translation memory. */
     public $segmentCount;
 
+    /** @var DateTime|null Timestamp when the translation memory was created, or null if not provided. */
+    public $creationTime;
+
+    /** @var DateTime|null Timestamp when the translation memory was last updated, or null if not provided. */
+    public $updatedTime;
+
     public function __construct(
         string $translationMemoryId,
         string $name,
         string $sourceLanguage,
         array $targetLanguages,
-        int $segmentCount
+        int $segmentCount,
+        ?DateTime $creationTime = null,
+        ?DateTime $updatedTime = null
     ) {
         $this->translationMemoryId = $translationMemoryId;
         $this->name = $name;
         $this->sourceLanguage = $sourceLanguage;
         $this->targetLanguages = $targetLanguages;
         $this->segmentCount = $segmentCount;
+        $this->creationTime = $creationTime;
+        $this->updatedTime = $updatedTime;
     }
 
     /**
@@ -60,8 +70,18 @@ class TranslationMemoryInfo
             $json['name'],
             $json['source_language'],
             $json['target_languages'] ?? [],
-            $json['segment_count'] ?? 0
+            $json['segment_count'] ?? 0,
+            TranslationMemoryUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+            TranslationMemoryUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
         );
+    }
+
+    /**
+     * @throws InvalidContentException
+     */
+    public static function parse(string $content): TranslationMemoryInfo
+    {
+        return self::fromJson(TranslationMemoryUtils::decodeJson($content));
     }
 
     /**
@@ -69,11 +89,7 @@ class TranslationMemoryInfo
      */
     public static function parseList(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $decoded = TranslationMemoryUtils::decodeJson($content);
 
         $result = [];
         $translationMemories = $decoded['translation_memories'] ?? [];

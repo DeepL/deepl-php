@@ -14,6 +14,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for translation memories in document translation via the
   `TranslateDocumentOptions::TRANSLATION_MEMORY_ID` and
   `TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD` options.
+- Added support for the translation memory management endpoints in the
+  `DeepLClient` class: `getTranslationMemory()`,
+  `listTranslationMemorySegments()`, `deleteTranslationMemory()`,
+  `createTranslationMemoryImport()`, `uploadTranslationMemoryFile()`,
+  `createTranslationMemoryExport()`, `getTranslationMemoryJob()`,
+  `waitUntilTranslationMemoryJobDone()`, `downloadTranslationMemoryExport()`,
+  `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()`.
+  `waitUntilTranslationMemoryJobDone()` polls through the `'awaiting_input'`
+  status, which an import job keeps reporting for a while after its file has
+  been uploaded, and accepts an optional timeout in seconds, as do
+  `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()`.
+- Added new model classes `TranslationMemorySegment`,
+  `TranslationMemoryTargetSegment`, `TranslationMemorySegments`,
+  `TranslationMemorySegmentsOptions`, `TranslationMemoryImport`,
+  `TranslationMemoryExport`, `TranslationMemoryJob` and
+  `TranslationMemoryJobResult`.
+- Added the `creationTime` and `updatedTime` properties to
+  `TranslationMemoryInfo`.
+
+### Changed
+- Requests to the pre-signed storage URLs used for translation memory import and export now
+  go through a separate HTTP client that is constructed without the DeepL `Authorization`
+  header, instead of stripping it per request. Headers supplied via `TranslatorOptions::HEADERS`
+  are no longer sent to those URLs either — only the `User-Agent` and the per-request
+  `Content-Type`. Proxy settings are unaffected.
 
 ## [1.19.0] - 2026-06-24
 ### Added

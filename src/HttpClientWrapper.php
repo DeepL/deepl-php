@@ -47,6 +47,7 @@ class HttpClientWrapper
     public const OPTION_PARAMS = 'params';
     public const OPTION_OUTFILE = 'outfile';
     public const OPTION_JSON = 'json';
+    public const OPTION_RAW_BODY = 'raw_body';
 
     public function __construct(
         string           $serverUrl,
@@ -82,14 +83,17 @@ class HttpClientWrapper
     /**
      * Makes API request retrying if necessary, and returns (as Promise) response.
      * @param string $method HTTP method, for example 'GET'.
-     * @param string $url Path to endpoint, excluding base server URL.
+     * @param string $url Path to endpoint excluding base server URL, or an absolute URL of a
+     * service outside the DeepL API, for example a pre-signed storage URL.
      * @param array|null $options Array of options, possible arguments are given by OPTIONS_ constants.
      * @return array Status code and content.
      * @throws DeepLException
      */
     public function sendRequestWithBackoff(string $method, string $url, ?array $options = []): array
     {
-        $url = $this->serverUrl . $url;
+        if (!self::isAbsoluteUrl($url)) {
+            $url = $this->serverUrl . $url;
+        }
         $headers = array_replace(
             $this->headers,
             $options[self::OPTION_HEADERS] ?? []
@@ -107,8 +111,19 @@ class HttpClientWrapper
             $response = null;
             $exception = null;
             $json = isset($options[self::OPTION_JSON]) ? $options[self::OPTION_JSON] : null;
+            $rawBody = isset($options[self::OPTION_RAW_BODY]) ? $options[self::OPTION_RAW_BODY] : null;
             try {
-                $response = $this->sendRequest($method, $url, $timeout, $headers, $params, $file, $outFile, $json);
+                $response = $this->sendRequest(
+                    $method,
+                    $url,
+                    $timeout,
+                    $headers,
+                    $params,
+                    $file,
+                    $outFile,
+                    $json,
+                    $rawBody
+                );
             } catch (ConnectionException $e) {
                 $exception = $e;
             }
@@ -152,6 +167,7 @@ class HttpClientWrapper
      * @param string|null $filePath If not null, path to file to upload with request.
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
+     * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -163,12 +179,32 @@ class HttpClientWrapper
         array $params,
         ?string $filePath,
         $outFile,
-        ?string $json
+        ?string $json,
+        ?string $rawBody = null
     ): array {
         if ($this->customHttpClient !== null) {
-            return $this->sendCustomHttpRequest($method, $url, $headers, $params, $filePath, $outFile, $json);
+            return $this->sendCustomHttpRequest(
+                $method,
+                $url,
+                $headers,
+                $params,
+                $filePath,
+                $outFile,
+                $json,
+                $rawBody
+            );
         } else {
-            return $this->sendCurlRequest($method, $url, $timeout, $headers, $params, $filePath, $outFile, $json);
+            return $this->sendCurlRequest(
+                $method,
+                $url,
+                $timeout,
+                $headers,
+                $params,
+                $filePath,
+                $outFile,
+                $json,
+                $rawBody
+            );
         }
     }
 
@@ -199,6 +235,7 @@ class HttpClientWrapper
      * @param string|null $filePath If not null, path to file to upload with request.
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
+     * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -209,7 +246,8 @@ class HttpClientWrapper
         array $params,
         ?string $filePath,
         $outFile,
-        ?string $json
+        ?string $json,
+        ?string $rawBody = null
     ): array {
         $body = null;
         if ($filePath !== null) {
@@ -229,6 +267,9 @@ class HttpClientWrapper
         } elseif (isset($json)) {
             $headers['Content-Type'] = 'application/json';
             $body = $this->streamFactory->createStream($json);
+        } elseif (isset($rawBody)) {
+            // The Content-Type of a raw body is specified by the caller
+            $body = $this->streamFactory->createStream($rawBody);
         } else {
             $body = $this->streamFactory->createStream('');
         }
@@ -257,6 +298,7 @@ class HttpClientWrapper
      * @param string|null $filePath If not null, path to file to upload with request.
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
+     * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -268,7 +310,8 @@ class HttpClientWrapper
         array $params,
         ?string $filePath,
         $outFile,
-        ?string $json
+        ?string $json,
+        ?string $rawBody = null
     ): array {
         $curlOptions = [];
         $curlOptions[\CURLOPT_HEADER] = false;
@@ -310,6 +353,9 @@ class HttpClientWrapper
         } elseif (!is_null($json)) {
             $curlOptions[\CURLOPT_POSTFIELDS] = $json;
             $curlOptions[\CURLOPT_HTTPHEADER][] = 'Content-Type: application/json';
+        } elseif (!is_null($rawBody)) {
+            // The Content-Type of a raw body is specified by the caller
+            $curlOptions[\CURLOPT_POSTFIELDS] = $rawBody;
         }
 
         if ($outFile) {
@@ -351,6 +397,15 @@ class HttpClientWrapper
             }
             throw new ConnectionException($errorMessage, $errorCode, null, $shouldRetry);
         }
+    }
+
+    /**
+     * Returns true if the given URL is absolute, and therefore must not be appended to the
+     * configured server URL.
+     */
+    private static function isAbsoluteUrl(string $url): bool
+    {
+        return preg_match('/^https?:\/\//i', $url) === 1;
     }
 
     private function shouldRetry(?array $response, ?ConnectionException $exception): bool

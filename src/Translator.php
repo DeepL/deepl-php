@@ -25,6 +25,14 @@ class Translator
     protected $client;
 
     /**
+     * Client for requests to pre-signed storage URLs, which are served by the Asset Store rather
+     * than the DeepL API. Constructed without the DeepL Authorization header — and without any
+     * caller-configured headers — so credentials cannot reach a third-party host by mistake.
+     * @var HttpClientWrapper
+     */
+    protected $storageClient;
+
+    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -74,6 +82,19 @@ class Translator
         $this->client = new HttpClientWrapper(
             $serverUrl,
             $headers,
+            $timeout,
+            $maxRetries,
+            $logger,
+            $proxy,
+            $http_client
+        );
+        // Deliberately built from scratch rather than by subtracting Authorization from the
+        // headers above: translation memory files are exchanged over pre-signed Asset Store URLs
+        // outside the DeepL API, and a client that never holds the auth key cannot leak it. Only
+        // the User-Agent is carried over; per-request headers such as Content-Type still apply.
+        $this->storageClient = new HttpClientWrapper(
+            $serverUrl,
+            ['User-Agent' => $headers['User-Agent']],
             $timeout,
             $maxRetries,
             $logger,

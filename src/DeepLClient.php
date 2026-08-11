@@ -749,4 +749,402 @@ class DeepLClient extends Translator
         list(, $content) = $response;
         return TranslationMemoryInfo::parseList($content);
     }
+
+    /**
+     * Retrieves a single translation memory by ID.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo of the translation memory to retrieve.
+     * @return TranslationMemoryInfo TranslationMemoryInfo containing details about the translation memory.
+     * @throws DeepLException
+     * @throws NotFoundException If the translation memory is not found.
+     */
+    public function getTranslationMemory($translationMemory): TranslationMemoryInfo
+    {
+        $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
+        $response = $this->client->sendRequestWithBackoff(
+            'GET',
+            "/v3/translation_memories/" . rawurlencode($translationMemoryId)
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return TranslationMemoryInfo::parse($content);
+    }
+
+    /**
+     * Retrieves one page of the segments of a translation memory.
+     *
+     * Pagination is cursor-based: omit the page cursor on the first call, then pass the previous
+     * response's nextPageCursor to fetch the next page. A null nextPageCursor means the last page
+     * has been returned. Note that segmentCount is the translation-memory total and is not reduced
+     * by the filter text.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo of the translation memory to retrieve segments of.
+     * @param array $options Pagination and filtering options. See \DeepL\TranslationMemorySegmentsOptions.
+     * @return TranslationMemorySegments One page of segments.
+     * @throws DeepLException
+     * @throws NotFoundException If the translation memory is not found.
+     * @see \DeepL\TranslationMemorySegmentsOptions
+     */
+    public function listTranslationMemorySegments($translationMemory, array $options = []): TranslationMemorySegments
+    {
+        $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
+
+        $queryParams = [];
+        if (isset($options[TranslationMemorySegmentsOptions::PAGE_SIZE])) {
+            $queryParams['page_size'] = $options[TranslationMemorySegmentsOptions::PAGE_SIZE];
+        }
+        if (isset($options[TranslationMemorySegmentsOptions::PAGE_CURSOR])) {
+            $queryParams['page_cursor'] = $options[TranslationMemorySegmentsOptions::PAGE_CURSOR];
+        }
+        if (isset($options[TranslationMemorySegmentsOptions::FILTER_TEXT])) {
+            $queryParams['filter_text'] = $options[TranslationMemorySegmentsOptions::FILTER_TEXT];
+        }
+        if (isset($options[TranslationMemorySegmentsOptions::FILTER_CASE_SENSITIVE])) {
+            $queryParams['filter_case_sensitive'] =
+                $options[TranslationMemorySegmentsOptions::FILTER_CASE_SENSITIVE] ? 'true' : 'false';
+        }
+        // PHP_QUERY_RFC3986 percent-encodes spaces in filter_text as %20. The default,
+        // PHP_QUERY_RFC1738, encodes them as "+" — correct for a form body, but not for
+        // a URI query string.
+        $queryString = empty($queryParams)
+            ? ''
+            : '?' . http_build_query($queryParams, '', '&', \PHP_QUERY_RFC3986);
+
+        $response = $this->client->sendRequestWithBackoff(
+            'GET',
+            "/v3/translation_memories/" . rawurlencode($translationMemoryId) . "/segments$queryString"
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return TranslationMemorySegments::parse($content);
+    }
+
+    /**
+     * Deletes the translation memory with the given ID or TranslationMemoryInfo.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo of the translation memory to be deleted.
+     * @throws DeepLException
+     * @throws NotFoundException If the translation memory is not found.
+     */
+    public function deleteTranslationMemory($translationMemory): void
+    {
+        $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
+        $response = $this->client->sendRequestWithBackoff(
+            'DELETE',
+            "/v3/translation_memories/" . rawurlencode($translationMemoryId)
+        );
+        $this->checkStatusCode($response);
+    }
+
+    /**
+     * Creates an import job for a new translation memory.
+     *
+     * The job only declares the file; upload the TMX file itself to the returned upload URL with
+     * uploadTranslationMemoryFile(), then poll getTranslationMemoryJob() for the outcome. Use
+     * importTranslationMemoryFromFilepath() to do all three steps at once.
+     * @param string $fileName Name of the TMX file to import, for example 'legal.tmx'.
+     * @param int $contentLength Size of the TMX file in bytes.
+     * @param string|null $contentType Optional MIME type of the file, defaults to 'application/xml'.
+     * @param string|null $displayName Optional name for the resulting translation memory, defaults
+     *  to the file name.
+     * @return TranslationMemoryImport The job ID and upload URL.
+     * @throws DeepLException
+     */
+    public function createTranslationMemoryImport(
+        string $fileName,
+        int $contentLength,
+        ?string $contentType = null,
+        ?string $displayName = null
+    ): TranslationMemoryImport {
+        if (strlen($fileName) === 0) {
+            throw new DeepLException('fileName must be a non-empty string');
+        }
+        if ($contentLength <= 0) {
+            throw new DeepLException('contentLength must be greater than 0');
+        }
+
+        $sourceFile = [
+            'file_name' => $fileName,
+            'content_length' => $contentLength,
+        ];
+        if ($contentType !== null) {
+            $sourceFile['content_type'] = $contentType;
+        }
+        $params = ['source_file' => $sourceFile];
+        if ($displayName !== null) {
+            $params['parameters'] = ['display_name' => $displayName];
+        }
+
+        $response = $this->client->sendRequestWithBackoff(
+            'POST',
+            '/v3/translation_memories/import',
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return TranslationMemoryImport::parse($content);
+    }
+
+    /**
+     * Uploads a TMX file to the upload URL of an import job, which starts processing.
+     *
+     * Note that the upload URL is a pre-signed storage URL outside the DeepL API, so the
+     * authentication key is not sent with this request.
+     * @param string|TranslationMemoryImport $translationMemoryImport The import returned by
+     *  createTranslationMemoryImport(), or its upload URL.
+     * @param string $fileContent Content of the TMX file.
+     * @param string $contentType MIME type of the file, which must match the content type declared
+     *  when the import job was created. Defaults to 'application/xml'.
+     * @throws DeepLException
+     */
+    public function uploadTranslationMemoryFile(
+        $translationMemoryImport,
+        string $fileContent,
+        string $contentType = 'application/xml'
+    ): void {
+        $uploadUrl = is_string($translationMemoryImport)
+            ? $translationMemoryImport
+            : $translationMemoryImport->uploadUrl;
+        if (strlen($uploadUrl) === 0) {
+            throw new DeepLException('uploadUrl must be a non-empty string');
+        }
+
+        $response = $this->storageClient->sendRequestWithBackoff(
+            'PUT',
+            $uploadUrl,
+            [
+                HttpClientWrapper::OPTION_RAW_BODY => $fileContent,
+                HttpClientWrapper::OPTION_HEADERS => ['Content-Type' => $contentType],
+            ]
+        );
+        $this->checkAssetStatusCode($response, 'uploading translation memory file');
+    }
+
+    /**
+     * Creates an export job for a translation memory.
+     *
+     * Poll getTranslationMemoryJob() for the download URL of the exported TMX file. Use
+     * exportTranslationMemoryToFilepath() to do both steps and write the file at once.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo of the translation memory to export.
+     * @return TranslationMemoryExport The job ID, and whether the API reused a previously completed
+     *  export.
+     * @throws DeepLException
+     * @throws NotFoundException If the translation memory is not found.
+     */
+    public function createTranslationMemoryExport($translationMemory): TranslationMemoryExport
+    {
+        $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
+        $response = $this->client->sendRequestWithBackoff(
+            'POST',
+            "/v3/translation_memories/" . rawurlencode($translationMemoryId) . "/export"
+        );
+        $this->checkStatusCode($response);
+        list($statusCode, $content) = $response;
+        // 200 means the API reused a previously completed export, 202 that it started a new one.
+        return TranslationMemoryExport::parse($content, $statusCode === 200);
+    }
+
+    /**
+     * Retrieves the status of a translation memory import or export job.
+     * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to query.
+     * @return TranslationMemoryJob The current status of the job.
+     * @throws DeepLException
+     * @throws NotFoundException If the job is not found.
+     */
+    public function getTranslationMemoryJob($job): TranslationMemoryJob
+    {
+        $jobId = TranslationMemoryJob::getJobId($job);
+        if (strlen($jobId) === 0) {
+            throw new DeepLException('jobId must be a non-empty string');
+        }
+        $response = $this->client->sendRequestWithBackoff(
+            'GET',
+            "/v3/translation_memories/jobs/" . rawurlencode($jobId)
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return TranslationMemoryJob::parse($content);
+    }
+
+    /**
+     * Returns when the given translation memory job finishes, or throws an exception if there was
+     * an error communicating with the DeepL API or the job failed.
+     *
+     * Note that an import job keeps reporting 'awaiting_input' for a while after its file has been
+     * uploaded, because the API detects the upload asynchronously. That status is therefore polled
+     * through like any other non-terminal one. A job whose file is never uploaded does not finish
+     * on its own, so pass $timeout when that is a possibility.
+     * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
+     * @param float|null $timeout Optional maximum time in seconds to wait before throwing an
+     *  exception. Note that this is not accurate to the second, as the job is only polled every
+     *  5 seconds.
+     * @return TranslationMemoryJob The job once it has finished.
+     * @throws DeepLException
+     */
+    public function waitUntilTranslationMemoryJobDone($job, ?float $timeout = null): TranslationMemoryJob
+    {
+        $jobId = TranslationMemoryJob::getJobId($job);
+        $status = $this->getTranslationMemoryJob($jobId);
+        $startTime = microtime(true);
+        while (!$status->done()) {
+            if ($timeout !== null && microtime(true) - $startTime > $timeout) {
+                throw new DeepLException("Manual timeout of {$timeout}s exceeded for translation memory job");
+            }
+            // The job duration is not reported by the API, so just poll equidistantly
+            $secs = 5.0;
+            usleep($secs * 1000000);
+            $this->client->logInfo("Rechecking translation memory job status after sleeping for $secs seconds.");
+            $status = $this->getTranslationMemoryJob($jobId);
+        }
+        if (!$status->ok()) {
+            $result = $status->result();
+            throw new DeepLException(($result === null ? null : $result->errorMessage) ?? 'unknown error');
+        }
+        return $status;
+    }
+
+    /**
+     * Downloads the TMX file of a completed export job to the specified output file path.
+     *
+     * Note that the download URL is a pre-signed storage URL outside the DeepL API, so the
+     * authentication key is not sent with this request.
+     * @param TranslationMemoryJob $job Completed export job carrying the download URL.
+     * @param string $outputFile String containing file path to create the exported TMX file.
+     * @throws DeepLException
+     */
+    public function downloadTranslationMemoryExport(TranslationMemoryJob $job, string $outputFile): void
+    {
+        $result = $job->result();
+        $downloadUrl = $result === null ? null : $result->downloadUrl;
+        if ($downloadUrl === null || strlen($downloadUrl) === 0) {
+            throw new DeepLException(
+                'translation memory export job has no download URL; it may not have completed yet'
+            );
+        }
+        if (file_exists($outputFile)) {
+            throw new DeepLException("File already exists at output file path $outputFile");
+        }
+
+        try {
+            $response = $this->storageClient->sendRequestWithBackoff(
+                'GET',
+                $downloadUrl,
+                [
+                    HttpClientWrapper::OPTION_OUTFILE => $outputFile,
+                ]
+            );
+            // With OPTION_OUTFILE the cURL path streams the body straight to the file and
+            // returns true rather than the content, so on a non-2xx response the storage
+            // service's error detail is in the file. Read it back for the error message,
+            // otherwise the exception would just report "content: 1". Only on failure: the
+            // file holds the whole export on success, and reading it would defeat streaming
+            // it to disk in the first place.
+            list($statusCode) = $response;
+            $errorDetail = null;
+            if (($statusCode < 200 || $statusCode >= 300) && file_exists($outputFile)) {
+                $errorDetail = file_get_contents($outputFile) ?: null;
+            }
+            $this->checkAssetStatusCode($response, 'downloading translation memory export', $errorDetail);
+        } catch (DeepLException $error) {
+            if (file_exists($outputFile)) {
+                unlink($outputFile);
+            }
+            throw $error;
+        }
+    }
+
+    /**
+     * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
+     * waits for processing to finish.
+     * @param string $inputFile String containing file path of the TMX file to import.
+     * @param string|null $displayName Optional name for the resulting translation memory, defaults
+     *  to the file name.
+     * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
+     *  Note that this is not accurate to the second, as the job is only polled every 5 seconds.
+     * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
+     *  translation memory.
+     * @throws DeepLException
+     */
+    public function importTranslationMemoryFromFilepath(
+        string $inputFile,
+        ?string $displayName = null,
+        ?float $timeout = null
+    ): TranslationMemoryJob {
+        if (!file_exists($inputFile)) {
+            throw new DeepLException("File does not exist at input file path $inputFile");
+        }
+        $fileContent = file_get_contents($inputFile);
+        if ($fileContent === false) {
+            throw new DeepLException("Failed reading input file $inputFile");
+        }
+
+        $created = $this->createTranslationMemoryImport(
+            basename($inputFile),
+            strlen($fileContent),
+            null,
+            $displayName
+        );
+        $this->uploadTranslationMemoryFile($created, $fileContent);
+        return $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
+    }
+
+    /**
+     * Exports a translation memory to a TMX file: creates the export job, waits for it to finish,
+     * and writes the result to the specified output file path.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo of the translation memory to export.
+     * @param string $outputFile String containing file path to create the exported TMX file.
+     * @param float|null $timeout Optional maximum time in seconds to wait for the export to finish.
+     *  Note that this is not accurate to the second, as the job is only polled every 5 seconds.
+     * @return TranslationMemoryJob The completed export job.
+     * @throws DeepLException
+     */
+    public function exportTranslationMemoryToFilepath(
+        $translationMemory,
+        string $outputFile,
+        ?float $timeout = null
+    ): TranslationMemoryJob {
+        $created = $this->createTranslationMemoryExport($translationMemory);
+        $job = $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
+        $this->downloadTranslationMemoryExport($job, $outputFile);
+        return $job;
+    }
+
+    /**
+     * Extracts and validates the translation memory ID of the given argument.
+     * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
+     *  TranslationMemoryInfo.
+     * @throws DeepLException
+     */
+    private function getTranslationMemoryId($translationMemory): string
+    {
+        $translationMemoryId = TranslationMemoryInfo::getTranslationMemoryId($translationMemory);
+        if (strlen($translationMemoryId) === 0) {
+            throw new DeepLException('translationMemoryId must be a non-empty string');
+        }
+        return $translationMemoryId;
+    }
+
+    /**
+     * Checks the HTTP status code of a request to a pre-signed storage URL. These requests are not
+     * answered by the DeepL API, so the API error format does not apply.
+     * @param array $response Status code and content, as returned by the HTTP client.
+     * @param string $description Description of the attempted action, included in the message.
+     * @param string|null $detailOverride Error detail to report instead of the response content,
+     * used when the body was streamed to a file rather than returned.
+     * @throws DeepLException
+     */
+    private function checkAssetStatusCode(
+        array $response,
+        string $description,
+        ?string $detailOverride = null
+    ): void {
+        list($statusCode, $content) = $response;
+        if (200 <= $statusCode && $statusCode < 300) {
+            return;
+        }
+        $detail = $detailOverride ?? (is_string($content) ? $content : '');
+        throw new DeepLException("Error $description, HTTP status: $statusCode, content: $detail");
+    }
 }
