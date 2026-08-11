@@ -77,6 +77,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Send `type` as a query parameter on `GET /v2/languages` instead of in the
   request body.
 - Enabled OpenAPI request and response validation for the mock-server CI jobs.
+- As a consequence of the above, values passed via `extraBodyParameters` are sent with
+  their JSON type rather than always as strings. The API does not coerce, so a string
+  given for a field it types as a boolean, number or array (for example `'0'` for
+  `outline_detection`) is rejected; pass the matching type instead.
 
 ## [1.18.0] - 2026-04-09
 ### Added
