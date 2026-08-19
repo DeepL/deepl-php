@@ -194,19 +194,21 @@ class DocumentMinifier
     ): void {
         $extractedDocDirectory = $this->getExtractedDocDirectory();
         $mediaDir = $this->getOriginalMediaDirectory();
-        if (!mkdir($extractedDocDirectory)) {
-            throw new DocumentDeminificationException(
-                "Exception when deminifying, could not create directory at $extractedDocDirectory."
+        if (is_dir($mediaDir)) {
+            if (!mkdir($extractedDocDirectory)) {
+                throw new DocumentDeminificationException(
+                    "Exception when deminifying, could not create directory at $extractedDocDirectory."
+                );
+            }
+
+            $this->extractZipTo($inputFilePath, $extractedDocDirectory, DocumentDeminificationException::class);
+            $this->replaceImagesInDir($extractedDocDirectory, $mediaDir);
+            $this->createZippedDocumentFromUnzippedDirectory(
+                $extractedDocDirectory,
+                $outputFilePath,
+                DocumentDeminificationException::class
             );
         }
-
-        $this->extractZipTo($inputFilePath, $extractedDocDirectory, DocumentDeminificationException::class);
-        $this->replaceImagesInDir($extractedDocDirectory, $mediaDir);
-        $this->createZippedDocumentFromUnzippedDirectory(
-            $extractedDocDirectory,
-            $outputFilePath,
-            DocumentDeminificationException::class
-        );
         if ($cleanup) {
             $this->recursivelyDeleteDirectory($this->tempDir, DocumentDeminificationException::class);
         }
