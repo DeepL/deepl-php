@@ -311,6 +311,9 @@ class DeepLClient extends Translator
         ?string $style = null,
         ?string $tone = null
     ): array {
+
+        $params = [];
+
         if ($targetLang !== null) {
             $targetLang = LanguageCode::standardizeLanguageCode($targetLang);
             if ($targetLang === 'en') {
