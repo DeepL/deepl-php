@@ -143,21 +143,34 @@ class Translator
      */
     public function getGlossaryLanguages(): array
     {
-        $response = $this->client->sendRequestWithBackoff('GET', '/v2/glossary-language-pairs');
+        $response = $this->client->sendRequestWithBackoff(
+            'GET',
+            '/v3/languages?' . http_build_query(['resource' => LanguageResource::RESOURCE_GLOSSARY])
+        );
         $this->checkStatusCode($response);
         list(, $content) = $response;
 
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
+        $languages = LanguageSupport::parseList($content);
+
+        $sourceLangs = [];
+        $targetLangs = [];
+        foreach ($languages as $language) {
+            if ($language->usableAsSource) {
+                $sourceLangs[] = $language->code;
+            }
+            if ($language->usableAsTarget) {
+                $targetLangs[] = $language->code;
+            }
         }
 
         $result = [];
-        foreach ($decoded['supported_languages'] as $lang) {
-            $sourceLang = $lang['source_lang'];
-            $targetLang = $lang['target_lang'];
-            $result[] = new GlossaryLanguagePair($sourceLang, $targetLang);
+        foreach ($sourceLangs as $sourceLang) {
+            foreach ($targetLangs as $targetLang) {
+                if ($sourceLang === $targetLang) {
+                    continue;
+                }
+                $result[] = new GlossaryLanguagePair($sourceLang, $targetLang);
+            }
         }
         return $result;
     }
@@ -548,27 +561,22 @@ class Translator
      */
     private function getLanguages(bool $target): array
     {
-        $type = $target ? 'target' : 'source';
         $response = $this->client->sendRequestWithBackoff(
             'GET',
-            "/v2/languages?type=$type"
+            '/v3/languages?' . http_build_query(['resource' => LanguageResource::RESOURCE_TRANSLATE_TEXT])
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
 
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $languages = LanguageSupport::parseList($content);
 
         $result = [];
-        foreach ($decoded as $lang) {
-            $name = $lang['name'];
-            $code = $lang['language'];
-            $supportsFormality = array_key_exists('supports_formality', $lang) ?
-                $lang['supports_formality'] : null;
-            $result[] = new Language($name, $code, $supportsFormality);
+        foreach ($languages as $language) {
+            if ($target ? !$language->usableAsTarget : !$language->usableAsSource) {
+                continue;
+            }
+            $supportsFormality = $target ? $language->supports(LanguageFeature::FEATURE_FORMALITY) : null;
+            $result[] = new Language($language->name, strtoupper($language->code), $supportsFormality);
         }
         return $result;
     }

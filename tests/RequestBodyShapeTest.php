@@ -143,12 +143,15 @@ class RequestBodyShapeTest extends DeepLTestBase
         $this->assertSame(50, $client->decodeBody()['translation_memory_threshold']);
     }
 
-    public function testGetLanguagesSendsTypeAsQueryParamWithEmptyBody(): void
+    public function testGetLanguagesSendsResourceAsQueryParamWithEmptyBody(): void
     {
-        $client = $this->makeClient(json_encode([['language' => 'EN', 'name' => 'English']]));
+        $client = $this->makeClient(json_encode([
+            ['lang' => 'en', 'name' => 'English', 'status' => 'stable',
+                'usable_as_source' => true, 'usable_as_target' => true, 'features' => []],
+        ]));
         $this->makeCapturingTranslator($client)->getSourceLanguages();
 
-        $this->assertStringContainsString('type=source', $client->getLastRequestQuery());
+        $this->assertStringContainsString('resource=translate_text', $client->getLastRequestQuery());
         $this->assertSame('', $client->getLastRequestBody());
     }
 

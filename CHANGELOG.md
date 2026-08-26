@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- `getSourceLanguages()`, `getTargetLanguages()`, and `getGlossaryLanguages()`
+  now call `/v3/languages` internally instead of the deprecated
+  `/v2/languages` and `/v2/glossary-language-pairs` endpoints. No change to
+  public method signatures or return types.
 
 ## [1.20.0] - 2026-08-11
 ### Added

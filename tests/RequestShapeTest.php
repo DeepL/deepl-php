@@ -64,7 +64,8 @@ class RequestShapeTest extends DeepLTestBase
     public function testGetSourceLanguagesRequestShape(): void
     {
         $body = json_encode([
-            ['language' => 'EN', 'name' => 'English'],
+            ['lang' => 'en', 'name' => 'English', 'status' => 'stable',
+                'usable_as_source' => true, 'usable_as_target' => true, 'features' => []],
         ]);
         $client = new CapturingHttpClient($body);
         $translator = $this->makeCapturingTranslator($client);
@@ -72,14 +73,16 @@ class RequestShapeTest extends DeepLTestBase
         $translator->getSourceLanguages();
 
         $this->assertEquals('GET', $client->getLastRequestMethod());
-        $this->assertEquals('/v2/languages', $client->getLastRequestPath());
+        $this->assertEquals('/v3/languages', $client->getLastRequestPath());
+        $this->assertStringContainsString('resource=translate_text', $client->getLastRequestQuery());
         $this->assertCommonRequestHeaders($client);
     }
 
     public function testGetTargetLanguagesRequestShape(): void
     {
         $body = json_encode([
-            ['language' => 'DE', 'name' => 'German', 'supports_formality' => true],
+            ['lang' => 'de', 'name' => 'German', 'status' => 'stable', 'usable_as_source' => true,
+                'usable_as_target' => true, 'features' => ['formality' => ['status' => 'stable']]],
         ]);
         $client = new CapturingHttpClient($body);
         $translator = $this->makeCapturingTranslator($client);
@@ -87,7 +90,8 @@ class RequestShapeTest extends DeepLTestBase
         $translator->getTargetLanguages();
 
         $this->assertEquals('GET', $client->getLastRequestMethod());
-        $this->assertEquals('/v2/languages', $client->getLastRequestPath());
+        $this->assertEquals('/v3/languages', $client->getLastRequestPath());
+        $this->assertStringContainsString('resource=translate_text', $client->getLastRequestQuery());
         $this->assertCommonRequestHeaders($client);
     }
 
