@@ -138,6 +138,12 @@ class Translator
 
     /**
      * Queries languages supported for glossaries by the DeepL API.
+     *
+     * Note: v3 reports per-language usability rather than an explicit pair list, so pairs here
+     * are the cross product of usable-as-source x usable-as-target languages (excluding
+     * self-pairs). This assumes glossary support is a full symmetric cross product, which holds
+     * today (verified against production) but is not guaranteed by the API contract.
+     *
      * @return GlossaryLanguagePair[] Array of GlossaryLanguagePair objects containing available glossary languages.
      * @throws DeepLException
      */
