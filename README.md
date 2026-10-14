@@ -67,8 +67,11 @@ translate multiple texts.
 The second and third arguments are the source and target language codes.
 Language codes are **case-insensitive** strings according to ISO 639-1, for
 example `'de'`, `'fr'`, `'ja''`. Some target languages also include the regional
-variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. The source
-language also accepts `null`, to enable auto-detection of the source language.
+variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. A target
+language without a variant translates to its default variant, for example `'en'`
+to `'en-US'` and `'pt'` to `'pt-PT'`; specify the variant to choose it
+explicitly. The source language also accepts `null`, to enable auto-detection of
+the source language.
 
 The last argument to `translateText()` is optional, and specifies extra
 translation options, see [Text translation options](#text-translation-options)

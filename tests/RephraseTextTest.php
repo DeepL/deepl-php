@@ -20,6 +20,13 @@ class RephraseTextTest extends DeepLTestBase
         $this->checkSanityOfImprovements(DeepLTestBase::EXAMPLE_TEXT['en'], $result);
     }
 
+    public function testBareTargetLangIsAccepted()
+    {
+        $deeplClient = $this->makeDeeplClient();
+        $result = $deeplClient->rephraseText(DeepLTestBase::EXAMPLE_TEXT['en'], 'en');
+        $this->checkSanityOfImprovements(DeepLTestBase::EXAMPLE_TEXT['en'], $result);
+    }
+
     /**
      * @dataProvider provideHttpClient
      */

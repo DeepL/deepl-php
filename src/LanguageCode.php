@@ -77,10 +77,16 @@ class LanguageCode
     /** German language code, may be used as source or target language. */
     public const GERMAN = 'de';
 
+    /** German (Swiss) language code, may only be used as a target language. */
+    public const GERMAN_SWISS = 'de-CH';
+
+    /** German (Germany) language code, may only be used as a target language. */
+    public const GERMAN_GERMANY = 'de-DE';
+
     /** Greek language code, may be used as source or target language. */
     public const GREEK = 'el';
 
-    /** English language code, may only be used as a source language. */
+    /** English language code, may be used as source or target language; as a target it means American English. */
     public const ENGLISH = 'en';
 
     /** British English language code, may only be used as a target language. */
@@ -94,6 +100,9 @@ class LanguageCode
 
     /** Spanish language code, may be used as source or target language. */
     public const SPANISH = 'es';
+
+    /** Spanish (Spain) language code, may only be used as a target language. */
+    public const SPANISH_EUROPEAN = 'es-ES';
 
     /** Spanish (Latin American) language code, may only be used as a target language. */
     public const SPANISH_LATIN_AMERICAN = 'es-419';
@@ -112,6 +121,12 @@ class LanguageCode
 
     /** French language code, may be used as source or target language. */
     public const FRENCH = 'fr';
+
+    /** French (Canadian) language code, may only be used as a target language. */
+    public const FRENCH_CANADIAN = 'fr-CA';
+
+    /** French (France) language code, may only be used as a target language. */
+    public const FRENCH_EUROPEAN = 'fr-FR';
 
     /** Irish language code, may be used as source or target language. */
     public const IRISH = 'ga';
@@ -263,7 +278,7 @@ class LanguageCode
     /** Pashto language code, may be used as source or target language. */
     public const PASHTO = 'ps';
 
-    /** Portuguese language code, may only be used as a source language. */
+    /** Portuguese language code, may be used as source or target language; as a target it means European Portuguese. */
     public const PORTUGUESE = 'pt';
 
     /** Brazilian Portuguese language code, may only be used as a target language. */

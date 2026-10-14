@@ -498,7 +498,6 @@ class GlossaryTest extends DeepLTestBase
     {
         $translator = $this->makeTranslator([TranslatorOptions::HTTP_CLIENT => $httpClient]);
         $glossaryNameEnDe = $this->getGlossaryName() . "EnDe";
-        $glossaryNameDeEn = $this->getGlossaryName() . "DeEn";
         try {
             $glossaryEnDe = $translator->createGlossary(
                 $glossaryNameEnDe,
@@ -506,25 +505,12 @@ class GlossaryTest extends DeepLTestBase
                 'de',
                 GlossaryEntries::fromEntries($this->testEntries)
             );
-            $glossaryDeEn = $translator->createGlossary(
-                $glossaryNameDeEn,
-                'de',
-                'en',
-                GlossaryEntries::fromEntries($this->testEntries)
-            );
 
             $this->assertExceptionContains('sourceLang is required', function () use ($glossaryEnDe, $translator) {
                 $translator->translateText('test', null, 'de', ['glossary' => $glossaryEnDe]);
             });
-            $this->assertExceptionContains(
-                'targetLang="en" is deprecated',
-                function () use ($glossaryDeEn, $translator) {
-                    $translator->translateText('test', 'de', 'en', ['glossary' => $glossaryDeEn]);
-                }
-            );
         } finally {
             $this->cleanupGlossary($translator, $glossaryNameEnDe);
-            $this->cleanupGlossary($translator, $glossaryNameDeEn);
         }
     }
 

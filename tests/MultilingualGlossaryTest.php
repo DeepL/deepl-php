@@ -580,12 +580,6 @@ class MultilingualGlossaryTest extends DeepLTestBase
             $this->assertExceptionContains('sourceLang is required', function () use ($glossary, $client) {
                 $client->translateText('test', null, 'de', ['glossary' => $glossary]);
             });
-            $this->assertExceptionContains(
-                'targetLang="en" is deprecated',
-                function () use ($glossary, $client) {
-                    $client->translateText('test', 'de', 'en', ['glossary' => $glossary]);
-                }
-            );
         } finally {
             $this->cleanupGlossary($client, $glossaryName);
         }

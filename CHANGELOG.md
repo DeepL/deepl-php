@@ -5,12 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added language code constants for the target variants `de-CH`, `de-DE`,
+  `es-ES`, `fr-CA` and `fr-FR` to `LanguageCode`.
+
 ### Changed
+- Target languages `en` and `pt` are no longer rejected client-side; the API
+  translates them to `en-US` and `pt-PT` respectively.
 - `getSourceLanguages()`, `getTargetLanguages()`, and `getGlossaryLanguages()`
   now call `/v3/languages` internally instead of the deprecated
   `/v2/languages` and `/v2/glossary-language-pairs` endpoints. The returned
   lists may include additional languages. No change to public method
   signatures or return types.
+
+### Fixed
+- Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
+  which said these codes may only be used as source languages.
 
 ## [1.20.0] - 2026-08-11
 ### Added

@@ -625,12 +625,6 @@ class Translator
             $sourceLang = LanguageCode::standardizeLanguageCode($sourceLang);
         }
 
-        if ($targetLang === 'en') {
-            throw new DeepLException('targetLang="en" is deprecated, please use "en-GB" or "en-US" instead.');
-        } elseif ($targetLang === 'pt') {
-            throw new DeepLException('targetLang="pt" is deprecated, please use "pt-PT" or "pt-BR" instead.');
-        }
-
         $params = ['target_lang' => $targetLang];
         if (isset($sourceLang)) {
             $params['source_lang'] = $sourceLang;

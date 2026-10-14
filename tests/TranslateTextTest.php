@@ -138,19 +138,19 @@ class TranslateTextTest extends DeepLTestBase
         $this->assertEquals('en', $result->detectedSourceLang);
     }
 
-    public static function deprecatedTargetLang(): array
+    public static function bareTargetLang(): array
     {
         return [['en'], ['pt']];
     }
 
     /**
-     * @dataProvider deprecatedTargetLang
+     * @dataProvider bareTargetLang
      */
-    public function testTargetLangDeprecated(string $targetLang)
+    public function testBareTargetLangIsAccepted(string $targetLang)
     {
         $translator = $this->makeTranslator();
-        $this->expectExceptionMessage('deprecated');
-        $translator->translateText(DeepLTestBase::EXAMPLE_TEXT['de'], null, $targetLang);
+        $result = $translator->translateText(DeepLTestBase::EXAMPLE_TEXT['de'], null, $targetLang);
+        $this->assertNotEmpty($result->text);
     }
 
     /**
