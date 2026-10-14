@@ -260,6 +260,28 @@ The `DeepLClientOptions` class defines constants for these options:
 - `RephraseTextOptions::WRITING_STYLE`
 - `RephraseTextOptions::TONE`
 
+### Correcting text
+
+To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string is rejected with a `DeepLException`.
+
+The second argument is the target language code, which is optional. If not provided, the text is corrected in its original language.
+
+`correctText()` returns a `RephraseTextResult`, or an array of `RephraseTextResult`s corresponding to your input text(s).
+
+```php
+// Correct a single text:
+$result = $deeplClient->correctText('I has a apple.', 'en-US');
+echo $result->text; // Returns the corrected text
+
+// Correct multiple texts:
+$results = $deeplClient->correctText([
+    'I has a apple.',
+    'She go to school yesterday.'
+]);
+echo $results[0]->text; // First corrected text
+echo $results[1]->text; // Second corrected text
+```
+
 ### Translating documents
 
 To translate documents, call `translateDocument()`. The first and second
