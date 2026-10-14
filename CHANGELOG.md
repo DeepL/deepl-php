@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added language code constants for the target variants `de-CH`, `de-DE`,
   `es-ES`, `fr-CA` and `fr-FR` to `LanguageCode`.
+- Added support for the `/v2/write/correct` endpoint in the `DeepLClient` class:
+  `correctText()`. This applies a minimal-change spelling and grammar
+  correction pass without rewriting the text for style or tone.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API

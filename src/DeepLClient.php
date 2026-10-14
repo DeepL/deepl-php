@@ -62,6 +62,51 @@ class DeepLClient extends Translator
     }
 
     /**
+     * Corrects spelling and grammar in the given text using DeepL's API.
+     * @param string|string[] $texts A single string or array of strings to correct
+     * @param string|null $targetLang Optional target language code
+     * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
+     * RephraseTextResult objects containing corrected texts
+     * @throws DeepLException If a single text is empty or the request fails
+     */
+    public function correctText($texts, ?string $targetLang = null)
+    {
+        if ($texts === '') {
+            throw new DeepLException('text must not be empty');
+        }
+        $params = [];
+        if ($targetLang !== null) {
+            $params['target_lang'] = LanguageCode::standardizeLanguageCode($targetLang);
+        }
+        $this->validateAndAppendTexts($params, $texts);
+
+        $response = $this->client->sendRequestWithBackoff(
+            'POST',
+            '/v2/write/correct',
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+
+        try {
+            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new InvalidContentException($exception);
+        }
+
+        $improvements = isset($json['improvements']) && is_array($json['improvements']) ? $json['improvements'] : [];
+        $output = [];
+        foreach ($improvements as $improvement) {
+            $text = $improvement['text'] ?? '';
+            $detectedSourceLanguage = $improvement['detected_source_language'] ?? '';
+            $targetLanguage = $improvement['target_language'] ?? '';
+            $output[] = new RephraseTextResult($text, $detectedSourceLanguage, $targetLanguage);
+        }
+
+        return is_array($texts) ? $output : $output[0];
+    }
+
+    /**
      * Creates a new glossary on DeepL server with given name with all the specified
      * dictionaries, each with their own language pair and entries.
      * @param string $name User-defined name to assign to the glossary.
