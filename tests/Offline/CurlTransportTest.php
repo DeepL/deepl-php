@@ -29,7 +29,7 @@ class CurlTransportTest extends OfflineTestCase
         callable $call,
         string $body = '{}',
         array $clientOptions = [],
-        callable $inspect = null
+        ?callable $inspect = null
     ): array {
         $captured = null;
         $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->once())
