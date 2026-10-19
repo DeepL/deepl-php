@@ -31,6 +31,15 @@ class RephraseTextTest extends OfflineTestCase
         );
     }
 
+    public function testSendsOnlyTheTextWhenNoTargetLanguageOrOptionIsGiven(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->rephraseText('Hello');
+
+        $this->assertSame(['text' => ['Hello']], $this->jsonBody());
+    }
+
     public function testSendsABareTargetLanguage(): void
     {
         $this->reply(self::REPLY);

@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Fixed
+- Fixed `rephraseText()` throwing a `TypeError` when called without a target
+  language and without options.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
   which said these codes may only be used as source languages.
 
