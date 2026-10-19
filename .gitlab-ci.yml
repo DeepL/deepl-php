@@ -123,43 +123,25 @@ semgrep-sast:
 
 # stage: test ----------------------
 
-.test_base:
+# The offline suite needs no API key and no network: it runs on every PHP version.
+.test_offline_base:
   stage: test
-  extends: .test
-  retry: 1
-  variables:
-    VALIDATE_REQUESTS_FOR_DEEPL_MOCK: '1'
-    VALIDATE_RESPONSES_FOR_DEEPL_MOCK: '1'
   parallel:
     matrix:
-      - PHP_VERSION: "8.3-alpine"
       - PHP_VERSION: "8.5-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "8.4-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "8.3-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "8.2-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "8.1-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "8.0-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "7.4-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - PHP_VERSION: "7.3-alpine"
   image: ${DOCKER_IMAGE_PREFIX}_${PHP_VERSION}
   script:
-    - >
-      if [[ ! -z "${USE_MOCK_SERVER}" ]]; then
-        echo "Using mock server"
-        export DEEPL_SERVER_URL=http://deepl-mock:3000
-        export DEEPL_MOCK_SERVER_PORT=3000
-        export DEEPL_PROXY_URL=http://deepl-mock:3001
-        export DEEPL_MOCK_PROXY_SERVER_PORT=3001
-      fi
     - echo $CI_PIPELINE_ID
-    - vendor/bin/phpunit --random-order-seed $CI_PIPELINE_ID
+    - >
+      vendor/bin/phpunit --testsuite offline --order-by=random --random-order-seed $CI_PIPELINE_ID
+      --log-junit reports/junit.xml --coverage-cobertura reports/cobertura.xml
   artifacts:
     reports:
       coverage_report:
@@ -169,14 +151,46 @@ semgrep-sast:
         - reports/junit.xml
     when: always
 
-test_scheduled:
-  extends: .test_base
+test_offline_scheduled:
+  extends: .test_offline_base
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   retry: 2
 
-test_manual:
-  extends: .test_base
+test_offline_manual:
+  extends: .test_offline_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+# The real-API suite sends one request per endpoint to the test API, once, on the newest PHP version.
+# It has no retry: a rerun would repeat the requests.
+.test_real_api_base:
+  stage: test
+  extends: .test
+  services: []
+  variables:
+    PHP_VERSION: "8.5-alpine"
+  image: ${DOCKER_IMAGE_PREFIX}_${PHP_VERSION}
+  script:
+    - >
+      vendor/bin/phpunit --testsuite realApi
+      --log-junit reports/junit.xml --coverage-cobertura reports/cobertura.xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: reports/cobertura.xml
+      junit:
+        - reports/junit.xml
+    when: always
+
+test_real_api_scheduled:
+  extends: .test_real_api_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+test_real_api_manual:
+  extends: .test_real_api_base
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
