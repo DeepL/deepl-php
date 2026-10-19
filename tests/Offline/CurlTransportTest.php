@@ -1,0 +1,211 @@
+<?php
+
+// Copyright 2026 DeepL SE (https://www.deepl.com)
+// Use of this source code is governed by an MIT
+// license that can be found in the LICENSE file.
+
+namespace DeepL\Offline;
+
+use DeepL\DeepLClient;
+use DeepL\DocumentHandle;
+use DeepL\Fixtures;
+use DeepL\TranslatorOptions;
+
+/**
+ * Exercises the built-in cURL transport with the cURL functions mocked, so the request it builds is
+ * asserted without any network. The other offline tests use a PSR-18 client and never reach this code.
+ */
+class CurlTransportTest extends OfflineTestCase
+{
+    /** The cURL functions are mocked in this class, so cURL is not blocked here. */
+    protected function blockNetwork(): void
+    {
+    }
+
+    /**
+     * Runs the call against mocked cURL functions and returns the options that reached curl_setopt_array.
+     */
+    private function captureCurlOptions(
+        callable $call,
+        string $body = '{}',
+        array $clientOptions = [],
+        callable $inspect = null
+    ): array {
+        $captured = null;
+        $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->once())
+            ->willReturnCallback(function ($handle, array $options) use (&$captured, $inspect) {
+                $captured = $options;
+                if ($inspect !== null) {
+                    $inspect($options);
+                }
+                return true;
+            });
+        $this->getFunctionMock('DeepL', 'curl_exec')->expects($this->once())->willReturn($body);
+        $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->once())->willReturn(200);
+
+        $call(new DeepLClient(
+            'k',
+            array_replace([TranslatorOptions::SERVER_URL => 'https://api.deepl.com'], $clientOptions)
+        ));
+
+        $this->assertIsArray($captured);
+        return $captured;
+    }
+
+    private function headers(array $options): array
+    {
+        return $options[CURLOPT_HTTPHEADER];
+    }
+
+    public function testSendsGetRequestWithHeadersProxyAndTimeout(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}', [
+            TranslatorOptions::PROXY => 'http://proxy.local:3128',
+            TranslatorOptions::TIMEOUT => 3.5,
+            TranslatorOptions::SEND_PLATFORM_INFO => false,
+        ]);
+
+        $this->assertTrue($options[CURLOPT_HTTPGET]);
+        $this->assertSame('https://api.deepl.com/v2/usage', $options[CURLOPT_URL]);
+        $this->assertSame('http://proxy.local:3128', $options[CURLOPT_PROXY]);
+        $this->assertEquals(3500, $options[CURLOPT_TIMEOUT_MS]);
+        $this->assertEquals(3.5, $options[CURLOPT_CONNECTTIMEOUT]);
+        $this->assertTrue($options[CURLOPT_RETURNTRANSFER]);
+        $this->assertArrayNotHasKey(CURLOPT_POSTFIELDS, $options);
+        $this->assertSame(
+            ['Authorization: DeepL-Auth-Key k', 'User-Agent: deepl-php/' . DeepLClient::VERSION],
+            $this->headers($options)
+        );
+    }
+
+    public function testSendsNoProxyByDefault(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}');
+
+        $this->assertArrayNotHasKey(CURLOPT_PROXY, $options);
+    }
+
+    public function testSendsJsonBodyWithJsonContentType(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->translateText('Hello', null, 'de', [\DeepL\TranslateTextOptions::FORMALITY => 'less']);
+        }, '{"translations":[{"text":"Hallo","detected_source_language":"EN","billed_characters":5}]}');
+
+        $this->assertTrue($options[CURLOPT_POST]);
+        $this->assertSame(
+            ['target_lang' => 'de', 'formality' => 'less', 'show_billed_characters' => true, 'text' => ['Hello']],
+            json_decode($options[CURLOPT_POSTFIELDS], true)
+        );
+        $headers = $this->headers($options);
+        $this->assertCount(3, $headers);
+        $this->assertSame('Content-Type: application/json', $headers[2]);
+    }
+
+    public function testSendsFormBodyAsEncodedString(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getDocumentStatus(new DocumentHandle('doc1', 'key/+&='));
+        }, '{"status":"done"}');
+
+        $this->assertTrue($options[CURLOPT_POST]);
+        $this->assertSame('https://api.deepl.com/v2/document/doc1', $options[CURLOPT_URL]);
+        $this->assertSame('document_key=key%2F%2B%26%3D', $options[CURLOPT_POSTFIELDS]);
+        $this->assertCount(2, $this->headers($options));
+    }
+
+    public function testSendsMultipartBodyWithTheFile(): void
+    {
+        $file = Fixtures::tempFile('input.txt', 'Hello');
+
+        $options = $this->captureCurlOptions(function (DeepLClient $client) use ($file) {
+            $client->uploadDocument($file, 'en', 'de');
+        }, '{"document_id":"d","document_key":"k"}');
+
+        $this->assertTrue($options[CURLOPT_POST]);
+        $fields = $options[CURLOPT_POSTFIELDS];
+        $this->assertSame(['target_lang', 'source_lang', 'file'], array_keys($fields));
+        $this->assertSame(['de', 'en'], [$fields['target_lang'], $fields['source_lang']]);
+        $this->assertInstanceOf(\CURLFile::class, $fields['file']);
+        $this->assertSame($file, $fields['file']->getFilename());
+    }
+
+    public function testSendsRawPutBodyWithoutAuthorization(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->uploadTranslationMemoryFile('https://storage.example.com/up?sig=1', '<tmx/>');
+        }, '');
+
+        $this->assertSame('PUT', $options[CURLOPT_CUSTOMREQUEST]);
+        $this->assertSame('https://storage.example.com/up?sig=1', $options[CURLOPT_URL]);
+        $this->assertSame('<tmx/>', $options[CURLOPT_POSTFIELDS]);
+        $headers = $this->headers($options);
+        $this->assertCount(2, $headers);
+        $this->assertStringStartsWith('User-Agent: deepl-php/', $headers[0]);
+        $this->assertSame('Content-Type: application/xml', $headers[1]);
+    }
+
+    public function testSendsDeleteWithoutBody(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->deleteGlossary('gid');
+        }, '');
+
+        $this->assertSame('DELETE', $options[CURLOPT_CUSTOMREQUEST]);
+        $this->assertSame('https://api.deepl.com/v2/glossaries/gid', $options[CURLOPT_URL]);
+        $this->assertArrayNotHasKey(CURLOPT_POSTFIELDS, $options);
+    }
+
+    public function testStreamsDownloadsToTheOutputFile(): void
+    {
+        $output = Fixtures::tempDir() . '/output.txt';
+
+        $options = $this->captureCurlOptions(function (DeepLClient $client) use ($output) {
+            $client->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
+        }, '1', [], function (array $options) {
+            $this->assertTrue(is_resource($options[CURLOPT_FILE]));
+        });
+
+        $this->assertArrayNotHasKey(CURLOPT_RETURNTRANSFER, $options);
+    }
+
+    public function testAddsTheCurlVersionToTheUserAgent(): void
+    {
+        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->atLeastOnce())
+            ->willReturn(['version' => '7.99.0']);
+
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}');
+
+        $this->assertStringEndsWith(' curl/7.99.0', $this->headers($options)[1]);
+    }
+
+    public function testOmitsTheCurlVersionFromTheUserAgentWhenPlatformInfoIsOff(): void
+    {
+        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->never());
+
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}', [TranslatorOptions::SEND_PLATFORM_INFO => false]);
+
+        $this->assertStringNotContainsString('curl/', $this->headers($options)[1]);
+    }
+
+    public function testSendsAnIncompleteUserAgentWhenTheCurlVersionIsUnavailable(): void
+    {
+        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->once())
+            ->willThrowException(new \Exception('curl_version failed'));
+
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}');
+
+        $userAgent = $this->headers($options)[1];
+        $this->assertStringContainsString(' php/', $userAgent);
+        $this->assertStringNotContainsString('curl/', $userAgent);
+    }
+}
