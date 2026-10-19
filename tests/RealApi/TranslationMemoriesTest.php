@@ -24,7 +24,6 @@ class TranslationMemoriesTest extends RealApiTestCase
         $client = $this->makeDeepLClient();
         $name = self::uniqueName('translationMemory');
         $translationMemoryId = null;
-        $created = null;
         try {
             $created = $client->createTranslationMemoryImport('example.tmx', strlen(self::EXAMPLE_TMX), null, $name);
             $this->assertNotEmpty($created->jobId);
@@ -65,15 +64,6 @@ class TranslationMemoriesTest extends RealApiTestCase
             $client->downloadTranslationMemoryExport($exportJob, $output);
             $this->assertStringContainsString('<tmx', file_get_contents($output));
         } finally {
-            if ($translationMemoryId === null && $created !== null) {
-                // The import may still finish after a failed or timed-out wait: wait once more to get its ID.
-                try {
-                    $job = $client->waitUntilTranslationMemoryJobDone($created->jobId, self::JOB_TIMEOUT);
-                    $translationMemoryId = $job->result()->translationMemoryId;
-                } catch (\Exception $exception) {
-                    // Best effort: the original failure is more useful than a failed cleanup.
-                }
-            }
             if ($translationMemoryId !== null) {
                 try {
                     $client->deleteTranslationMemory($translationMemoryId);
