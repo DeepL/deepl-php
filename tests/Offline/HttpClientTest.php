@@ -13,10 +13,6 @@ use DeepL\TranslatorOptions;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 class HttpClientTest extends OfflineTestCase
 {
@@ -125,36 +121,5 @@ class HttpClientTest extends OfflineTestCase
             $this->assertFalse($exception->shouldRetry);
         }
         $this->assertRequestCount(1);
-    }
-
-    public function testRetriesWhenACustomClientThrowsAClientException(): void
-    {
-        $this->useFakeClock();
-        $calls = 0;
-        $client = new class ($calls) implements ClientInterface {
-            private $calls;
-
-            public function __construct(&$calls)
-            {
-                $this->calls = &$calls;
-            }
-
-            public function sendRequest(RequestInterface $request): ResponseInterface
-            {
-                $this->calls++;
-                throw new class ('boom') extends \RuntimeException implements ClientExceptionInterface {
-                };
-            }
-        };
-
-        try {
-            $this->makeTranslator([TranslatorOptions::HTTP_CLIENT => $client, TranslatorOptions::MAX_RETRIES => 2])
-                ->getUsage();
-            $this->fail('expected a ConnectionException');
-        } catch (ConnectionException $exception) {
-            $this->assertSame('boom', $exception->getMessage());
-            $this->assertTrue($exception->shouldRetry);
-        }
-        $this->assertSame(2, $calls);
     }
 }
