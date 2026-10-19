@@ -1188,20 +1188,27 @@ We welcome Pull Requests, please read the
 
 ### Tests
 
-Execute the tests using `phpunit`. The tests communicate with the DeepL API
-using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.
+The tests are split into two suites that must run in separate processes.
 
-Be aware that the tests make DeepL API requests that contribute toward your API
-usage.
+The offline suite in `tests/Offline` needs no API key and no network. It sends
+the requests of the SDK to an in-process HTTP client and checks each request,
+and it also covers errors, retries and polling. It is the default suite:
 
-The test suite may instead be configured to communicate with the mock-server
-provided by [deepl-mock][deepl-mock]. Although most test cases work for either,
-some test cases work only with the DeepL API or the mock-server and will be
-otherwise skipped. The test cases that require the mock-server trigger server
-errors and test the client error-handling. To execute the tests using
-deepl-mock, run it in another terminal while executing the tests. Execute the
-tests using `phpunit` with the `DEEPL_MOCK_SERVER_PORT` and `DEEPL_SERVER_URL`
-environment variables defined referring to the mock-server.
+```bash
+vendor/bin/phpunit --testsuite offline
+```
+
+The real-API suite in `tests/RealApi` sends one request per endpoint to the
+DeepL API, using the auth key defined by the `DEEPL_AUTH_KEY` environment
+variable. Set `DEEPL_SERVER_URL` to use another server than the default one:
+
+```bash
+DEEPL_AUTH_KEY=your-key vendor/bin/phpunit --testsuite realApi
+```
+
+Be aware that the real-API tests make DeepL API requests that contribute
+toward your API usage. The resources they create are named
+`sdktest-php-<date>-<random>-<label>` and are deleted at the end of each test.
 
 ### Formatting and fixing code
 
@@ -1223,8 +1230,6 @@ For formatting and fixing code style issues, run this command:
 [create-account]: https://www.deepl.com/pro?utm_source=github&utm_medium=github-php-readme#developer
 
 [curl-proxy-docs]: https://www.php.net/manual/en/function.curl-setopt.php
-
-[deepl-mock]: https://www.github.com/DeepLcom/deepl-mock
 
 [issues]: https://www.github.com/DeepLcom/deepl-php/issues
 
