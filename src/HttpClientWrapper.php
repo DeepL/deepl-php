@@ -106,7 +106,13 @@ class HttpClientWrapper
         $response = null;
         $exception = null;
         while ($backoff->getNumRetries() <= $this->maxRetries) {
-            $outFile = isset($options[self::OPTION_OUTFILE]) ? fopen($options[self::OPTION_OUTFILE], 'w') : null;
+            $outFile = null;
+            if (isset($options[self::OPTION_OUTFILE])) {
+                $outFile = @fopen($options[self::OPTION_OUTFILE], 'w');
+                if ($outFile === false) {
+                    throw new DeepLException("Failed to open output file {$options[self::OPTION_OUTFILE]} for writing");
+                }
+            }
             $timeout = max($this->minTimeout, $backoff->getTimeUntilDeadline());
             $response = null;
             $exception = null;

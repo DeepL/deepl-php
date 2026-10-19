@@ -223,4 +223,17 @@ class TranslateDocumentTest extends OfflineTestCase
             Fixtures::tempFile('output.txt', 'old')
         );
     }
+
+    public function testThrowsWithoutRequestWhenTheDownloadDirectoryDoesNotExist(): void
+    {
+        $output = Fixtures::tempDir() . '/missing/output.txt';
+
+        try {
+            $this->makeTranslator()->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
 }

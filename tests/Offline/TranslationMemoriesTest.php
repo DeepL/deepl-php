@@ -484,4 +484,18 @@ class TranslationMemoriesTest extends OfflineTestCase
 
         $this->makeDeepLClient()->getTranslationMemory('');
     }
+
+    public function testThrowsWithoutRequestWhenTheExportDirectoryDoesNotExist(): void
+    {
+        $output = Fixtures::tempDir() . '/missing/export.tmx';
+        $job = TranslationMemoryJob::fromJson(self::job('completed', ['download_url' => self::STORAGE_URL]));
+
+        try {
+            $this->makeDeepLClient()->downloadTranslationMemoryExport($job, $output);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
 }

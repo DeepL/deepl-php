@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Fixed
+- Fixed `downloadDocument()` and `downloadTranslationMemoryExport()` returning
+  without an error and without writing a file when the directory of the output
+  file does not exist. They now throw a `DeepLException` before sending a
+  request.
 - Fixed `rephraseText()` throwing a `TypeError` when called without a target
   language and without options.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
