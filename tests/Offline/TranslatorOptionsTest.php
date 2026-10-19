@@ -10,7 +10,6 @@ use DeepL\AppInfo;
 use DeepL\DeepLException;
 use DeepL\Translator;
 use DeepL\TranslatorOptions;
-use GuzzleHttp\Psr7\Response;
 
 class TranslatorOptionsTest extends OfflineTestCase
 {
