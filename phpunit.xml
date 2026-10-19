@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit colors="true" convertWarningsToExceptions="false">
+<phpunit colors="true" convertWarningsToExceptions="false" defaultTestSuite="offline">
     <testsuites>
-        <testsuite name="deepl-php Test Suite">
-            <directory>tests/</directory>
+        <!-- Run the suites in separate processes: the offline suite blocks the built-in cURL transport,
+             which a real cURL call made earlier in the same process would bypass. -->
+        <testsuite name="offline">
+            <directory>tests/Offline</directory>
+        </testsuite>
+        <testsuite name="realApi">
+            <directory>tests/RealApi</directory>
         </testsuite>
     </testsuites>
 
