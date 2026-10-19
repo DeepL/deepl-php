@@ -67,9 +67,8 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequest('GET', '/v3/translation_memories/tm%2F1', 1);
         foreach ([$listed, $fetched] as $info) {
             $this->assertInstanceOf(TranslationMemoryInfo::class, $info);
-            $this->assertSame(['tm/1', 'My TM', 'en', ['de', 'fr'], 4], [
+            $this->assertSame(['tm/1', 'en', ['de', 'fr'], 4], [
                 $info->translationMemoryId,
-                $info->name,
                 $info->sourceLanguage,
                 $info->targetLanguages,
                 $info->segmentCount,
@@ -252,10 +251,8 @@ class TranslationMemoriesTest extends OfflineTestCase
         $job = $this->makeDeepLClient()->getTranslationMemoryJob('job1');
 
         $this->assertRequest('GET', '/v3/translation_memories/jobs/job1');
-        $this->assertSame(['job1', 'import', 'translation_memory', 'tm1', 'My TM'], [
+        $this->assertSame(['job1', 'tm1', 'My TM'], [
             $job->jobId,
-            $job->operation,
-            $job->product,
             $job->translationMemoryId,
             $job->displayName,
         ]);

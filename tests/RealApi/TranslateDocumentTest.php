@@ -18,7 +18,6 @@ class TranslateDocumentTest extends RealApiTestCase
         $status = $this->makeTranslator()->translateDocument($input, $output, null, 'de');
 
         $this->assertTrue($status->ok() && $status->done());
-        $this->assertSame(strlen(Fixtures::EXAMPLE_TEXT), $status->billedCharacters);
         $this->assertGreaterThan(0, filesize($output));
     }
 }

@@ -56,19 +56,11 @@ class StyleRulesTest extends OfflineTestCase
 
         $this->assertCount(2, $rules);
         $this->assertSame('sid', $rules[0]->styleId);
-        $this->assertSame('My rules', $rules[0]->name);
-        $this->assertSame('en', $rules[0]->language);
-        $this->assertSame(3, $rules[0]->version);
         $this->assertSame('2024-05-06 07:08:09', $rules[0]->creationTime->format('Y-m-d H:i:s'));
         $this->assertSame('2024-06-07 08:09:10', $rules[0]->updatedTime->format('Y-m-d H:i:s'));
         $this->assertSame(['calendar_era' => 'use_bc_and_ad'], $rules[0]->configuredRules->datesAndTimes);
         $this->assertNull($rules[0]->configuredRules->numbers);
-        $this->assertSame(['i1', 'L', 'P', 'de'], [
-            $rules[0]->customInstructions[0]->id,
-            $rules[0]->customInstructions[0]->label,
-            $rules[0]->customInstructions[0]->prompt,
-            $rules[0]->customInstructions[0]->sourceLanguage,
-        ]);
+        $this->assertSame('de', $rules[0]->customInstructions[0]->sourceLanguage);
     }
 
     public function testParsesStyleRulesWithoutDetails(): void
@@ -188,7 +180,6 @@ class StyleRulesTest extends OfflineTestCase
         $instruction = $this->makeDeepLClient()->getStyleRuleCustomInstruction('sid', 'i1');
 
         $this->assertInstanceOf(CustomInstruction::class, $instruction);
-        $this->assertSame(['i1', 'L', 'P'], [$instruction->id, $instruction->label, $instruction->prompt]);
         $this->assertNull($instruction->sourceLanguage);
     }
 

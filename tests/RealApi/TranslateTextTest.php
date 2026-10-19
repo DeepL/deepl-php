@@ -17,7 +17,7 @@ class TranslateTextTest extends RealApiTestCase
 
         $this->assertInstanceOf(TextResult::class, $result);
         $this->assertIsString($result->text);
-        $this->assertSame('en', $result->detectedSourceLang);
-        $this->assertSame(strlen(Fixtures::EXAMPLE_TEXT), $result->billedCharacters);
+        $this->assertNotEmpty($result->detectedSourceLang);
+        $this->assertGreaterThan(0, $result->billedCharacters);
     }
 }

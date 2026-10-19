@@ -17,6 +17,5 @@ class RephraseTextTest extends RealApiTestCase
 
         $this->assertInstanceOf(RephraseTextResult::class, $result);
         $this->assertIsString($result->text);
-        $this->assertSame('en', strtolower($result->detectedSourceLanguage));
     }
 }

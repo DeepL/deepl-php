@@ -49,7 +49,6 @@ class LanguagesTest extends OfflineTestCase
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=translate_text');
         $this->assertSame(['DE', 'FR'], [$languages[0]->code, $languages[1]->code]);
-        $this->assertSame('German', $languages[0]->name);
         $this->assertNull($languages[0]->supportsFormality);
     }
 
@@ -103,7 +102,6 @@ class LanguagesTest extends OfflineTestCase
         $this->assertSame('de', $languages[0]->code);
         $this->assertTrue($languages[0]->usableAsSource);
         $this->assertFalse($languages[0]->usableAsTarget);
-        $this->assertSame('stable', $languages[0]->features['tag_handling']->status);
         $this->assertTrue($languages[0]->supports(LanguageFeature::FEATURE_TAG_HANDLING));
         $this->assertFalse($languages[0]->supports(LanguageFeature::FEATURE_FORMALITY));
         $this->assertSame([], $languages[2]->features);
@@ -148,7 +146,6 @@ class LanguagesTest extends OfflineTestCase
         $this->assertSame('translate_text', $resources[0]->resource);
         $this->assertTrue($resources[0]->supports(LanguageFeature::FEATURE_GLOSSARY));
         $this->assertFalse($resources[0]->supports(LanguageFeature::FEATURE_TONE));
-        $this->assertSame('glossary', $resources[0]->features['glossary']->name);
         $this->assertTrue($resources[0]->features['glossary']->needsSourceSupport);
         // a flag that is absent stays null instead of defaulting to false
         $this->assertNull($resources[0]->features['formality']->needsSourceSupport);

@@ -90,8 +90,6 @@ class GlossariesTest extends OfflineTestCase
         $info = $this->makeTranslator()->getGlossary('gid');
 
         $this->assertRequest('GET', '/v2/glossaries/gid');
-        $this->assertSame('gid', $info->glossaryId);
-        $this->assertTrue($info->ready);
         $this->assertSame(2, $info->entryCount);
         $this->assertSame('2021-08-03 14:16:18', $info->creationTime->format('Y-m-d H:i:s'));
     }

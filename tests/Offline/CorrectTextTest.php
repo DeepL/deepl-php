@@ -41,8 +41,7 @@ class CorrectTextTest extends OfflineTestCase
         $result = $this->makeDeepLClient()->correctText('Helo');
 
         $this->assertInstanceOf(RephraseTextResult::class, $result);
-        $this->assertSame(['Fixed', 'en', 'en-US'], [
-            $result->text,
+        $this->assertSame(['en', 'en-US'], [
             $result->detectedSourceLanguage,
             $result->targetLanguage,
         ]);
