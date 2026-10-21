@@ -167,7 +167,6 @@ test_offline_manual:
 .test_real_api_base:
   stage: test
   extends: .test
-  services: []
   variables:
     PHP_VERSION: "8.5-alpine"
   image: ${DOCKER_IMAGE_PREFIX}_${PHP_VERSION}
