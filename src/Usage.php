@@ -6,6 +6,7 @@
 
 namespace DeepL;
 
+use DateTime;
 use JsonException;
 
 /**
@@ -15,6 +16,9 @@ use JsonException;
  * Depending on the account type, different usage types are included: the character, document and
  * teamDocument fields provide details about each corresponding usage type, allowing each usage type
  * to be checked individually. The anyLimitReached() function checks if any usage type is exceeded.
+ *
+ * API Pro accounts additionally receive per-key character usage, speech usage, the billing period
+ * and a per-product breakdown; these fields are null for other accounts.
  */
 class Usage
 {
@@ -32,6 +36,37 @@ class Usage
      * @var UsageDetail|null Usage details for documents shared among your team.
      */
     public $teamDocument;
+
+    /**
+     * @var UsageDetail|null Usage details for characters translated with this API key, as opposed to
+     * $character, which covers the whole account. Only set for API Pro accounts.
+     */
+    public $apiKeyCharacter;
+
+    /**
+     * @var UsageDetail|null Usage details for speech-to-text, in minutes. Only set for API Pro accounts.
+     */
+    public $speechToTextMinutes;
+
+    /**
+     * @var UsageDetail|null Usage details for speech-to-speech, in minutes. Only set for API Pro accounts.
+     */
+    public $speechToSpeechMinutes;
+
+    /**
+     * @var UsageProduct[]|null Per-product usage in the current billing period. Only set for API Pro accounts.
+     */
+    public $products;
+
+    /**
+     * @var DateTime|null Start of the current billing period. Only set for API Pro accounts.
+     */
+    public $startTime;
+
+    /**
+     * @var DateTime|null End of the current billing period. Only set for API Pro accounts.
+     */
+    public $endTime;
 
     /**
      * @return bool True if any usage type limit has been reached or passed, otherwise false.
@@ -73,6 +108,14 @@ class Usage
         $this->character = $this->buildUsageDetail('character', $json);
         $this->document = $this->buildUsageDetail('document', $json);
         $this->teamDocument = $this->buildUsageDetail('team_document', $json);
+        $this->apiKeyCharacter = $this->buildUsageDetail('api_key_character', $json);
+        $this->speechToTextMinutes = $this->buildUsageDetail('speech_to_text_minutes', $json);
+        $this->speechToSpeechMinutes = $this->buildUsageDetail('speech_to_speech_minutes', $json);
+        if (isset($json['products']) && is_array($json['products'])) {
+            $this->products = array_map([UsageProduct::class, 'fromJson'], $json['products']);
+        }
+        $this->startTime = isset($json['start_time']) ? new DateTime($json['start_time']) : null;
+        $this->endTime = isset($json['end_time']) ? new DateTime($json['end_time']) : null;
     }
 
     private function buildUsageDetail(string $prefix, array $json): ?UsageDetail

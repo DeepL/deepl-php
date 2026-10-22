@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the input file's format, `ENABLE_DOCUMENT_MINIFICATION` is ignored.
 - Added the `TranslateDocumentOptions::ENABLE_WATERMARK` option to add a
   "Translated by DeepL" watermark to translated `docx` and `pdf` documents.
+- Added the API Pro fields of `getUsage()` to `Usage`: `apiKeyCharacter`,
+  `speechToTextMinutes`, `speechToSpeechMinutes`, `startTime`, `endTime` and
+  `products` (an array of the new `UsageProduct` class). They are `null` when
+  the response does not include them, for example for API Free accounts.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API

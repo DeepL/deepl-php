@@ -649,6 +649,34 @@ if ($usage->document) {
 }
 ```
 
+For API Pro accounts the `Usage` object has these additional properties; for
+other accounts they are `null`:
+
+- `apiKeyCharacter`: character usage of the API key making the request, as
+  opposed to `character`, which covers the whole account.
+- `speechToTextMinutes` and `speechToSpeechMinutes`: speech usage in minutes.
+  Like `character`, these have `count` and `limit` properties.
+- `startTime` and `endTime`: the current billing period, as `DateTime` objects.
+- `products`: an array of `UsageProduct` objects, one per product, with
+  `productType` (for example `'translate'`, `'write'` or `'speechToText'`),
+  `billingUnit` (`'characters'` or `'minutes'`), `apiKeyUnitCount` and
+  `accountUnitCount`.
+
+```php
+$usage = $deeplClient->getUsage();
+if ($usage->apiKeyCharacter) {
+    echo 'Characters (account): ' . $usage->character->count . ' of ' . $usage->character->limit;
+    echo 'Characters (this key): ' . $usage->apiKeyCharacter->count . ' of ' . $usage->apiKeyCharacter->limit;
+}
+if ($usage->startTime && $usage->endTime) {
+    echo 'Billing period: ' . $usage->startTime->format(DATE_ATOM) . ' to ' . $usage->endTime->format(DATE_ATOM);
+}
+foreach ($usage->products ?? [] as $product) {
+    echo "$product->productType: $product->apiKeyUnitCount (this key) / "
+        . "$product->accountUnitCount (account) $product->billingUnit";
+}
+```
+
 ### Listing available languages
 
 You can request the list of languages supported by DeepL API for text and
