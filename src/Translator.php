@@ -321,6 +321,9 @@ class Translator
         if (isset($options[TranslateDocumentOptions::OUTPUT_FORMAT])) {
             $params['output_format'] = $options[TranslateDocumentOptions::OUTPUT_FORMAT];
         }
+        if (isset($options[TranslateDocumentOptions::ENABLE_WATERMARK])) {
+            $params['enable_watermark'] = $options[TranslateDocumentOptions::ENABLE_WATERMARK] ? 'true' : 'false';
+        }
         $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
         // The document request body is sent as multipart/form-data, where every field must be a
         // string. Unlike the JSON-encoded text request, the threshold must therefore be

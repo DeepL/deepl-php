@@ -36,6 +36,11 @@ final class TranslateDocumentOptions
      */
     public const OUTPUT_FORMAT = 'output_format';
 
+    /** Set to `true` to add a "Translated by DeepL" watermark to the translated document.
+     *  Only supported for docx and pdf output; the API ignores it for other output formats.
+     */
+    public const ENABLE_WATERMARK = 'enable_watermark';
+
     /** Set to `true` in order to use Document Minification for translation, if available. */
     public const ENABLE_DOCUMENT_MINIFICATION = 'enable_document_minification';
 

@@ -69,6 +69,14 @@ class TranslateDocumentTest extends OfflineTestCase
                 ['glossary_ids' => 'g1,g1,g3'],
             ],
             'output format' => [[TranslateDocumentOptions::OUTPUT_FORMAT => 'docx'], ['output_format' => 'docx']],
+            'watermark enabled' => [
+                [TranslateDocumentOptions::ENABLE_WATERMARK => true],
+                ['enable_watermark' => 'true'],
+            ],
+            'watermark disabled' => [
+                [TranslateDocumentOptions::ENABLE_WATERMARK => false],
+                ['enable_watermark' => 'false'],
+            ],
             'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
             'translation memory with threshold as string' => [
                 [
@@ -82,6 +90,34 @@ class TranslateDocumentTest extends OfflineTestCase
                 ['custom' => '1', 'target_lang' => 'fr'],
             ],
         ];
+    }
+
+    public function testTranslateDocumentSendsWatermarkWithOutputFormat(): void
+    {
+        $input = Fixtures::tempFile('input.txt', 'Hello');
+        $output = Fixtures::tempDir() . '/output.docx';
+        $this->reply(self::UPLOAD_REPLY);
+        $this->reply(['document_id' => 'doc1', 'status' => 'done']);
+        $this->mock->append(new Response(200, [], 'docx'));
+
+        $this->makeTranslator()->translateDocument($input, $output, null, 'de', [
+            TranslateDocumentOptions::OUTPUT_FORMAT => 'docx',
+            TranslateDocumentOptions::ENABLE_WATERMARK => true,
+        ]);
+
+        $this->assertMultipart(
+            ['target_lang' => 'de', 'output_format' => 'docx', 'enable_watermark' => 'true'],
+            'input.txt'
+        );
+    }
+
+    public function testOmitsWatermarkWhenUnset(): void
+    {
+        $this->reply(self::UPLOAD_REPLY);
+
+        $this->makeTranslator()->uploadDocument(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
+
+        $this->assertStringNotContainsString('enable_watermark', (string)$this->request()->getBody());
     }
 
     public function testSendsBinaryFileContentUnchanged(): void

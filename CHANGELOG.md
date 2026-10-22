@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `TranslateDocumentOptions::OUTPUT_FORMAT` option to request the
   file format of the translated document, for example `docx`. When it differs
   from the input file's format, `ENABLE_DOCUMENT_MINIFICATION` is ignored.
+- Added the `TranslateDocumentOptions::ENABLE_WATERMARK` option to add a
+  "Translated by DeepL" watermark to translated `docx` and `pdf` documents.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API
