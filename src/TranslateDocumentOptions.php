@@ -31,6 +31,11 @@ final class TranslateDocumentOptions
      */
     public const GLOSSARY_IDS = 'glossary_ids';
 
+    /** Set to a string containing the file extension of the desired format of the translated file,
+     *  for example 'docx'. If unspecified, the translated file is in the same format as the input file.
+     */
+    public const OUTPUT_FORMAT = 'output_format';
+
     /** Set to `true` in order to use Document Minification for translation, if available. */
     public const ENABLE_DOCUMENT_MINIFICATION = 'enable_document_minification';
 

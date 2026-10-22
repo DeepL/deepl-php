@@ -265,8 +265,12 @@ class Translator
         }
         try {
             $minifier = null;
+            // The media removed by minification can only be reinserted into a file of the input's format.
+            $outputFormat = $options[TranslateDocumentOptions::OUTPUT_FORMAT] ?? null;
             $willMinify = ($options[TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION] ?? false) &&
-                DocumentMinifier::canMinifyFile($inputFile);
+                DocumentMinifier::canMinifyFile($inputFile) &&
+                ($outputFormat === null ||
+                    strcasecmp($outputFormat, pathinfo($inputFile, PATHINFO_EXTENSION)) === 0);
             $fileToUpload = $inputFile;
             if ($willMinify) {
                 $minifier = new DocumentMinifier();
@@ -314,6 +318,9 @@ class Translator
             $options[TranslateDocumentOptions::GLOSSARY_IDS] ?? null
         );
 
+        if (isset($options[TranslateDocumentOptions::OUTPUT_FORMAT])) {
+            $params['output_format'] = $options[TranslateDocumentOptions::OUTPUT_FORMAT];
+        }
         $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
         // The document request body is sent as multipart/form-data, where every field must be a
         // string. Unlike the JSON-encoded text request, the threshold must therefore be

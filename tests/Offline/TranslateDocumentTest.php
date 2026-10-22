@@ -68,6 +68,7 @@ class TranslateDocumentTest extends OfflineTestCase
                 [TranslateDocumentOptions::GLOSSARY_IDS => ['g1', $glossary, 'g3']],
                 ['glossary_ids' => 'g1,g1,g3'],
             ],
+            'output format' => [[TranslateDocumentOptions::OUTPUT_FORMAT => 'docx'], ['output_format' => 'docx']],
             'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
             'translation memory with threshold as string' => [
                 [

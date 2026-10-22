@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the `/v2/write/correct` endpoint in the `DeepLClient` class:
   `correctText()`. This applies a minimal-change spelling and grammar
   correction pass without rewriting the text for style or tone.
+- Added the `TranslateDocumentOptions::OUTPUT_FORMAT` option to request the
+  file format of the translated document, for example `docx`. When it differs
+  from the input file's format, `ENABLE_DOCUMENT_MINIFICATION` is ignored.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API

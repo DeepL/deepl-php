@@ -103,6 +103,27 @@ class DocumentMinificationTest extends OfflineTestCase
         $this->assertGreaterThan(self::MEDIA_SIZE, $this->request()->getBody()->getSize());
     }
 
+    public function testUploadsTheOriginalDocumentWhenTheOutputFormatDiffers(): void
+    {
+        list($input) = $this->inflate('example_document_template.docx', 'word/media/big.png');
+        $output = Fixtures::tempDir() . '/output.pdf';
+        $this->reply(['document_id' => 'doc1', 'document_key' => 'k']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'done']);
+        $this->mock->append(new \GuzzleHttp\Psr7\Response(200, [], 'pdf'));
+
+        $this->makeTranslator()->translateDocument($input, $output, 'en', 'de', [
+            TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION => true,
+            TranslateDocumentOptions::OUTPUT_FORMAT => 'pdf',
+        ]);
+
+        $this->assertMultipart(
+            ['target_lang' => 'de', 'source_lang' => 'en', 'output_format' => 'pdf'],
+            basename($input)
+        );
+        $this->assertGreaterThan(self::MEDIA_SIZE, $this->request()->getBody()->getSize());
+        $this->assertSame('pdf', file_get_contents($output));
+    }
+
     public function testUploadsUnsupportedFileTypesUnchanged(): void
     {
         $input = Fixtures::resourcePath('example_zip_template.zip');
