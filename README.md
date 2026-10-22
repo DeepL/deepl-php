@@ -344,6 +344,10 @@ using the following keys:
 -   `translation_memory_threshold`: same as in [Text translation options](#text-translation-options).
     An integer from 0 to 100 controlling the minimum matching percentage for translation
     memory matches.
+-   `output_format`: a string containing the file extension of the desired format of the
+    translated document, for example `'docx'`. If unspecified, the translated document is in
+    the same format as the input file. If it differs from the input file's format, document
+    minification is not applied.
 -   `minification`: A `bool` value. If set to `true`, the library will try to minify a document before translating it through the API, sending a smaller document if the file contains a lot of media. This is currently only supported for `pptx` files. See also [Document minification](#document-minification). Note that this only works in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in between.
 
 The `uploadDocument` function also supports these options.
