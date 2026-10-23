@@ -343,6 +343,159 @@ class DeepLClient extends Translator
     }
 
     /**
+     * Creates a spoken terms collection with the given name and term lists.
+     * @param string $name User-defined name to assign to the collection.
+     * @param SpokenTermsEntries[] $termLists Term lists to add, one per language.
+     * @return SpokenTerms Details about the created collection.
+     * @throws DeepLException
+     */
+    public function createSpokenTerms(string $name, array $termLists): SpokenTerms
+    {
+        $params = ['name' => $name, 'term_lists' => self::spokenTermsListsToObjects($termLists)];
+        $response = $this->client->sendRequestWithBackoff(
+            'POST',
+            '/v3/spoken-terms',
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTerms::parseJson($content);
+    }
+
+    /**
+     * Gets information about all spoken terms collections.
+     * @return SpokenTerms[] Details about all collections, without their entries.
+     * @throws DeepLException
+     */
+    public function listSpokenTerms(): array
+    {
+        $response = $this->client->sendRequestWithBackoff('GET', '/v3/spoken-terms');
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTerms::parseListJson($content);
+    }
+
+    /**
+     * Gets information about a spoken terms collection.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @return SpokenTerms Details about the collection, without its entries.
+     * @throws DeepLException
+     */
+    public function getSpokenTerms($spokenTerms): SpokenTerms
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $response = $this->client->sendRequestWithBackoff('GET', "/v3/spoken-terms/$spokenTermsId");
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTerms::parseJson($content);
+    }
+
+    /**
+     * Renames a spoken terms collection and/or merges terms into its term lists. A term list for a
+     * language not yet in the collection is added. Arguments that are null are not sent.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @param string|null $name New name for the collection, or null to keep it.
+     * @param SpokenTermsEntries[]|null $termLists Terms to merge into the term lists, or null.
+     * @return SpokenTerms Details about the updated collection.
+     * @throws DeepLException
+     */
+    public function updateSpokenTerms($spokenTerms, ?string $name, ?array $termLists): SpokenTerms
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $params = new \stdClass();
+        if ($name !== null) {
+            $params->name = $name;
+        }
+        if ($termLists !== null) {
+            $params->term_lists = self::spokenTermsListsToObjects($termLists);
+        }
+        $response = $this->client->sendRequestWithBackoff(
+            'PATCH',
+            "/v3/spoken-terms/$spokenTermsId",
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTerms::parseJson($content);
+    }
+
+    /**
+     * Retrieves the terms of one language in a spoken terms collection.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @param string $lang Language code of the term list, e.g. "en".
+     * @return SpokenTermsEntries The terms of the list.
+     * @throws DeepLException
+     */
+    public function getSpokenTermsEntries($spokenTerms, string $lang): SpokenTermsEntries
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $query = http_build_query(['lang' => $lang]);
+        $url = "/v3/spoken-terms/$spokenTermsId/entries?$query";
+        $response = $this->client->sendRequestWithBackoff('GET', $url);
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTermsEntries::parseJson($content);
+    }
+
+    /**
+     * Replaces the term list of one language in a spoken terms collection, or adds it if the
+     * collection has no list for that language.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @param SpokenTermsEntries $entries Language and terms of the replacement list.
+     * @return SpokenTermsList Details about the term list.
+     * @throws DeepLException
+     */
+    public function replaceSpokenTermsList($spokenTerms, SpokenTermsEntries $entries): SpokenTermsList
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $response = $this->client->sendRequestWithBackoff(
+            'PUT',
+            "/v3/spoken-terms/$spokenTermsId/term-lists",
+            [HttpClientWrapper::OPTION_JSON => json_encode($entries->toObject())]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return SpokenTermsList::parseJson($content);
+    }
+
+    /**
+     * Deletes a spoken terms collection.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @throws DeepLException
+     */
+    public function deleteSpokenTerms($spokenTerms): void
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/spoken-terms/$spokenTermsId");
+        $this->checkStatusCode($response);
+    }
+
+    /**
+     * Deletes the term list of one language from a spoken terms collection.
+     * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @param string $lang Language code of the term list to delete, e.g. "en".
+     * @throws DeepLException
+     */
+    public function deleteSpokenTermsList($spokenTerms, string $lang): void
+    {
+        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+        $query = http_build_query(['lang' => $lang]);
+        $url = "/v3/spoken-terms/$spokenTermsId/term-lists?$query";
+        $response = $this->client->sendRequestWithBackoff('DELETE', $url);
+        $this->checkStatusCode($response);
+    }
+
+    /**
+     * @param SpokenTermsEntries[] $termLists
+     */
+    private static function spokenTermsListsToObjects(array $termLists): array
+    {
+        return array_map(function (SpokenTermsEntries $entries) {
+            return $entries->toObject();
+        }, $termLists);
+    }
+
+    /**
      * Validates and prepares HTTP parameters for rephrase requests.
      * @param string|string[] $texts Text(s) to rephrase
      * @param string|null $targetLang Target language code, or null to use default

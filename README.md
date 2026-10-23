@@ -623,6 +623,51 @@ $deeplClient->translateDocument(
 );
 ```
 
+### Spoken terms
+
+Spoken terms collections improve speech transcription of terms such as product
+names. Each collection has a user-specified name, a uniquely-assigned ID and
+one term list per language. The `DeepLClient` methods below accept either the
+spoken terms ID or a `SpokenTerms` object. Terms are passed and returned as
+arrays of strings.
+
+```php
+// Create a collection with an English term list
+$spokenTerms = $deeplClient->createSpokenTerms(
+    'Product names',
+    [new SpokenTermsEntries('en', ['DeepL', 'webhook'])]
+);
+echo $spokenTerms->spokenTermsId;
+foreach ($spokenTerms->termLists as $termList) {
+    echo "$termList->lang: $termList->entryCount terms"; // "en: 2 terms"
+}
+
+// List all collections, or get one
+foreach ($deeplClient->listSpokenTerms() as $item) {
+    echo "$item->name ($item->spokenTermsId)";
+}
+$spokenTerms = $deeplClient->getSpokenTerms($spokenTerms->spokenTermsId);
+
+// Rename the collection and/or merge terms into its term lists; null arguments are not sent
+$spokenTerms = $deeplClient->updateSpokenTerms(
+    $spokenTerms,
+    'Product names v2',
+    [new SpokenTermsEntries('en', ['authentication'])]
+);
+
+// Read the terms of one language
+$entries = $deeplClient->getSpokenTermsEntries($spokenTerms, 'en');
+print_r($entries->entries); // Array ( [0] => DeepL [1] => authentication [2] => webhook )
+
+// Replace the term list of one language, or add it if the language is new
+$termList = $deeplClient->replaceSpokenTermsList($spokenTerms, new SpokenTermsEntries('de', ['Schnittstelle']));
+echo $termList->entryCount; // 1
+
+// Delete the term list of one language, then the whole collection
+$deeplClient->deleteSpokenTermsList($spokenTerms, 'de');
+$deeplClient->deleteSpokenTerms($spokenTerms);
+```
+
 ### Checking account usage
 
 To check account usage, use the `getUsage()` function.

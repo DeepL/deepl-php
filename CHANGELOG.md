@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `speechToTextMinutes`, `speechToSpeechMinutes`, `startTime`, `endTime` and
   `products` (an array of the new `UsageProduct` class). They are `null` when
   the response does not include them, for example for API Free accounts.
+- Added support for the Spoken Terms API (`/v3/spoken-terms`) in the
+  `DeepLClient` class: `createSpokenTerms()`, `listSpokenTerms()`,
+  `getSpokenTerms()`, `updateSpokenTerms()`, `getSpokenTermsEntries()`,
+  `replaceSpokenTermsList()`, `deleteSpokenTerms()` and
+  `deleteSpokenTermsList()`, with the new classes `SpokenTerms`,
+  `SpokenTermsList` and `SpokenTermsEntries`.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API
