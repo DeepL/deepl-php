@@ -58,9 +58,9 @@ class TranslationMemorySegment
             $json['source_segment_id'],
             $json['source_text'],
             $targets,
-            TranslationMemoryUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            TranslationMemoryUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
-            TranslationMemoryUtils::parseOptionalTimestamp($json['last_used_time'] ?? null)
+            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
+            ParsingUtils::parseOptionalTimestamp($json['last_used_time'] ?? null)
         );
     }
 

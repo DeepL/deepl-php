@@ -78,7 +78,7 @@ class TranslationMemoryJobResult
             $json['status'] ?? '',
             $json['status_metadata']['required_action'] ?? null,
             $json['download_url'] ?? null,
-            TranslationMemoryUtils::parseOptionalTimestamp($json['expires_at'] ?? null),
+            ParsingUtils::parseOptionalTimestamp($json['expires_at'] ?? null),
             $json['error']['message'] ?? null,
             $json['translation_memory_id'] ?? null,
             $json['skipped_segment_count'] ?? null

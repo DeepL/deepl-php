@@ -69,7 +69,9 @@ class Usage
     public $endTime;
 
     /**
-     * @return bool True if any usage type limit has been reached or passed, otherwise false.
+     * @return bool True if the character, document or team document limit has been reached or passed,
+     * otherwise false. The API Pro usage types ($apiKeyCharacter, $speechToTextMinutes,
+     * $speechToSpeechMinutes) are not considered; call limitReached() on them directly.
      */
     public function anyLimitReached(): bool
     {
@@ -112,10 +114,18 @@ class Usage
         $this->speechToTextMinutes = $this->buildUsageDetail('speech_to_text_minutes', $json);
         $this->speechToSpeechMinutes = $this->buildUsageDetail('speech_to_speech_minutes', $json);
         if (isset($json['products']) && is_array($json['products'])) {
-            $this->products = array_map([UsageProduct::class, 'fromJson'], $json['products']);
+            $this->products = array_map(
+                [UsageProduct::class, 'fromJson'],
+                array_values(array_filter($json['products'], 'is_array'))
+            );
         }
-        $this->startTime = isset($json['start_time']) ? new DateTime($json['start_time']) : null;
-        $this->endTime = isset($json['end_time']) ? new DateTime($json['end_time']) : null;
+        $this->startTime = ParsingUtils::parseOptionalTimestamp(self::stringOrNull($json, 'start_time'));
+        $this->endTime = ParsingUtils::parseOptionalTimestamp(self::stringOrNull($json, 'end_time'));
+    }
+
+    private static function stringOrNull(array $json, string $key): ?string
+    {
+        return isset($json[$key]) && is_string($json[$key]) ? $json[$key] : null;
     }
 
     private function buildUsageDetail(string $prefix, array $json): ?UsageDetail

@@ -634,7 +634,10 @@ your account type: `character`, `document` and `teamDocument`. For API accounts
 Each usage subtypes (if set) have `count` and `limit` properties giving the
 amount used and maximum amount respectively, and the `limitReached()` function
 that checks if the usage has reached the limit. The top level `Usage` object has
-the `anyLimitReached()` function to check all usage subtypes.
+the `anyLimitReached()` function to check the `character`, `document` and
+`teamDocument` subtypes. It does not consider the API Pro subtypes described
+below; call `limitReached()` on those directly, e.g.
+`$usage->apiKeyCharacter->limitReached()`.
 
 ```php
 $usage = $deeplClient->getUsage();

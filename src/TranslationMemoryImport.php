@@ -35,7 +35,7 @@ class TranslationMemoryImport
         return new TranslationMemoryImport(
             $json['job_id'],
             $json['upload_url'],
-            TranslationMemoryUtils::parseOptionalTimestamp($json['expires_at'] ?? null)
+            ParsingUtils::parseOptionalTimestamp($json['expires_at'] ?? null)
         );
     }
 

@@ -71,8 +71,8 @@ class TranslationMemoryInfo
             $json['source_language'],
             $json['target_languages'] ?? [],
             $json['segment_count'] ?? 0,
-            TranslationMemoryUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            TranslationMemoryUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
+            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
         );
     }
 

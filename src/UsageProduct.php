@@ -49,10 +49,10 @@ class UsageProduct
     public static function fromJson(array $json): UsageProduct
     {
         return new UsageProduct(
-            $json['product_type'],
-            $json['billing_unit'],
-            $json['api_key_unit_count'],
-            $json['account_unit_count']
+            (string)($json['product_type'] ?? ''),
+            (string)($json['billing_unit'] ?? ''),
+            (int)($json['api_key_unit_count'] ?? 0),
+            (int)($json['account_unit_count'] ?? 0)
         );
     }
 }

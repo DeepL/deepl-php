@@ -117,6 +117,27 @@ class UsageTest extends OfflineTestCase
         $this->assertSame("Usage this billing period:\nCharacters: 5 of 500000", (string)$usage);
     }
 
+    public function testIgnoresUnparseableBillingPeriodAndIncompleteProducts(): void
+    {
+        $this->reply([
+            'character_count' => 20,
+            'character_limit' => 500000,
+            'start_time' => 'not a timestamp',
+            'end_time' => '',
+            'products' => [['product_type' => 'translate'], 'not an object'],
+        ]);
+
+        $usage = $this->makeTranslator()->getUsage();
+
+        $this->assertSame(20, $usage->character->count);
+        $this->assertNull($usage->startTime);
+        $this->assertNull($usage->endTime);
+        $this->assertCount(1, $usage->products);
+        $this->assertSame('translate', $usage->products[0]->productType);
+        $this->assertSame('', $usage->products[0]->billingUnit);
+        $this->assertSame(0, $usage->products[0]->apiKeyUnitCount);
+    }
+
     public function testReportsNoLimitReachedBelowTheLimits(): void
     {
         $this->reply(['character_count' => 0, 'character_limit' => 20]);
