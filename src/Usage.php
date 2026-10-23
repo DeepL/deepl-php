@@ -24,6 +24,11 @@ class Usage
     public $character;
 
     /**
+     * @var UsageDetail|null Usage details for characters used by this API key only.
+     */
+    public $apiKeyCharacter;
+
+    /**
      * @var UsageDetail|null Usage details for documents.
      */
     public $document;
@@ -34,21 +39,66 @@ class Usage
     public $teamDocument;
 
     /**
+     * @var UsageDetail|null Usage details for speech-to-text, in minutes.
+     */
+    public $speechToTextMinutes;
+
+    /**
+     * @var UsageDetail|null Usage details for speech-to-text, in milliseconds.
+     */
+    public $speechToTextMilliseconds;
+
+    /**
+     * @var UsageDetail|null Usage details for speech-to-speech, in minutes.
+     */
+    public $speechToSpeechMinutes;
+
+    /**
+     * @var UsageProduct[] Usage broken down per product, empty if the account does not report it.
+     */
+    public $products;
+
+    /**
+     * @var string|null Start of the billing period, as an ISO 8601 timestamp.
+     */
+    public $startTime;
+
+    /**
+     * @var string|null End of the billing period, as an ISO 8601 timestamp.
+     */
+    public $endTime;
+
+    /**
      * @return bool True if any usage type limit has been reached or passed, otherwise false.
      */
     public function anyLimitReached(): bool
     {
-        return ($this->character !== null && $this->character->limitReached()) ||
-            ($this->document !== null && $this->document->limitReached()) ||
-            ($this->teamDocument !== null && $this->teamDocument->limitReached());
+        $details = [
+            $this->apiKeyCharacter,
+            $this->character,
+            $this->document,
+            $this->teamDocument,
+            $this->speechToTextMinutes,
+            $this->speechToSpeechMinutes,
+        ];
+        /** @var UsageDetail|null $detail */
+        foreach ($details as $detail) {
+            if ($detail !== null && $detail->limitReached()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function __toString(): string
     {
         $list = [
+            'API key characters' => $this->apiKeyCharacter,
             'Characters' => $this->character,
             'Documents' => $this->document,
             'Team documents' => $this->teamDocument,
+            'Speech-to-text minutes' => $this->speechToTextMinutes,
+            'Speech-to-speech minutes' => $this->speechToSpeechMinutes,
         ];
         $result = 'Usage this billing period:';
         foreach ($list as $label => $detail) {
@@ -71,8 +121,20 @@ class Usage
         }
 
         $this->character = $this->buildUsageDetail('character', $json);
+        $this->apiKeyCharacter = $this->buildUsageDetail('api_key_character', $json);
         $this->document = $this->buildUsageDetail('document', $json);
         $this->teamDocument = $this->buildUsageDetail('team_document', $json);
+        $this->speechToTextMinutes = $this->buildUsageDetail('speech_to_text_minutes', $json);
+        $this->speechToTextMilliseconds = $this->buildUsageDetail('speech_to_text_milliseconds', $json);
+        $this->speechToSpeechMinutes = $this->buildUsageDetail('speech_to_speech_minutes', $json);
+        $this->products = array_map(
+            function (array $product): UsageProduct {
+                return new UsageProduct($product);
+            },
+            $json['products'] ?? []
+        );
+        $this->startTime = $json['start_time'] ?? null;
+        $this->endTime = $json['end_time'] ?? null;
     }
 
     private function buildUsageDetail(string $prefix, array $json): ?UsageDetail
