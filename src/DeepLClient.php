@@ -886,6 +886,154 @@ class DeepLClient extends Translator
     }
 
     /**
+     * Retrieves one page of style profiles.
+     * @param int|null $page Page number for pagination, 0-indexed, or null for the API default (0).
+     * @param int|null $pageSize Number of items per page, or null for the API default (10). Values
+     *  above 100 are reduced to 100 by the API.
+     * @return StyleProfile[] The style profiles on the requested page.
+     * @throws DeepLException
+     */
+    public function listStyleProfiles(?int $page = null, ?int $pageSize = null): array
+    {
+        $params = [];
+        if ($page !== null) {
+            $params['page'] = (string)$page;
+        }
+        if ($pageSize !== null) {
+            $params['page_size'] = (string)$pageSize;
+        }
+        $queryString = empty($params) ? '' : '?' . http_build_query($params);
+
+        $response = $this->client->sendRequestWithBackoff('GET', "/v3/style_profiles$queryString");
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return StyleProfile::parseList($content);
+    }
+
+    /**
+     * Creates a style profile.
+     * @param string $name Name of the style profile.
+     * @param array $options Optional fields, see \DeepL\StyleProfileOptions. Options that are null
+     *  are not sent. If any of the linked component IDs cannot be used, no style profile is created.
+     * @return StyleProfile Details about the created style profile.
+     * @throws DeepLException
+     */
+    public function createStyleProfile(string $name, array $options = []): StyleProfile
+    {
+        if (array_key_exists(StyleProfileOptions::NAME, $options)) {
+            throw new DeepLException('pass the name as the $name argument, not as an option');
+        }
+        $params = self::buildStyleProfileBody($options);
+        $params = (object)array_merge(['name' => $name], (array)$params);
+        $response = $this->client->sendRequestWithBackoff(
+            'POST',
+            '/v3/style_profiles',
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return StyleProfile::parseJson($content);
+    }
+
+    /**
+     * Gets information about a style profile.
+     * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
+     * @return StyleProfile Details about the style profile.
+     * @throws DeepLException
+     * @throws NotFoundException If the style profile is not found.
+     */
+    public function getStyleProfile($styleProfile): StyleProfile
+    {
+        $styleProfileId = StyleProfile::getStyleProfileId($styleProfile);
+        $response = $this->client->sendRequestWithBackoff(
+            'GET',
+            '/v3/style_profiles/' . rawurlencode($styleProfileId)
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return StyleProfile::parseJson($content);
+    }
+
+    /**
+     * Updates a style profile. Options that are not set, or null, are not changed. An empty string
+     * clears the description or industry; an ID list replaces the linked list in full, and an empty
+     * array unlinks all components of that kind.
+     * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
+     * @param array $options Fields to change, see \DeepL\StyleProfileOptions, including NAME.
+     * @return StyleProfile Details about the updated style profile.
+     * @throws DeepLException
+     * @throws NotFoundException If the style profile is not found.
+     */
+    public function updateStyleProfile($styleProfile, array $options): StyleProfile
+    {
+        $styleProfileId = StyleProfile::getStyleProfileId($styleProfile);
+        $params = self::buildStyleProfileBody($options);
+        if (isset($options[StyleProfileOptions::NAME])) {
+            $params = (object)array_merge(['name' => (string)$options[StyleProfileOptions::NAME]], (array)$params);
+        }
+        $response = $this->client->sendRequestWithBackoff(
+            'PATCH',
+            '/v3/style_profiles/' . rawurlencode($styleProfileId),
+            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+        );
+        $this->checkStatusCode($response);
+        list(, $content) = $response;
+        return StyleProfile::parseJson($content);
+    }
+
+    /**
+     * Deletes a style profile.
+     * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
+     * @throws DeepLException
+     * @throws NotFoundException If the style profile is not found.
+     */
+    public function deleteStyleProfile($styleProfile): void
+    {
+        $styleProfileId = StyleProfile::getStyleProfileId($styleProfile);
+        $response = $this->client->sendRequestWithBackoff(
+            'DELETE',
+            '/v3/style_profiles/' . rawurlencode($styleProfileId)
+        );
+        $this->checkStatusCode($response);
+    }
+
+    /**
+     * Builds the JSON body of a style profile request from its options, except the name. A stdClass,
+     * so that a body without fields encodes as {}.
+     * @throws DeepLException If an option key is unknown.
+     */
+    private static function buildStyleProfileBody(array $options): \stdClass
+    {
+        $stringKeys = [StyleProfileOptions::DESCRIPTION, StyleProfileOptions::INDUSTRY];
+        $listKeys = [
+            StyleProfileOptions::GLOSSARY_IDS,
+            StyleProfileOptions::STYLE_RULE_IDS,
+            StyleProfileOptions::TRANSLATION_MEMORY_IDS,
+        ];
+        $boolKeys = [StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED];
+        $known = array_merge([StyleProfileOptions::NAME], $stringKeys, $listKeys, $boolKeys);
+
+        $body = new \stdClass();
+        foreach ($options as $key => $value) {
+            if (!in_array($key, $known, true)) {
+                throw new DeepLException("Unknown style profile option: $key");
+            }
+            if (!isset($value) || $key === StyleProfileOptions::NAME) {
+                continue;
+            }
+            if (in_array($key, $listKeys, true)) {
+                $body->$key = array_values(array_map('strval', (array)$value));
+            } elseif (in_array($key, $boolKeys, true)) {
+                $body->$key = (bool)$value;
+            } else {
+                $body->$key = (string)$value;
+            }
+        }
+        return $body;
+    }
+
+
+    /**
      * Queries languages supported by the DeepL API for the given resource. Returns each
      * language with its per-feature support information.
      * @param string $resource Resource to query support for, see the RESOURCE_* constants on

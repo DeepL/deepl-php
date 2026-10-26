@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `replaceSpokenTermsList()`, `deleteSpokenTerms()` and
   `deleteSpokenTermsList()`, with the new classes `SpokenTerms`,
   `SpokenTermsList` and `SpokenTermsEntries`.
+- Added support for the style profile management API (`/v3/style_profiles`) in
+  the `DeepLClient` class: `listStyleProfiles()`, `createStyleProfile()`,
+  `getStyleProfile()`, `updateStyleProfile()` and `deleteStyleProfile()`, with
+  the new classes `StyleProfile` and `StyleProfileOptions`.
 
 ### Changed
 - Target languages `en` and `pt` are no longer rejected client-side; the API

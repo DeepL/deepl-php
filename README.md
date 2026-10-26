@@ -975,6 +975,53 @@ $deeplClient->translateDocument(
 );
 ```
 
+### Style profiles
+
+A style profile is a named set of linked glossaries, style rule lists and
+translation memories, with an optional description and industry. The
+`DeepLClient` methods below accept either the style profile ID or a
+`StyleProfile` object; an empty ID throws a `DeepLException` before any request
+is sent. Optional fields are passed as an array keyed by the
+`StyleProfileOptions` constants. An option is sent only if it is set and not
+`null`: an empty string `''` clears the description or industry, and an empty
+array `[]` unlinks all components of that kind.
+
+```php
+// Create a style profile with only a name
+$profile = $deeplClient->createStyleProfile('Legal, German');
+
+// Create a style profile with components; if any ID cannot be used, nothing is created
+$profile = $deeplClient->createStyleProfile('Legal, German', [
+    StyleProfileOptions::DESCRIPTION => 'Contract wording for the German market.',
+    StyleProfileOptions::INDUSTRY => 'Legal',
+    StyleProfileOptions::GLOSSARY_IDS => [$glossary->glossaryId],
+    StyleProfileOptions::STYLE_RULE_IDS => [$styleRule->styleId],
+    StyleProfileOptions::TRANSLATION_MEMORY_IDS => [$translationMemory->translationMemoryId],
+    StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => true,
+]);
+echo "Created: {$profile->name} ({$profile->styleProfileId})\n";
+
+// Get a style profile
+$profile = $deeplClient->getStyleProfile($profile->styleProfileId);
+print_r($profile->styleRuleIds);
+
+// List style profiles, one page at a time (page is 0-indexed, page size at most 100)
+foreach ($deeplClient->listStyleProfiles(0, 100) as $item) {
+    echo "{$item->name} ({$item->styleProfileId})\n";
+}
+
+// Update: options you leave out are not changed, an ID list replaces the linked list in full
+$profile = $deeplClient->updateStyleProfile($profile, [
+    StyleProfileOptions::NAME => 'Legal, German v2',
+    StyleProfileOptions::DESCRIPTION => '',    // clears the description
+    StyleProfileOptions::STYLE_RULE_IDS => [], // unlinks all style rule lists
+]);
+var_dump($profile->description); // NULL
+
+// Delete a style profile
+$deeplClient->deleteStyleProfile($profile);
+```
+
 ### Translation Memories
 
 Translation memories allow you to leverage previously translated segments to
