@@ -629,7 +629,10 @@ Spoken terms collections improve speech transcription of terms such as product
 names. Each collection has a user-specified name, a uniquely-assigned ID and
 one term list per language. The `DeepLClient` methods below accept either the
 spoken terms ID or a `SpokenTerms` object. Terms are passed and returned as
-arrays of strings.
+arrays of strings. `createSpokenTerms()`, `updateSpokenTerms()` and
+`replaceSpokenTermsList()` check each term like a glossary term before sending
+anything: a term that is blank or contains a control character such as a newline
+throws a `DeepLException`.
 
 ```php
 // Create a collection with an English term list

@@ -451,7 +451,7 @@ class DeepLClient extends Translator
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
             "/v3/spoken-terms/$spokenTermsId/term-lists",
-            [HttpClientWrapper::OPTION_JSON => json_encode($entries->toObject())]
+            [HttpClientWrapper::OPTION_JSON => json_encode(self::spokenTermsEntriesToObject($entries))]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -491,8 +491,21 @@ class DeepLClient extends Translator
     private static function spokenTermsListsToObjects(array $termLists): array
     {
         return array_map(function (SpokenTermsEntries $entries) {
-            return $entries->toObject();
+            return self::spokenTermsEntriesToObject($entries);
         }, $termLists);
+    }
+
+    /**
+     * Checks every term like a glossary term before the terms are joined with newlines: a term
+     * containing a newline would otherwise be sent as several terms.
+     * @throws DeepLException
+     */
+    private static function spokenTermsEntriesToObject(SpokenTermsEntries $entries): array
+    {
+        foreach ($entries->entries as $term) {
+            GlossaryUtils::validateGlossaryTerm($term);
+        }
+        return $entries->toObject();
     }
 
     /**

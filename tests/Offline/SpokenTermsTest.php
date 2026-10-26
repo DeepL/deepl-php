@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLException;
 use DeepL\SpokenTermsEntries;
 
 class SpokenTermsTest extends OfflineTestCase
@@ -32,5 +33,31 @@ class SpokenTermsTest extends OfflineTestCase
         $this->assertRequest('GET', '/v3/spoken-terms/sid/entries', 1, 'lang=en');
         $this->assertSame('en', $entries->lang);
         $this->assertSame(['a', 'b'], $entries->entries);
+    }
+
+    public function testRejectsATermContainingANewlineBeforeSending(): void
+    {
+        $client = $this->makeDeepLClient();
+        $entries = new SpokenTermsEntries('en', ['DeepL', "web\nhook"]);
+
+        foreach ([
+            function () use ($client, $entries) {
+                $client->createSpokenTerms('My terms', [$entries]);
+            },
+            function () use ($client, $entries) {
+                $client->updateSpokenTerms('sid', null, [$entries]);
+            },
+            function () use ($client, $entries) {
+                $client->replaceSpokenTermsList('sid', $entries);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertStringContainsString('contains invalid characters', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
     }
 }
