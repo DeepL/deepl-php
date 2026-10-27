@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the `DeepLAdminClient` class for the Admin API. It must be created with
+  an admin API key and supports managing developer keys
+  (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,
+  `renameDeveloperKey()`, `setDeveloperKeyUsageLimits()`) and retrieving usage
+  analytics (`getUsageAnalytics()`, `getCustomTagUsageAnalytics()`).
+  `setDeveloperKeyUsageLimits()` changes only the limits given with the
+  `DeveloperKeyUsageLimitsOptions` keys, including speech-to-speech.
+  New public types: `DeveloperKey`, `DeveloperKeyUsageLimits`,
+  `DeveloperKeyUsageLimitsOptions`, `AdminUsageReport`, `AdminUsageBreakdown`,
+  `AdminUsageGroupBy`, `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage`,
+  `CustomTagUsageBreakdown` and `CustomTagUsageAggregateBy`.
 - Added language code constants for the target variants `de-CH`, `de-DE`,
   `es-ES`, `fr-CA` and `fr-FR` to `LanguageCode`.
 - Added support for the `/v2/write/correct` endpoint in the `DeepLClient` class:

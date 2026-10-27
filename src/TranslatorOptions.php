@@ -9,10 +9,11 @@ namespace DeepL;
 use Psr\Log\LoggerInterface;
 
 /**
- * Options that can be specified when constructing a Translator.
+ * Options that can be specified when constructing a Translator, DeepLClient or DeepLAdminClient.
  * Please note that using any options from TranslatorOptions::IGNORED_OPTIONS_WITH_CUSTOM_HTTP_CLIENT,
  * such as proxy or timeout, are ignored when using a custom HTTP client.
  * @see Translator::__construct
+ * @see DeepLAdminClient::__construct
  */
 class TranslatorOptions
 {
@@ -41,14 +42,15 @@ class TranslatorOptions
 
     /**
      * Base URL of DeepL API, can be overridden for example for testing purposes. By default, the correct DeepL API URL
-     * is selected based on the user account type (free or paid).
+     * is selected based on the user account type (free or paid). DeepLAdminClient always uses DEFAULT_SERVER_URL by
+     * default.
      * @see DEFAULT_SERVER_URL
      * @see DEFAULT_SERVER_URL_FREE
      */
     public const SERVER_URL = 'server_url';
 
     /**
-     * HTTP headers attached to every HTTP request. By default, no extra headers are used. Note that during Translator
+     * HTTP headers attached to every HTTP request. By default, no extra headers are used. Note that during client
      * initialization headers for Authorization and User-Agent are added, unless they are overridden in this option.
      */
     public const HEADERS = 'headers';
@@ -60,7 +62,7 @@ class TranslatorOptions
     public const TIMEOUT = 'timeout';
 
     /**
-     * The maximum number of failed attempts that Translator will retry, per request. Note: only errors due to
+     * The maximum number of failed attempts that the client will retry, per request. Note: only errors due to
      * transient conditions are retried.
      * @see DEFAULT_MAX_RETRIES
      */

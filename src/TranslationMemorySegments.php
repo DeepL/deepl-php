@@ -52,6 +52,6 @@ class TranslationMemorySegments
      */
     public static function parse(string $content): TranslationMemorySegments
     {
-        return self::fromJson(TranslationMemoryUtils::decodeJson($content));
+        return self::fromJson(ParsingUtils::decodeJson($content));
     }
 }

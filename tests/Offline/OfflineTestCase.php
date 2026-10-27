@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLAdminClient;
 use DeepL\DeepLClient;
 use DeepL\Fixtures;
 use DeepL\Translator;
@@ -44,7 +45,10 @@ abstract class OfflineTestCase extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        $functions = ['curl_exec', 'curl_getinfo', 'curl_setopt_array', 'curl_version', 'usleep', 'sleep', 'microtime'];
+        $functions = [
+            'curl_exec', 'curl_getinfo', 'curl_setopt_array', 'curl_errno', 'curl_error', 'curl_version',
+            'usleep', 'sleep', 'microtime',
+        ];
         foreach ($functions as $function) {
             if (!function_exists("DeepL\\$function")) {
                 self::defineFunctionMock('DeepL', $function);
@@ -100,7 +104,12 @@ abstract class OfflineTestCase extends TestCase
         return new DeepLClient('k', $this->clientOptions($options));
     }
 
-    private function clientOptions(array $options): array
+    protected function makeAdminClient(array $options = []): DeepLAdminClient
+    {
+        return new DeepLAdminClient('k', $this->clientOptions($options));
+    }
+
+    protected function clientOptions(array $options): array
     {
         $stack = HandlerStack::create($this->mock);
         $stack->push(Middleware::history($this->history));

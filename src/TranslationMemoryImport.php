@@ -44,7 +44,7 @@ class TranslationMemoryImport
      */
     public static function parse(string $content): TranslationMemoryImport
     {
-        return self::fromJson(TranslationMemoryUtils::decodeJson($content));
+        return self::fromJson(ParsingUtils::decodeJson($content));
     }
 
     public function __toString(): string

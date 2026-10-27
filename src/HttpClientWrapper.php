@@ -48,6 +48,11 @@ class HttpClientWrapper
     public const OPTION_OUTFILE = 'outfile';
     public const OPTION_JSON = 'json';
     public const OPTION_RAW_BODY = 'raw_body';
+    /**
+     * Retry only failures that show the request was not processed: HTTP 429 and retryable connection errors
+     * that happen before the request is sent. For requests that are unsafe to repeat.
+     */
+    public const OPTION_RETRY_ONLY_UNPROCESSED = 'retry_only_unprocessed';
 
     public function __construct(
         string           $serverUrl,
@@ -105,6 +110,7 @@ class HttpClientWrapper
         $backoff = new BackoffTimer();
         $response = null;
         $exception = null;
+        $onlyUnprocessed = !empty($options[self::OPTION_RETRY_ONLY_UNPROCESSED]);
         while ($backoff->getNumRetries() <= $this->maxRetries) {
             $outFile = null;
             if (isset($options[self::OPTION_OUTFILE])) {
@@ -128,7 +134,8 @@ class HttpClientWrapper
                     $file,
                     $outFile,
                     $json,
-                    $rawBody
+                    $rawBody,
+                    $onlyUnprocessed
                 );
             } catch (ConnectionException $e) {
                 $exception = $e;
@@ -138,7 +145,8 @@ class HttpClientWrapper
                 fclose($outFile);
             }
 
-            if (!$this->shouldRetry($response, $exception) || $backoff->getNumRetries() + 1 >= $this->maxRetries) {
+            $retry = $this->shouldRetry($response, $exception, $onlyUnprocessed);
+            if (!$retry || $backoff->getNumRetries() + 1 >= $this->maxRetries) {
                 break;
             }
 
@@ -174,6 +182,7 @@ class HttpClientWrapper
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
      * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
+     * @param bool $freshConnection If true, cURL sends the request on a new connection.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -186,7 +195,8 @@ class HttpClientWrapper
         ?string $filePath,
         $outFile,
         ?string $json,
-        ?string $rawBody = null
+        ?string $rawBody = null,
+        bool $freshConnection = false
     ): array {
         if ($this->customHttpClient !== null) {
             return $this->sendCustomHttpRequest(
@@ -209,7 +219,8 @@ class HttpClientWrapper
                 $filePath,
                 $outFile,
                 $json,
-                $rawBody
+                $rawBody,
+                $freshConnection
             );
         }
     }
@@ -305,6 +316,7 @@ class HttpClientWrapper
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
      * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
+     * @param bool $freshConnection If true, the request is sent on a new connection.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -317,7 +329,8 @@ class HttpClientWrapper
         ?string $filePath,
         $outFile,
         ?string $json,
-        ?string $rawBody = null
+        ?string $rawBody = null,
+        bool $freshConnection = false
     ): array {
         $curlOptions = [];
         $curlOptions[\CURLOPT_HEADER] = false;
@@ -372,9 +385,15 @@ class HttpClientWrapper
             $curlOptions[\CURLOPT_RETURNTRANSFER] = true;
         }
 
+        if ($freshConnection) {
+            // libcurl resends a request silently when a reused keep-alive connection was closed.
+            // A request that must not be sent twice therefore never reuses a connection.
+            $curlOptions[\CURLOPT_FRESH_CONNECT] = true;
+        }
+
         \curl_reset($this->curlHandle);
 
-        // The next 3 curl calls are unqualified so that we can mock them, see
+        // The next curl calls are unqualified so that we can mock them, see
         // https://github.com/php-mock/php-mock-phpunit#restrictions
         curl_setopt_array($this->curlHandle, $curlOptions);
 
@@ -383,8 +402,8 @@ class HttpClientWrapper
             $statusCode = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
             return [$statusCode, $result];
         } else {
-            $errorMessage = \curl_error($this->curlHandle);
-            $errorCode = \curl_errno($this->curlHandle);
+            $errorMessage = curl_error($this->curlHandle);
+            $errorCode = curl_errno($this->curlHandle);
             switch ($errorCode) {
                 case \CURLE_UNSUPPORTED_PROTOCOL:
                 case \CURLE_URL_MALFORMAT:
@@ -414,15 +433,24 @@ class HttpClientWrapper
         return preg_match('/^https?:\/\//i', $url) === 1;
     }
 
-    private function shouldRetry(?array $response, ?ConnectionException $exception): bool
+    private function shouldRetry(?array $response, ?ConnectionException $exception, bool $onlyUnprocessed): bool
     {
         if ($exception !== null) {
-            return $exception->shouldRetry;
+            return $exception->shouldRetry && (!$onlyUnprocessed || $this->isUnsentRequestError($exception));
         }
         list($statusCode, ) = $response;
 
         // Retry on Too-Many-Requests error and internal errors
-        return $statusCode === 429 || $statusCode >= 500;
+        return $statusCode === 429 || (!$onlyUnprocessed && $statusCode >= 500);
+    }
+
+    /**
+     * Returns true if the connection error happened before the request was sent. Only the cURL error
+     * codes tell this; errors of a custom HTTP client are treated as possibly sent.
+     */
+    private function isUnsentRequestError(ConnectionException $exception): bool
+    {
+        return $this->customHttpClient === null && $exception->getCode() === \CURLE_COULDNT_CONNECT;
     }
 
     public function logDebug(string $message): void

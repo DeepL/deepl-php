@@ -81,7 +81,7 @@ class TranslationMemoryInfo
      */
     public static function parse(string $content): TranslationMemoryInfo
     {
-        return self::fromJson(TranslationMemoryUtils::decodeJson($content));
+        return self::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -89,7 +89,7 @@ class TranslationMemoryInfo
      */
     public static function parseList(string $content): array
     {
-        $decoded = TranslationMemoryUtils::decodeJson($content);
+        $decoded = ParsingUtils::decodeJson($content);
 
         $result = [];
         $translationMemories = $decoded['translation_memories'] ?? [];

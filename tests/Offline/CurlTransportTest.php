@@ -6,6 +6,8 @@
 
 namespace DeepL\Offline;
 
+use DeepL\ConnectionException;
+use DeepL\DeepLAdminClient;
 use DeepL\DeepLClient;
 use DeepL\DocumentHandle;
 use DeepL\Fixtures;
@@ -207,5 +209,75 @@ class CurlTransportTest extends OfflineTestCase
         $userAgent = $this->headers($options)[1];
         $this->assertStringContainsString(' php/', $userAgent);
         $this->assertStringNotContainsString('curl/', $userAgent);
+    }
+
+    /**
+     * Lets curl_exec fail with the given cURL error codes in turn, then succeed, and collects the
+     * options of each attempt.
+     */
+    private function failCurlWith(array $errorCodes, ?array &$attempts, string $body = '{}'): void
+    {
+        $attempts = [];
+        $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->any())
+            ->willReturnCallback(function ($handle, array $options) use (&$attempts) {
+                $attempts[] = $options;
+                return true;
+            });
+        $results = array_merge(array_fill(0, count($errorCodes), false), [$body]);
+        $this->getFunctionMock('DeepL', 'curl_exec')->expects($this->any())->willReturnOnConsecutiveCalls(...$results);
+        $this->getFunctionMock('DeepL', 'curl_errno')->expects($this->any())
+            ->willReturnOnConsecutiveCalls(...$errorCodes);
+        $this->getFunctionMock('DeepL', 'curl_error')->expects($this->any())->willReturn('failed');
+        $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->any())->willReturn(200);
+    }
+
+    private function makeCurlAdminClient(): DeepLAdminClient
+    {
+        return new DeepLAdminClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']);
+    }
+
+    public function testRetriesKeyCreationOnAFreshConnectionAfterAFailedConnect(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([CURLE_COULDNT_CONNECT], $attempts, '{"key_id": "id"}');
+
+        $key = $this->makeCurlAdminClient()->createDeveloperKey();
+
+        $this->assertSame('id', $key->keyId);
+        $this->assertCount(2, $attempts);
+        foreach ($attempts as $options) {
+            $this->assertTrue($options[CURLOPT_FRESH_CONNECT]);
+        }
+    }
+
+    /**
+     * @dataProvider providePossiblySentErrors
+     */
+    public function testDoesNotRetryKeyCreationAfterAPossiblySentRequest(int $errorCode): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([$errorCode], $attempts);
+
+        try {
+            $this->makeCurlAdminClient()->createDeveloperKey();
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame($errorCode, $exception->getCode());
+            $this->assertCount(1, $attempts);
+        }
+    }
+
+    public static function providePossiblySentErrors(): array
+    {
+        return ['timeout' => [CURLE_OPERATION_TIMEDOUT], 'empty reply' => [CURLE_GOT_NOTHING]];
+    }
+
+    public function testReusesConnectionsForOtherRequests(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->getUsage();
+        }, '{"character_count":1,"character_limit":2}');
+
+        $this->assertArrayNotHasKey(CURLOPT_FRESH_CONNECT, $options);
     }
 }

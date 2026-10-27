@@ -45,7 +45,7 @@ class TranslationMemoryExport
      */
     public static function parse(string $content, bool $reusedExisting): TranslationMemoryExport
     {
-        return self::fromJson(TranslationMemoryUtils::decodeJson($content), $reusedExisting);
+        return self::fromJson(ParsingUtils::decodeJson($content), $reusedExisting);
     }
 
     public function __toString(): string

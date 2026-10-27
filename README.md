@@ -1158,6 +1158,100 @@ $deeplClient->translateDocument(
 );
 ```
 
+### Admin API
+
+The Admin API lets you manage the developer keys of your organization and
+retrieve usage analytics. It requires an admin API key, which you can create in
+the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for
+translation, and developer keys cannot access the Admin API.
+
+Create a `DeepLAdminClient` with your admin key. It uses the
+`https://api.deepl.com` server by default and accepts the same options as the
+`DeepLClient` constructor, see [Configuration](#configuration).
+
+```php
+$adminClient = new \DeepL\DeepLAdminClient('YOUR_ADMIN_KEY');
+```
+
+#### Managing developer keys
+
+```php
+$key = $adminClient->createDeveloperKey('Staging Team Key');
+echo "Created {$key->label} ({$key->keyId})\n";
+
+foreach ($adminClient->getDeveloperKeys() as $existingKey) {
+    echo "{$existingKey->label}: deactivated=" . ($existingKey->isDeactivated ? 'true' : 'false') . "\n";
+}
+
+$key = $adminClient->renameDeveloperKey($key, 'Production Team Key');
+
+// Only the given limits change; the others keep their current value. null
+// removes a limit and 0 blocks that usage. Here the character limit is set and
+// the speech-to-text limit is removed.
+$key = $adminClient->setDeveloperKeyUsageLimits($key, [
+    \DeepL\DeveloperKeyUsageLimitsOptions::CHARACTERS => 500000,
+    \DeepL\DeveloperKeyUsageLimitsOptions::SPEECH_TO_TEXT_MILLISECONDS => null,
+]);
+
+// Deactivation is permanent.
+$adminClient->deactivateDeveloperKey($key);
+```
+
+`renameDeveloperKey()`, `setDeveloperKeyUsageLimits()` and
+`deactivateDeveloperKey()` accept either a key ID or a `DeveloperKey` object,
+and return the updated `DeveloperKey`. The usage limits are also available for
+speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`).
+
+To avoid duplicate keys, `createDeveloperKey()` is retried only when the
+request was not processed: after HTTP 429, or when the connection failed before
+the request was sent. With a custom HTTP client, only HTTP 429 is retried. The
+other functions are retried like all other requests.
+
+#### Retrieving usage analytics
+
+`getUsageAnalytics()` returns an `AdminUsageReport` for a date range. Dates are
+UTC calendar days, and both the start and the end day are included. Pass
+`YYYY-MM-DD` strings or `DateTimeInterface` objects. For a `DateTimeInterface`,
+the library uses the UTC date of that moment, so local midnight in UTC+2
+(`2026-10-20T00:00+02:00`) is sent as `2026-10-19`; your object is not
+modified. The API requires the end date to be after the start date, so a report
+covers at least two days, and at most 366 days after it. Invalid dates throw a
+`DeepLException` before the request is sent; the API rejects invalid ranges.
+The same rules apply to `getCustomTagUsageAnalytics()`.
+Timestamps in the reports without a time zone are in UTC. Use
+the `groupBy` argument to break the usage down by key
+(`AdminUsageGroupBy::KEY`, see `keyUsages`) or by key and day
+(`AdminUsageGroupBy::KEY_AND_DAY`, see `keyAndDayUsages`).
+
+```php
+$report = $adminClient->getUsageAnalytics(
+    '2026-06-01',
+    '2026-07-01',
+    \DeepL\AdminUsageGroupBy::KEY
+);
+echo "Total characters: {$report->totalUsage->totalCharacters}\n";
+foreach ($report->keyUsages as $keyUsage) {
+    echo "{$keyUsage->apiKeyLabel}: {$keyUsage->usage->totalCharacters}\n";
+}
+```
+
+`getCustomTagUsageAnalytics()` returns a `CustomTagUsageReport` with the
+usage per custom tag. Use the `aggregateBy` argument to choose between the
+whole period (`CustomTagUsageAggregateBy::PERIOD`, the default) and per-day
+usage (`CustomTagUsageAggregateBy::DAY`). The results are paginated: pass the
+`nextPage` value of a report as `page` to get the next page.
+
+```php
+$page = null;
+do {
+    $report = $adminClient->getCustomTagUsageAnalytics('2026-06-01', '2026-07-01', null, $page);
+    foreach ($report->usage as $tagUsage) {
+        echo "{$tagUsage->customTag}: {$tagUsage->breakdown->totalCharacters}\n";
+    }
+    $page = $report->nextPage;
+} while ($page !== null);
+```
+
 ### Writing a Plugin
 
 If you use this library in an application, please identify the application with
@@ -1286,10 +1380,12 @@ vendor/bin/phpunit --testsuite offline
 
 The real-API suite in `tests/RealApi` sends one request per endpoint to the
 DeepL API, using the auth key defined by the `DEEPL_AUTH_KEY` environment
-variable. Set `DEEPL_SERVER_URL` to use another server than the default one:
+variable. The Admin API tests also need an admin API key in the
+`DEEPL_ADMIN_KEY` environment variable. Set `DEEPL_SERVER_URL` to use another
+server than the default one:
 
 ```bash
-DEEPL_AUTH_KEY=your-key vendor/bin/phpunit --testsuite realApi
+DEEPL_AUTH_KEY=your-key DEEPL_ADMIN_KEY=your-admin-key vendor/bin/phpunit --testsuite realApi
 ```
 
 Be aware that the real-API tests make DeepL API requests that contribute
