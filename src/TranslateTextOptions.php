@@ -110,6 +110,13 @@ class TranslateTextOptions
      */
     public const STYLE_ID = 'style_id';
 
+    /** Set to string containing a style profile ID to use the style profile for translation: its
+     *  glossaries, style rule lists and translation memories through one ID.
+     *  Can also be set to a StyleProfile as returned by getStyleProfile or listStyleProfiles.
+     *  @see \DeepL\DeepLClient::listStyleProfiles()
+     */
+    public const STYLE_PROFILE_ID = 'style_profile_id';
+
     /** Array of custom instructions to customize text translation behavior. Maximum 10 elements, each max
      * 300 characters. Only supported for target languages: `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `zh`
      * and their variants. Note: using the `custom_instructions` parameter will use the `quality_optimized`

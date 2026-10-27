@@ -157,6 +157,12 @@ using the following keys:
     option.
 -   `style_id`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
+-   `style_profile_id`: specifies a style profile to use with translation, either as
+    a string containing the ID of the style profile, or a `StyleProfile` object. The
+    profile applies its linked glossaries, style rule lists and translation memories;
+    a component that does not fit the language pair is left out. Cannot be combined
+    with `glossary`, `glossary_ids`, `style_id`, `translation_memory_id`,
+    `translation_memory_threshold` or `custom_instructions`.
 -   `translation_memory_id`: specifies a translation memory to use with translation,
     either as a string containing the ID of the translation memory, or a
     `TranslationMemoryInfo` object.
@@ -338,6 +344,11 @@ using the following keys:
 -   `style_id`: same as in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
+-   `style_profile_id`: same as in [Text translation options](#text-translation-options).
+    Specify a style profile to use for the document translation, either as a style
+    profile ID string or a `StyleProfile` object. An unknown style profile is not
+    rejected at upload: the document translation fails with a
+    `DocumentTranslationException` whose message contains `Style profile not found.`.
 -   `translation_memory_id`: same as in [Text translation options](#text-translation-options).
     Specify a translation memory to use for the document translation, either as a
     translation memory ID string or a `TranslationMemoryInfo` object.
@@ -1020,6 +1031,16 @@ var_dump($profile->description); // NULL
 
 // Delete a style profile
 $deeplClient->deleteStyleProfile($profile);
+```
+
+To translate with a style profile, pass its ID or the `StyleProfile` object as
+the `style_profile_id` option of `translateText()` or `translateDocument()`:
+
+```php
+$result = $deeplClient->translateText('The artist is here.', null, 'de', [
+    TranslateTextOptions::STYLE_PROFILE_ID => $profile,
+]);
+$deeplClient->translateDocument('in.txt', 'out.txt', null, 'de', [TranslateDocumentOptions::STYLE_PROFILE_ID => $profile]);
 ```
 
 ### Translation Memories

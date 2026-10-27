@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the `style_profile_id` option (`TranslateTextOptions::STYLE_PROFILE_ID`
+  and `TranslateDocumentOptions::STYLE_PROFILE_ID`) to translate text and
+  documents with a style profile, given as an ID string or a `StyleProfile`.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with
   an admin API key and supports managing developer keys
   (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,

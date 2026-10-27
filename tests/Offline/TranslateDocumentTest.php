@@ -12,6 +12,7 @@ use DeepL\DocumentNotReadyException;
 use DeepL\DocumentTranslationException;
 use DeepL\Fixtures;
 use DeepL\GlossaryInfo;
+use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
 use DeepL\TranslateDocumentOptions;
 use DeepL\TranslationMemoryInfo;
@@ -61,6 +62,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $glossary = new GlossaryInfo('g1', 'name', true, 'en', 'de', new \DateTime(), 1);
         $style = new StyleRuleInfo('sid', 'name', new \DateTime(), new \DateTime(), 'en', 1);
         $tm = new TranslationMemoryInfo('tmid', 'name', 'en', ['de'], 1);
+        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, null, null);
         return [
             'formality' => [[TranslateDocumentOptions::FORMALITY => 'More'], ['formality' => 'more']],
             'glossary' => [[TranslateDocumentOptions::GLOSSARY => $glossary], ['glossary_id' => 'g1']],
@@ -78,6 +80,14 @@ class TranslateDocumentTest extends OfflineTestCase
                 ['enable_watermark' => 'false'],
             ],
             'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
+            'style profile id' => [
+                [TranslateDocumentOptions::STYLE_PROFILE_ID => 'spid'],
+                ['style_profile_id' => 'spid'],
+            ],
+            'style profile id from object' => [
+                [TranslateDocumentOptions::STYLE_PROFILE_ID => $profile],
+                ['style_profile_id' => 'spid'],
+            ],
             'translation memory with threshold as string' => [
                 [
                     TranslateDocumentOptions::TRANSLATION_MEMORY_ID => $tm,

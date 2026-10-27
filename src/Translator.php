@@ -749,7 +749,7 @@ class Translator
     }
 
     /**
-     * Validates and appends the style-rule and translation-memory options to HTTP request parameters.
+     * Validates and appends the style-rule, style-profile and translation-memory options to HTTP request parameters.
      * These options share the same constant values between text and document translation, so this
      * helper is used by both the text and document request builders.
      * @param array $params Parameters for HTTP request.
@@ -769,6 +769,16 @@ class Translator
                 $params['style_id'] = $styleRule->styleId;
             } else {
                 throw new DeepLException('style_id must be a string or StyleRuleInfo object');
+            }
+        }
+        if (isset($options[TranslateTextOptions::STYLE_PROFILE_ID])) {
+            $styleProfile = $options[TranslateTextOptions::STYLE_PROFILE_ID];
+            if (is_string($styleProfile)) {
+                $params['style_profile_id'] = $styleProfile;
+            } elseif ($styleProfile instanceof StyleProfile) {
+                $params['style_profile_id'] = $styleProfile->styleProfileId;
+            } else {
+                throw new DeepLException('style_profile_id must be a string or StyleProfile object');
             }
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {

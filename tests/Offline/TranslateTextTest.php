@@ -10,6 +10,7 @@ use DeepL\DeepLException;
 use DeepL\GlossaryInfo;
 use DeepL\InvalidContentException;
 use DeepL\MultilingualGlossaryInfo;
+use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
 use DeepL\TextResult;
 use DeepL\TranslateTextOptions;
@@ -50,6 +51,25 @@ class TranslateTextTest extends OfflineTestCase
         );
     }
 
+    public function testSendsStyleProfileWithoutSourceLanguage(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeTranslator()->translateText('Hello', null, 'de', [
+            TranslateTextOptions::STYLE_PROFILE_ID => 'spid',
+        ]);
+
+        $this->assertSame(
+            [
+                'target_lang' => 'de',
+                'show_billed_characters' => true,
+                'text' => ['Hello'],
+                'style_profile_id' => 'spid',
+            ],
+            $this->jsonBody()
+        );
+    }
+
     /**
      * @dataProvider provideOptions
      */
@@ -70,6 +90,7 @@ class TranslateTextTest extends OfflineTestCase
         $multilingual = new MultilingualGlossaryInfo('mid', 'name', new \DateTime(), []);
         $style = new StyleRuleInfo('sid', 'name', new \DateTime(), new \DateTime(), 'en', 1);
         $tm = new TranslationMemoryInfo('tmid', 'name', 'en', ['de'], 1);
+        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, null, null);
         $tail = ['show_billed_characters' => true, 'text' => ['Hello']];
         return [
             'formality' => [
@@ -127,6 +148,14 @@ class TranslateTextTest extends OfflineTestCase
             'style id from object' => [
                 [TranslateTextOptions::STYLE_ID => $style],
                 $base + $tail + ['style_id' => 'sid'],
+            ],
+            'style profile id from string' => [
+                [TranslateTextOptions::STYLE_PROFILE_ID => 'spid'],
+                $base + $tail + ['style_profile_id' => 'spid'],
+            ],
+            'style profile id from object' => [
+                [TranslateTextOptions::STYLE_PROFILE_ID => $profile],
+                $base + $tail + ['style_profile_id' => 'spid'],
             ],
             'translation memory from string with threshold' => [
                 [
@@ -222,6 +251,9 @@ class TranslateTextTest extends OfflineTestCase
             ],
             'style_id of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::STYLE_ID => 5], 'style_id must be',
+            ],
+            'style_profile_id of the wrong type' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE_ID => 5], 'style_profile_id must be',
             ],
             'translation_memory_id of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY_ID => 5], 'translation_memory_id must be',

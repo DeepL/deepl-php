@@ -50,6 +50,13 @@ final class TranslateDocumentOptions
      */
     public const STYLE_ID = 'style_id';
 
+    /** Set to string containing a style profile ID to use the style profile for translation: its
+     *  glossaries, style rule lists and translation memories through one ID.
+     *  Can also be set to a StyleProfile as returned by getStyleProfile or listStyleProfiles.
+     *  @see \DeepL\DeepLClient::listStyleProfiles()
+     */
+    public const STYLE_PROFILE_ID = 'style_profile_id';
+
     /** Set to string containing a translation memory ID to use the translation memory for translation.
      *  Can also be set to a TranslationMemoryInfo as returned by listTranslationMemories.
      *  @see \DeepL\DeepLClient::listTranslationMemories()
