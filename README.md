@@ -71,7 +71,8 @@ variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. A target
 language without a variant translates to its default variant, for example `'en'`
 to `'en-US'` and `'pt'` to `'pt-PT'`; specify the variant to choose it
 explicitly. The source language also accepts `null`, to enable auto-detection of
-the source language.
+the source language. Pass language codes as plain strings; the `LanguageCode`
+constants are deprecated and will be removed in the next major version.
 
 The last argument to `translateText()` is optional, and specifies extra
 translation options, see [Text translation options](#text-translation-options)

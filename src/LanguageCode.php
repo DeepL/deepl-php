@@ -14,382 +14,886 @@ namespace DeepL;
  */
 class LanguageCode
 {
-    /** Acehnese language code, may be used as source or target language. */
+    /**
+     * Acehnese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ACEHNESE = 'ace';
 
-    /** Afrikaans language code, may be used as source or target language. */
+    /**
+     * Afrikaans language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const AFRIKAANS = 'af';
 
-    /** Aragonese language code, may be used as source or target language. */
+    /**
+     * Aragonese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ARAGONESE = 'an';
 
-    /** Arabic language code, may be used as source or target language. */
+    /**
+     * Arabic language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ARABIC = 'ar';
 
-    /** Assamese language code, may be used as source or target language. */
+    /**
+     * Assamese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ASSAMESE = 'as';
 
-    /** Aymara language code, may be used as source or target language. */
+    /**
+     * Aymara language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const AYMARA = 'ay';
 
-    /** Azerbaijani language code, may be used as source or target language. */
+    /**
+     * Azerbaijani language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const AZERBAIJANI = 'az';
 
-    /** Bashkir language code, may be used as source or target language. */
+    /**
+     * Bashkir language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BASHKIR = 'ba';
 
-    /** Belarusian language code, may be used as source or target language. */
+    /**
+     * Belarusian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BELARUSIAN = 'be';
 
-    /** Bulgarian language code, may be used as source or target language. */
+    /**
+     * Bulgarian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BULGARIAN = 'bg';
 
-    /** Bhojpuri language code, may be used as source or target language. */
+    /**
+     * Bhojpuri language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BHOJPURI = 'bho';
 
-    /** Bengali language code, may be used as source or target language. */
+    /**
+     * Bengali language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BENGALI = 'bn';
 
-    /** Breton language code, may be used as source or target language. */
+    /**
+     * Breton language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BRETON = 'br';
 
-    /** Bosnian language code, may be used as source or target language. */
+    /**
+     * Bosnian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BOSNIAN = 'bs';
 
-    /** Catalan language code, may be used as source or target language. */
+    /**
+     * Catalan language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CATALAN = 'ca';
 
-    /** Cebuano language code, may be used as source or target language. */
+    /**
+     * Cebuano language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CEBUANO = 'ceb';
 
-    /** Kurdish (Sorani) language code, may be used as source or target language. */
+    /**
+     * Kurdish (Sorani) language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KURDISH_SORANI = 'ckb';
 
-    /** Czech language code, may be used as source or target language. */
+    /**
+     * Czech language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CZECH = 'cs';
 
-    /** Welsh language code, may be used as source or target language. */
+    /**
+     * Welsh language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const WELSH = 'cy';
 
-    /** Danish language code, may be used as source or target language. */
+    /**
+     * Danish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const DANISH = 'da';
 
-    /** German language code, may be used as source or target language. */
+    /**
+     * German language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GERMAN = 'de';
 
-    /** German (Swiss) language code, may only be used as a target language. */
+    /**
+     * German (Swiss) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GERMAN_SWISS = 'de-CH';
 
-    /** German (Germany) language code, may only be used as a target language. */
+    /**
+     * German (Germany) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GERMAN_GERMANY = 'de-DE';
 
-    /** Greek language code, may be used as source or target language. */
+    /**
+     * Greek language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GREEK = 'el';
 
-    /** English language code, may be used as source or target language; as a target it means American English. */
+    /**
+     * English language code, may be used as source or target language; as a target it means American English.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ENGLISH = 'en';
 
-    /** British English language code, may only be used as a target language. */
+    /**
+     * British English language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ENGLISH_BRITISH = 'en-GB';
 
-    /** American English language code, may only be used as a target language. */
+    /**
+     * American English language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ENGLISH_AMERICAN = 'en-US';
 
-    /** Esperanto language code, may be used as source or target language. */
+    /**
+     * Esperanto language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ESPERANTO = 'eo';
 
-    /** Spanish language code, may be used as source or target language. */
+    /**
+     * Spanish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SPANISH = 'es';
 
-    /** Spanish (Spain) language code, may only be used as a target language. */
+    /**
+     * Spanish (Spain) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SPANISH_EUROPEAN = 'es-ES';
 
-    /** Spanish (Latin American) language code, may only be used as a target language. */
+    /**
+     * Spanish (Latin American) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SPANISH_LATIN_AMERICAN = 'es-419';
 
-    /** Estonian language code, may be used as source or target language. */
+    /**
+     * Estonian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ESTONIAN = 'et';
 
-    /** Basque language code, may be used as source or target language. */
+    /**
+     * Basque language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BASQUE = 'eu';
 
-    /** Persian language code, may be used as source or target language. */
+    /**
+     * Persian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PERSIAN = 'fa';
 
-    /** Finnish language code, may be used as source or target language. */
+    /**
+     * Finnish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const FINNISH = 'fi';
 
-    /** French language code, may be used as source or target language. */
+    /**
+     * French language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const FRENCH = 'fr';
 
-    /** French (Canadian) language code, may only be used as a target language. */
+    /**
+     * French (Canadian) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const FRENCH_CANADIAN = 'fr-CA';
 
-    /** French (France) language code, may only be used as a target language. */
+    /**
+     * French (France) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const FRENCH_EUROPEAN = 'fr-FR';
 
-    /** Irish language code, may be used as source or target language. */
+    /**
+     * Irish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const IRISH = 'ga';
 
-    /** Galician language code, may be used as source or target language. */
+    /**
+     * Galician language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GALICIAN = 'gl';
 
-    /** Guarani language code, may be used as source or target language. */
+    /**
+     * Guarani language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GUARANI = 'gn';
 
-    /** Konkani language code, may be used as source or target language. */
+    /**
+     * Konkani language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KONKANI = 'gom';
 
-    /** Gujarati language code, may be used as source or target language. */
+    /**
+     * Gujarati language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GUJARATI = 'gu';
 
-    /** Hausa language code, may be used as source or target language. */
+    /**
+     * Hausa language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const HAUSA = 'ha';
 
-    /** Hebrew language code, may be used as source or target language. */
+    /**
+     * Hebrew language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const HEBREW = 'he';
 
-    /** Hindi language code, may be used as source or target language. */
+    /**
+     * Hindi language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const HINDI = 'hi';
 
-    /** Croatian language code, may be used as source or target language. */
+    /**
+     * Croatian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CROATIAN = 'hr';
 
-    /** Haitian Creole language code, may be used as source or target language. */
+    /**
+     * Haitian Creole language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const HAITIAN_CREOLE = 'ht';
 
-    /** Hungarian language code, may be used as source or target language. */
+    /**
+     * Hungarian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const HUNGARIAN = 'hu';
 
-    /** Armenian language code, may be used as source or target language. */
+    /**
+     * Armenian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ARMENIAN = 'hy';
 
-    /** Indonesian language code, may be used as source or target language. */
+    /**
+     * Indonesian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const INDONESIAN = 'id';
 
-    /** Igbo language code, may be used as source or target language. */
+    /**
+     * Igbo language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const IGBO = 'ig';
 
-    /** Icelandic language code, may be used as source or target language. */
+    /**
+     * Icelandic language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ICELANDIC = 'is';
 
-    /** Italian language code, may be used as source or target language. */
+    /**
+     * Italian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ITALIAN = 'it';
 
-    /** Japanese language code, may be used as source or target language. */
+    /**
+     * Japanese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const JAPANESE = 'ja';
 
-    /** Javanese language code, may be used as source or target language. */
+    /**
+     * Javanese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const JAVANESE = 'jv';
 
-    /** Georgian language code, may be used as source or target language. */
+    /**
+     * Georgian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const GEORGIAN = 'ka';
 
-    /** Kazakh language code, may be used as source or target language. */
+    /**
+     * Kazakh language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KAZAKH = 'kk';
 
-    /** Kurdish (Kurmanji) language code, may be used as source or target language. */
+    /**
+     * Kurdish (Kurmanji) language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KURDISH_KURMANJI = 'kmr';
 
-    /** Korean language code, may be used as source or target language. */
+    /**
+     * Korean language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KOREAN = 'ko';
 
-    /** Kyrgyz language code, may be used as source or target language. */
+    /**
+     * Kyrgyz language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KYRGYZ = 'ky';
 
-    /** Latin language code, may be used as source or target language. */
+    /**
+     * Latin language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LATIN = 'la';
 
-    /** Luxembourgish language code, may be used as source or target language. */
+    /**
+     * Luxembourgish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LUXEMBOURGISH = 'lb';
 
-    /** Lombard language code, may be used as source or target language. */
+    /**
+     * Lombard language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LOMBARD = 'lmo';
 
-    /** Lingala language code, may be used as source or target language. */
+    /**
+     * Lingala language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LINGALA = 'ln';
 
-    /** Lithuanian language code, may be used as source or target language. */
+    /**
+     * Lithuanian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LITHUANIAN = 'lt';
 
-    /** Latvian language code, may be used as source or target language. */
+    /**
+     * Latvian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const LATVIAN = 'lv';
 
-    /** Maithili language code, may be used as source or target language. */
+    /**
+     * Maithili language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MAITHILI = 'mai';
 
-    /** Malagasy language code, may be used as source or target language. */
+    /**
+     * Malagasy language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MALAGASY = 'mg';
 
-    /** Maori language code, may be used as source or target language. */
+    /**
+     * Maori language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MAORI = 'mi';
 
-    /** Macedonian language code, may be used as source or target language. */
+    /**
+     * Macedonian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MACEDONIAN = 'mk';
 
-    /** Malayalam language code, may be used as source or target language. */
+    /**
+     * Malayalam language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MALAYALAM = 'ml';
 
-    /** Mongolian language code, may be used as source or target language. */
+    /**
+     * Mongolian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MONGOLIAN = 'mn';
 
-    /** Marathi language code, may be used as source or target language. */
+    /**
+     * Marathi language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MARATHI = 'mr';
 
-    /** Malay language code, may be used as source or target language. */
+    /**
+     * Malay language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MALAY = 'ms';
 
-    /** Maltese language code, may be used as source or target language. */
+    /**
+     * Maltese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const MALTESE = 'mt';
 
-    /** Burmese language code, may be used as source or target language. */
+    /**
+     * Burmese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const BURMESE = 'my';
 
-    /** Norwegian (bokmål) language code, may be used as source or target language. */
+    /**
+     * Norwegian (bokmål) language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const NORWEGIAN = 'nb';
 
-    /** Nepali language code, may be used as source or target language. */
+    /**
+     * Nepali language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const NEPALI = 'ne';
 
-    /** Dutch language code, may be used as source or target language. */
+    /**
+     * Dutch language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const DUTCH = 'nl';
 
-    /** Occitan language code, may be used as source or target language. */
+    /**
+     * Occitan language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const OCCITAN = 'oc';
 
-    /** Oromo language code, may be used as source or target language. */
+    /**
+     * Oromo language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const OROMO = 'om';
 
-    /** Punjabi language code, may be used as source or target language. */
+    /**
+     * Punjabi language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PUNJABI = 'pa';
 
-    /** Pangasinan language code, may be used as source or target language. */
+    /**
+     * Pangasinan language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PANGASINAN = 'pag';
 
-    /** Kapampangan language code, may be used as source or target language. */
+    /**
+     * Kapampangan language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const KAPAMPANGAN = 'pam';
 
-    /** Polish language code, may be used as source or target language. */
+    /**
+     * Polish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const POLISH = 'pl';
 
-    /** Dari language code, may be used as source or target language. */
+    /**
+     * Dari language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const DARI = 'prs';
 
-    /** Pashto language code, may be used as source or target language. */
+    /**
+     * Pashto language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PASHTO = 'ps';
 
-    /** Portuguese language code, may be used as source or target language; as a target it means European Portuguese. */
+    /**
+     * Portuguese language code, may be used as source or target language; as a target it means European Portuguese.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PORTUGUESE = 'pt';
 
-    /** Brazilian Portuguese language code, may only be used as a target language. */
+    /**
+     * Brazilian Portuguese language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PORTUGUESE_BRAZILIAN = 'pt-BR';
 
-    /** European Portuguese language code, may only be used as a target language. */
+    /**
+     * European Portuguese language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const PORTUGUESE_EUROPEAN = 'pt-PT';
 
-    /** Quechua language code, may be used as source or target language. */
+    /**
+     * Quechua language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const QUECHUA = 'qu';
 
-    /** Romanian language code, may be used as source or target language. */
+    /**
+     * Romanian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ROMANIAN = 'ro';
 
-    /** Russian language code, may be used as source or target language. */
+    /**
+     * Russian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const RUSSIAN = 'ru';
 
-    /** Sanskrit language code, may be used as source or target language. */
+    /**
+     * Sanskrit language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SANSKRIT = 'sa';
 
-    /** Sicilian language code, may be used as source or target language. */
+    /**
+     * Sicilian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SICILIAN = 'scn';
 
-    /** Slovak language code, may be used as source or target language. */
+    /**
+     * Slovak language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SLOVAK = 'sk';
 
-    /** Slovenian language code, may be used as source or target language. */
+    /**
+     * Slovenian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SLOVENIAN = 'sl';
 
-    /** Albanian language code, may be used as source or target language. */
+    /**
+     * Albanian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ALBANIAN = 'sq';
 
-    /** Serbian language code, may be used as source or target language. */
+    /**
+     * Serbian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SERBIAN = 'sr';
 
-    /** Sesotho language code, may be used as source or target language. */
+    /**
+     * Sesotho language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SESOTHO = 'st';
 
-    /** Sundanese language code, may be used as source or target language. */
+    /**
+     * Sundanese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SUNDANESE = 'su';
 
-    /** Swedish language code, may be used as source or target language. */
+    /**
+     * Swedish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SWEDISH = 'sv';
 
-    /** Swahili language code, may be used as source or target language. */
+    /**
+     * Swahili language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const SWAHILI = 'sw';
 
-    /** Tamil language code, may be used as source or target language. */
+    /**
+     * Tamil language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TAMIL = 'ta';
 
-    /** Telugu language code, may be used as source or target language. */
+    /**
+     * Telugu language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TELUGU = 'te';
 
-    /** Tajik language code, may be used as source or target language. */
+    /**
+     * Tajik language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TAJIK = 'tg';
 
-    /** Thai language code, may be used as source or target language. */
+    /**
+     * Thai language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const THAI = 'th';
 
-    /** Turkmen language code, may be used as source or target language. */
+    /**
+     * Turkmen language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TURKMEN = 'tk';
 
-    /** Tagalog language code, may be used as source or target language. */
+    /**
+     * Tagalog language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TAGALOG = 'tl';
 
-    /** Tswana language code, may be used as source or target language. */
+    /**
+     * Tswana language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TSWANA = 'tn';
 
-    /** Turkish language code, may be used as source or target language. */
+    /**
+     * Turkish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TURKISH = 'tr';
 
-    /** Tsonga language code, may be used as source or target language. */
+    /**
+     * Tsonga language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TSONGA = 'ts';
 
-    /** Tatar language code, may be used as source or target language. */
+    /**
+     * Tatar language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const TATAR = 'tt';
 
-    /** Ukrainian language code, may be used as source or target language. */
+    /**
+     * Ukrainian language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const UKRAINIAN = 'uk';
 
-    /** Urdu language code, may be used as source or target language. */
+    /**
+     * Urdu language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const URDU = 'ur';
 
-    /** Uzbek language code, may be used as source or target language. */
+    /**
+     * Uzbek language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const UZBEK = 'uz';
 
-    /** Vietnamese language code, may be used as source or target language. */
+    /**
+     * Vietnamese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const VIETNAMESE = 'vi';
 
-    /** Wolof language code, may be used as source or target language. */
+    /**
+     * Wolof language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const WOLOF = 'wo';
 
-    /** Xhosa language code, may be used as source or target language. */
+    /**
+     * Xhosa language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const XHOSA = 'xh';
 
-    /** Yiddish language code, may be used as source or target language. */
+    /**
+     * Yiddish language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const YIDDISH = 'yi';
 
-    /** Cantonese language code, may be used as source or target language. */
+    /**
+     * Cantonese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CANTONESE = 'yue';
 
-    /** Chinese language code, may be used as source or target language. */
+    /**
+     * Chinese language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CHINESE = 'zh';
 
-    /** Chinese (simplified) language code, may only be used as a target language. */
+    /**
+     * Chinese (simplified) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CHINESE_SIMPLIFIED = 'zh-HANS';
 
-    /** Chinese (traditional) language code, may only be used as a target language. */
+    /**
+     * Chinese (traditional) language code, may only be used as a target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const CHINESE_TRADITIONAL = 'zh-HANT';
 
-    /** Zulu language code, may be used as source or target language. */
+    /**
+     * Zulu language code, may be used as source or target language.
+     * @deprecated Use the language code string, e.g. 'de', or the languages API. Will be removed in the next
+     *     major version.
+     */
     public const ZULU = 'zu';
 
     /**

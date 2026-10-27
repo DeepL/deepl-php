@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lists may include additional languages. No change to public method
   signatures or return types.
 
+### Deprecated
+- Deprecated the `LanguageCode` constants (for example `LanguageCode::GERMAN`).
+  Pass the language code string instead, for example `'de'`, or use
+  `getSourceLanguages()` / `getTargetLanguages()`. The constants keep working
+  and will be removed in the next major version.
+
 ### Fixed
 - Fixed `downloadDocument()` and `downloadTranslationMemoryExport()` returning
   without an error and without writing a file when the directory of the output
