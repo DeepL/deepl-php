@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Status of a document translation request.
  */
@@ -43,16 +41,17 @@ class DocumentStatus
      */
     public function __construct(string $content)
     {
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $json = ParsingUtils::decodeJson($content);
 
-        $this->status = $json['status'];
-        $this->secondsRemaining = $json['seconds_remaining'] ?? null;
-        $this->billedCharacters = $json['billed_characters'] ?? null;
-        $this->errorMessage = $json['error_message'] ?? null;
+        ParsingUtils::guard(function () use ($json): void {
+            if (!is_string($json['status'])) {
+                throw ParsingUtils::invalidContent('Expected a status string in the response');
+            }
+            $this->status = $json['status'];
+            $this->secondsRemaining = $json['seconds_remaining'] ?? null;
+            $this->billedCharacters = $json['billed_characters'] ?? null;
+            $this->errorMessage = $json['error_message'] ?? null;
+        });
     }
 
     /**

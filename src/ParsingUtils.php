@@ -42,6 +42,46 @@ class ParsingUtils
     }
 
     /**
+     * Runs the given parse function, converting any failure caused by missing or invalid fields in the
+     * response (PHP warnings and notices, TypeErrors, DateTime errors) into an InvalidContentException.
+     * @param callable $parse Function that parses the response and returns the result.
+     * @return mixed The result of the parse function.
+     * @throws DeepLException
+     */
+    public static function guard(callable $parse)
+    {
+        set_error_handler(function (int $severity, string $message, string $file = '', int $line = 0): bool {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        }, E_WARNING | E_NOTICE);
+        try {
+            return $parse();
+        } catch (DeepLException $exception) {
+            throw $exception;
+        } catch (\Throwable $error) {
+            throw self::invalidContent('Unexpected response content: ' . $error->getMessage(), $error);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
+     * Converts a required API timestamp to a DateTime.
+     * @param mixed $timestamp Timestamp as returned by the API.
+     * @throws InvalidContentException If the timestamp is absent or unparseable.
+     */
+    public static function parseTimestamp($timestamp, ?DateTimeZone $defaultTimeZone = null): DateTime
+    {
+        if (!is_string($timestamp) || $timestamp === '') {
+            throw self::invalidContent('Expected a timestamp in the response');
+        }
+        try {
+            return new DateTime($timestamp, $defaultTimeZone);
+        } catch (Exception $exception) {
+            throw self::invalidContent("Invalid timestamp in the response: $timestamp", $exception);
+        }
+    }
+
+    /**
      * Converts an optional API timestamp to a DateTime.
      * @param mixed $timestamp Timestamp as returned by the API, or null if it was absent.
      * @param DateTimeZone|null $defaultTimeZone Time zone assumed for timestamps without one, default is the

@@ -183,7 +183,15 @@ class TranslateTextTest extends OfflineTestCase
             'extra body parameters override and add' => [
                 [TranslateTextOptions::EXTRA_BODY_PARAMETERS => ['target_lang' => 'fr', 'new_param' => 7]],
                 ['target_lang' => 'fr', 'source_lang' => 'en', 'show_billed_characters' => true,
-                    'text' => ['Hello'], 'new_param' => '7'],
+                    'text' => ['Hello'], 'new_param' => 7],
+            ],
+            'extra body parameters keep their JSON type' => [
+                [TranslateTextOptions::EXTRA_BODY_PARAMETERS => [
+                    'flag_on' => true, 'flag_off' => false, 'list' => ['a', 'b'], 'object' => ['k' => 1.5],
+                ]],
+                $base + $tail + [
+                    'flag_on' => true, 'flag_off' => false, 'list' => ['a', 'b'], 'object' => ['k' => 1.5],
+                ],
             ],
         ];
     }
@@ -307,6 +315,49 @@ class TranslateTextTest extends OfflineTestCase
         $result = $this->makeTranslator()->translateText('ab', null, 'fr');
 
         $this->assertSame("a\u{FFFD}b", $result->text);
+    }
+
+    public function testRestoresTheCallersSubstituteCharacter(): void
+    {
+        $previous = mb_substitute_character();
+        mb_substitute_character(0x3F);
+        try {
+            $this->reply(self::REPLY);
+
+            $this->makeTranslator()->translateText('Hello', null, 'de');
+
+            $this->assertSame(0x3F, mb_substitute_character());
+        } finally {
+            mb_substitute_character($previous);
+        }
+    }
+
+    /**
+     * @dataProvider provideMalformedReplies
+     */
+    public function testThrowsInvalidContentExceptionWhenTheReplyIsMalformed($reply, $texts): void
+    {
+        $this->reply($reply);
+
+        $this->expectException(InvalidContentException::class);
+
+        $this->makeTranslator()->translateText($texts, null, 'de');
+    }
+
+    public static function provideMalformedReplies(): array
+    {
+        return [
+            'no translations' => [['other' => 1], 'Hello'],
+            'empty translations for a single text' => [['translations' => []], 'Hello'],
+            'translation without text' => [
+                ['translations' => [['detected_source_language' => 'EN', 'billed_characters' => 5]]],
+                ['Hello'],
+            ],
+            'text of the wrong type' => [
+                ['translations' => [['text' => ['x'], 'detected_source_language' => 'EN', 'billed_characters' => 5]]],
+                'Hello',
+            ],
+        ];
     }
 
     public function testThrowsWhenTheReplyIsNotJson(): void

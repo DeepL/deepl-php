@@ -32,13 +32,13 @@ class TranslatorOptionsTest extends OfflineTestCase
         $version = '\d+\.\d+\.\d+';
         $app = new AppInfo('my-app', '1.2.3');
         return [
-            'default with platform and curl version' => [
+            'default with platform' => [
                 [],
-                "#^deepl-php/$version \\(.+\\) php/\\S+ curl/\\S+$#",
+                "#^deepl-php/$version \\(.+ \\S+\\) php/\\S+$#",
             ],
             'explicit opt in' => [
                 [TranslatorOptions::SEND_PLATFORM_INFO => true],
-                "#^deepl-php/$version \\(.+\\) php/\\S+ curl/\\S+$#",
+                "#^deepl-php/$version \\(.+ \\S+\\) php/\\S+$#",
             ],
             'opt out' => [
                 [TranslatorOptions::SEND_PLATFORM_INFO => false],
@@ -46,7 +46,7 @@ class TranslatorOptionsTest extends OfflineTestCase
             ],
             'app info with platform' => [
                 [TranslatorOptions::APP_INFO => $app],
-                "#^deepl-php/$version \\(.+\\) php/\\S+ curl/\\S+ my-app/1\\.2\\.3$#",
+                "#^deepl-php/$version \\(.+\\) php/\\S+ my-app/1\\.2\\.3$#",
             ],
             'app info without platform' => [
                 [TranslatorOptions::SEND_PLATFORM_INFO => false, TranslatorOptions::APP_INFO => $app],
@@ -59,6 +59,19 @@ class TranslatorOptionsTest extends OfflineTestCase
         ];
     }
 
+    public function testSendsThePlatformAsOsVersionAndMachine(): void
+    {
+        $this->reply(self::USAGE);
+
+        $this->makeTranslator()->getUsage();
+
+        $platform = php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('v') . ' ' . php_uname('m');
+        $this->assertStringEndsWith(
+            " ($platform) php/" . phpversion(),
+            $this->request()->getHeaderLine('User-Agent')
+        );
+    }
+
     public function testSendsAuthorizationAndCustomHeaders(): void
     {
         $this->reply(self::USAGE);
@@ -69,12 +82,42 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->assertSame('value', $this->request()->getHeaderLine('X-Custom'));
     }
 
-    public function testThrowsWhenTheAuthKeyIsEmpty(): void
+    /**
+     * @dataProvider provideEmptyAuthKeys
+     */
+    public function testThrowsWhenTheAuthKeyIsEmpty(string $authKey): void
     {
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('authKey must be a non-empty string');
 
-        $this->makeTranslator([], '');
+        $this->makeTranslator([], $authKey);
+    }
+
+    public static function provideEmptyAuthKeys(): array
+    {
+        return ['empty' => [''], 'whitespace only' => [" \t\n"]];
+    }
+
+    public function testTrimsTheAuthKey(): void
+    {
+        $this->reply(self::USAGE);
+
+        $this->makeTranslator([], "  my-key \n")->getUsage();
+
+        $this->assertSame('DeepL-Auth-Key my-key', $this->request()->getHeaderLine('Authorization'));
+    }
+
+    public function testSelectsTheFreeServerForAFreeKeyWithSurroundingWhitespace(): void
+    {
+        $this->reply(self::USAGE);
+
+        $translator = new Translator(" abc:fx\n", [
+            TranslatorOptions::HTTP_CLIENT => $this->clientOptions([])[TranslatorOptions::HTTP_CLIENT],
+        ]);
+        $translator->getUsage();
+
+        $this->assertSame('api-free.deepl.com', $this->request()->getUri()->getHost());
+        $this->assertSame('DeepL-Auth-Key abc:fx', $this->request()->getHeaderLine('Authorization'));
     }
 
     /**

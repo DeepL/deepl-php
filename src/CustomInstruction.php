@@ -40,11 +40,13 @@ class CustomInstruction
      */
     public static function fromJson(array $json): CustomInstruction
     {
-        return new CustomInstruction(
-            $json['label'],
-            $json['prompt'],
-            $json['source_language'] ?? null,
-            $json['id'] ?? null
-        );
+        return ParsingUtils::guard(function () use ($json): CustomInstruction {
+            return new CustomInstruction(
+                $json['label'],
+                $json['prompt'],
+                $json['source_language'] ?? null,
+                $json['id'] ?? null
+            );
+        });
     }
 }

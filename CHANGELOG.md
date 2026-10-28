@@ -46,6 +46,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the new classes `StyleProfile` and `StyleProfileOptions`.
 
 ### Changed
+- The `max_retries` option now counts retries after the first attempt, as
+  documented: `max_retries => 5` (the default) sends a request at most 6
+  times, and `0` disables retries. Previously it counted attempts, so the
+  default made only 4 retries and `max_retries => 1` made none.
+- DNS resolution failures (`CURLE_COULDNT_RESOLVE_HOST` and
+  `CURLE_COULDNT_RESOLVE_PROXY`) are now retried like other transient network
+  failures. `createDeveloperKey()` retries them too, as such a request was not
+  sent.
+- The User-Agent platform information no longer includes the cURL version, and
+  has a space between the OS version and the machine type:
+  `deepl-php/<version> (<os>) php/<version>`.
+- `extra_body_parameters` values are sent as given in JSON request bodies
+  (text translation): booleans, numbers, arrays and objects keep their JSON
+  type. Previously every value was converted to a string, so `true` was sent as
+  `"1"` and arrays failed. In document uploads (a multipart form), booleans are
+  now sent as `true`/`false` and arrays and objects as JSON.
 - Target languages `en` and `pt` are no longer rejected client-side; the API
   translates them to `en-US` and `pt-PT` respectively.
 - `getSourceLanguages()`, `getTargetLanguages()`, and `getGlossaryLanguages()`
@@ -75,6 +91,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of `GlossaryUtils`.
 
 ### Fixed
+- Fixed HTTP 401 raising a generic `DeepLException`; it now raises
+  `AuthorizationException`, like 403.
+- Fixed 3xx responses being parsed as successful results; only 2xx statuses
+  are successful, other statuses raise a `DeepLException`.
+- Fixed the authentication key not being trimmed: surrounding whitespace was
+  sent in the Authorization header and hid the `:fx` suffix of free keys, and
+  a whitespace-only key was accepted. The key is now trimmed, and an empty key
+  after trimming throws a `DeepLException`.
+- Fixed custom `headers` with a different letter case (for example
+  `user-agent`) being sent in addition to the default header instead of
+  replacing it.
+- Fixed malformed API responses raising PHP warnings, a `TypeError` or a raw
+  `\Exception` (for example a missing field or an invalid timestamp) in
+  `translateText()`, `uploadDocument()`, `getDocumentStatus()`, the glossary,
+  multilingual glossary, spoken terms and style rule methods. They now raise
+  `InvalidContentException`. `translateText()` with a single text no longer
+  returns `null` when the response has no translations.
+- Fixed `translateText()` changing the process-wide
+  `mb_substitute_character()` setting; the caller's value is now restored.
 - Fixed the README entry of the document minification option: it is named
   `enable_document_minification` and supports `docx` as well as `pptx`. The
   README no longer states a 30 MB document size limit.

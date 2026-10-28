@@ -7,7 +7,6 @@
 namespace DeepL;
 
 use DateTime;
-use JsonException;
 
 /**
  * Information about a glossary, excluding the entry list.
@@ -58,13 +57,11 @@ class GlossaryInfo
      */
     public static function parse(string $content): GlossaryInfo
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $object = ParsingUtils::decodeJson($content);
 
-        return self::parseJsonObject($object);
+        return ParsingUtils::guard(function () use ($object): GlossaryInfo {
+            return self::parseJsonObject($object);
+        });
     }
 
     /**
@@ -72,17 +69,15 @@ class GlossaryInfo
      */
     public static function parseList(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $decoded = ParsingUtils::decodeJson($content);
 
-        $result = [];
-        foreach ($decoded['glossaries'] as $object) {
-            $result[] = self::parseJsonObject($object);
-        }
-        return $result;
+        return ParsingUtils::guard(function () use ($decoded): array {
+            $result = [];
+            foreach ($decoded['glossaries'] as $object) {
+                $result[] = self::parseJsonObject($object);
+            }
+            return $result;
+        });
     }
 
     /**
@@ -96,7 +91,7 @@ class GlossaryInfo
             $object['ready'] ?? null,
             $object['source_lang'] ?? null,
             $object['target_lang'] ?? null,
-            new DateTime($object['creation_time']) ?? null,
+            ParsingUtils::parseTimestamp($object['creation_time'] ?? null),
             $object['entry_count'] ?? null
         );
     }

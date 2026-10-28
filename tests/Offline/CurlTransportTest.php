@@ -174,41 +174,50 @@ class CurlTransportTest extends OfflineTestCase
         $this->assertArrayNotHasKey(CURLOPT_RETURNTRANSFER, $options);
     }
 
-    public function testAddsTheCurlVersionToTheUserAgent(): void
+    public function testSendsACustomHeaderInAnotherCaseInsteadOfTheDefault(): void
     {
-        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->atLeastOnce())
-            ->willReturn(['version' => '7.99.0']);
-
         $options = $this->captureCurlOptions(function (DeepLClient $client) {
             $client->getUsage();
-        }, '{"character_count":1,"character_limit":2}');
+        }, '{"character_count":1,"character_limit":2}', [
+            TranslatorOptions::HEADERS => ['user-agent' => 'my-client', 'x-custom' => 'value'],
+        ]);
 
-        $this->assertStringEndsWith(' curl/7.99.0', $this->headers($options)[1]);
+        $this->assertSame(
+            ['Authorization: DeepL-Auth-Key k', 'user-agent: my-client', 'x-custom: value'],
+            $this->headers($options)
+        );
     }
 
-    public function testOmitsTheCurlVersionFromTheUserAgentWhenPlatformInfoIsOff(): void
+    /**
+     * @dataProvider provideDnsErrors
+     */
+    public function testRetriesDnsFailures(int $errorCode): void
     {
-        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->never());
+        $this->useFakeClock();
+        $this->failCurlWith([$errorCode], $attempts, '{"character_count":1,"character_limit":2}');
 
-        $options = $this->captureCurlOptions(function (DeepLClient $client) {
-            $client->getUsage();
-        }, '{"character_count":1,"character_limit":2}', [TranslatorOptions::SEND_PLATFORM_INFO => false]);
+        (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
 
-        $this->assertStringNotContainsString('curl/', $this->headers($options)[1]);
+        $this->assertCount(2, $attempts);
     }
 
-    public function testSendsAnIncompleteUserAgentWhenTheCurlVersionIsUnavailable(): void
+    /**
+     * @dataProvider provideDnsErrors
+     */
+    public function testRetriesKeyCreationAfterADnsFailure(int $errorCode): void
     {
-        $this->getFunctionMock('DeepL', 'curl_version')->expects($this->once())
-            ->willThrowException(new \Exception('curl_version failed'));
+        $this->useFakeClock();
+        $this->failCurlWith([$errorCode], $attempts, '{"key_id": "id"}');
 
-        $options = $this->captureCurlOptions(function (DeepLClient $client) {
-            $client->getUsage();
-        }, '{"character_count":1,"character_limit":2}');
+        $key = $this->makeCurlAdminClient()->createDeveloperKey();
 
-        $userAgent = $this->headers($options)[1];
-        $this->assertStringContainsString(' php/', $userAgent);
-        $this->assertStringNotContainsString('curl/', $userAgent);
+        $this->assertSame('id', $key->keyId);
+        $this->assertCount(2, $attempts);
+    }
+
+    public static function provideDnsErrors(): array
+    {
+        return ['host' => [CURLE_COULDNT_RESOLVE_HOST], 'proxy' => [CURLE_COULDNT_RESOLVE_PROXY]];
     }
 
     /**

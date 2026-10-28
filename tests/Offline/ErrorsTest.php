@@ -7,8 +7,12 @@
 namespace DeepL\Offline;
 
 use DeepL\AuthorizationException;
+use DeepL\DeepLClient;
 use DeepL\DeepLException;
+use DeepL\DocumentHandle;
+use DeepL\Fixtures;
 use DeepL\GlossaryNotFoundException;
+use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\QuotaExceededException;
 use DeepL\TooManyRequestsException;
@@ -24,7 +28,7 @@ class ErrorsTest extends OfflineTestCase
         $this->reply(['message' => 'the message', 'detail' => 'the detail'], $status);
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 1])->getUsage();
+            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
             $this->fail("expected a $class");
         } catch (DeepLException $exception) {
             $this->assertSame($class, get_class($exception));
@@ -37,6 +41,7 @@ class ErrorsTest extends OfflineTestCase
     {
         return [
             '400' => [400, DeepLException::class, 'Bad request'],
+            '401' => [401, AuthorizationException::class, 'Authorization failure, check authentication key'],
             '403' => [403, AuthorizationException::class, 'Authorization failure, check authentication key'],
             '404' => [404, NotFoundException::class, 'Not found'],
             '429' => [429, TooManyRequestsException::class, 'Too many requests'],
@@ -89,5 +94,77 @@ class ErrorsTest extends OfflineTestCase
         } catch (DeepLException $exception) {
             $this->assertSame(NotFoundException::class, get_class($exception));
         }
+    }
+
+    public function testThrowsOnARedirectInsteadOfParsingIt(): void
+    {
+        $this->reply(['character_count' => 1, 'character_limit' => 2], 302);
+
+        try {
+            $this->makeTranslator()->getUsage();
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertSame(DeepLException::class, get_class($exception));
+            $this->assertStringStartsWith('Unexpected status code: 302', $exception->getMessage());
+        }
+    }
+
+    /**
+     * @dataProvider provideMalformedReplies
+     */
+    public function testThrowsInvalidContentExceptionWhenTheReplyIsMalformed(array $reply, callable $call): void
+    {
+        $this->reply($reply);
+
+        $this->expectException(InvalidContentException::class);
+
+        $call($this->makeDeepLClient());
+    }
+
+    public static function provideMalformedReplies(): array
+    {
+        $glossary = ['glossary_id' => 'g', 'name' => 'n', 'ready' => true, 'source_lang' => 'en',
+            'target_lang' => 'de', 'entry_count' => 1];
+        $styleRule = ['style_id' => 's', 'name' => 'n', 'language' => 'en', 'version' => 1];
+        $created = '2024-01-01T00:00:00Z';
+        return [
+            'upload without document key' => [['document_id' => 'd'], function (DeepLClient $client) {
+                $client->uploadDocument(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
+            }],
+            'document status without status' => [['document_id' => 'd'], function (DeepLClient $client) {
+                $client->getDocumentStatus(new DocumentHandle('d', 'k'));
+            }],
+            'glossary without creation time' => [$glossary, function (DeepLClient $client) {
+                $client->getGlossary('g');
+            }],
+            'glossary with an invalid creation time' => [
+                $glossary + ['creation_time' => 'not a date'],
+                function (DeepLClient $client) {
+                    $client->getGlossary('g');
+                },
+            ],
+            'glossary list without glossaries' => [['other' => []], function (DeepLClient $client) {
+                $client->listGlossaries();
+            }],
+            'multilingual glossary without dictionaries' => [
+                ['glossary_id' => 'g', 'name' => 'n', 'creation_time' => $created],
+                function (DeepLClient $client) {
+                    $client->getMultilingualGlossary('g');
+                },
+            ],
+            'multilingual glossary list without glossaries' => [['other' => []], function (DeepLClient $client) {
+                $client->listMultilingualGlossaries();
+            }],
+            'style rule without timestamps' => [$styleRule, function (DeepLClient $client) {
+                $client->getStyleRule('s');
+            }],
+            'style rule list entry without name' => [
+                ['style_rules' => [['style_id' => 's', 'creation_time' => $created, 'updated_time' => $created,
+                    'language' => 'en', 'version' => 1]]],
+                function (DeepLClient $client) {
+                    $client->getAllStyleRules();
+                },
+            ],
+        ];
     }
 }

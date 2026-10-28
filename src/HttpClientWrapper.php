@@ -49,8 +49,8 @@ class HttpClientWrapper
     public const OPTION_JSON = 'json';
     public const OPTION_RAW_BODY = 'raw_body';
     /**
-     * Retry only failures that show the request was not processed: HTTP 429 and retryable connection errors
-     * that happen before the request is sent. For requests that are unsafe to repeat.
+     * Retry only failures that show the request was not processed: HTTP 429, refused connections and DNS
+     * failures. For requests that are unsafe to repeat.
      */
     public const OPTION_RETRY_ONLY_UNPROCESSED = 'retry_only_unprocessed';
 
@@ -99,7 +99,7 @@ class HttpClientWrapper
         if (!self::isAbsoluteUrl($url)) {
             $url = $this->serverUrl . $url;
         }
-        $headers = array_replace(
+        $headers = ClientUtils::mergeHeaders(
             $this->headers,
             $options[self::OPTION_HEADERS] ?? []
         );
@@ -146,7 +146,7 @@ class HttpClientWrapper
             }
 
             $retry = $this->shouldRetry($response, $exception, $onlyUnprocessed);
-            if (!$retry || $backoff->getNumRetries() + 1 >= $this->maxRetries) {
+            if (!$retry || $backoff->getNumRetries() >= $this->maxRetries) {
                 break;
             }
 
@@ -414,6 +414,8 @@ class HttpClientWrapper
                 case \CURLE_OPERATION_TIMEOUTED:
                 case \CURLE_COULDNT_CONNECT:
                 case \CURLE_GOT_NOTHING:
+                case \CURLE_COULDNT_RESOLVE_HOST:
+                case \CURLE_COULDNT_RESOLVE_PROXY:
                     $shouldRetry = true;
                     break;
                 default:
@@ -445,12 +447,17 @@ class HttpClientWrapper
     }
 
     /**
-     * Returns true if the connection error happened before the request was sent. Only the cURL error
-     * codes tell this; errors of a custom HTTP client are treated as possibly sent.
+     * Returns true if the connection error happened before the request was sent: a refused connection or
+     * a DNS failure. Only the cURL error codes tell this; errors of a custom HTTP client are treated as
+     * possibly sent.
      */
     private function isUnsentRequestError(ConnectionException $exception): bool
     {
-        return $this->customHttpClient === null && $exception->getCode() === \CURLE_COULDNT_CONNECT;
+        return $this->customHttpClient === null && in_array(
+            $exception->getCode(),
+            [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST, \CURLE_COULDNT_RESOLVE_PROXY],
+            true
+        );
     }
 
     public function logDebug(string $message): void

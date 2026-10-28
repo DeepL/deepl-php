@@ -7,7 +7,6 @@
 namespace DeepL;
 
 use DateTime;
-use JsonException;
 
 /**
  * Information about a style rule list.
@@ -71,6 +70,13 @@ class StyleRuleInfo
      */
     public static function fromJson(array $json): StyleRuleInfo
     {
+        return ParsingUtils::guard(function () use ($json): StyleRuleInfo {
+            return self::parseObject($json);
+        });
+    }
+
+    private static function parseObject(array $json): StyleRuleInfo
+    {
         $configuredRules = null;
         if (isset($json['configured_rules'])) {
             $configuredRules = ConfiguredRules::fromJson($json['configured_rules']);
@@ -87,8 +93,8 @@ class StyleRuleInfo
         return new StyleRuleInfo(
             $json['style_id'],
             $json['name'],
-            new DateTime($json['creation_time']),
-            new DateTime($json['updated_time']),
+            ParsingUtils::parseTimestamp($json['creation_time'] ?? null),
+            ParsingUtils::parseTimestamp($json['updated_time'] ?? null),
             $json['language'],
             $json['version'],
             $configuredRules,
@@ -101,18 +107,16 @@ class StyleRuleInfo
      */
     public static function parseList(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $decoded = ParsingUtils::decodeJson($content);
 
-        $result = [];
-        $styleRules = $decoded['style_rules'] ?? [];
-        foreach ($styleRules as $object) {
-            $result[] = self::fromJson($object);
-        }
-        return $result;
+        return ParsingUtils::guard(function () use ($decoded): array {
+            $result = [];
+            $styleRules = $decoded['style_rules'] ?? [];
+            foreach ($styleRules as $object) {
+                $result[] = self::parseObject($object);
+            }
+            return $result;
+        });
     }
 
     public function __toString(): string

@@ -64,10 +64,10 @@ class HttpClientTest extends OfflineTestCase
         return [[400], [403], [404], [456]];
     }
 
-    public function testSendsAtMostMaxRetriesRequests(): void
+    public function testRetriesMaxRetriesTimesAfterTheFirstAttempt(): void
     {
         $this->useFakeClock();
-        foreach ([1, 2, 3] as $_) {
+        foreach ([1, 2, 3, 4] as $_) {
             $this->reply('', 429);
         }
 
@@ -76,7 +76,20 @@ class HttpClientTest extends OfflineTestCase
         try {
             $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 3])->getUsage();
         } finally {
-            $this->assertRequestCount(3);
+            $this->assertRequestCount(4);
+        }
+    }
+
+    public function testSendsOneRequestWhenMaxRetriesIsZero(): void
+    {
+        $this->reply('', 429);
+
+        $this->expectException(TooManyRequestsException::class);
+
+        try {
+            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
+        } finally {
+            $this->assertRequestCount(1);
         }
     }
 
@@ -101,7 +114,7 @@ class HttpClientTest extends OfflineTestCase
         }
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 3])->getUsage();
+            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 2])->getUsage();
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
             $this->assertStringContainsString('connection refused', $exception->getMessage());

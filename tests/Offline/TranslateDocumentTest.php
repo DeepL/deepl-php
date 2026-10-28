@@ -99,6 +99,12 @@ class TranslateDocumentTest extends OfflineTestCase
                 [TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => ['custom' => 1, 'target_lang' => 'fr']],
                 ['custom' => '1', 'target_lang' => 'fr'],
             ],
+            'extra body parameters of other JSON types' => [
+                [TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => [
+                    'flag_on' => true, 'flag_off' => false, 'list' => ['a', 'b'],
+                ]],
+                ['flag_on' => 'true', 'flag_off' => 'false', 'list' => '["a","b"]'],
+            ],
         ];
     }
 
@@ -251,7 +257,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->reply(['message' => 'still translating'], 503);
 
         try {
-            $this->makeTranslator(['max_retries' => 1])
+            $this->makeTranslator(['max_retries' => 0])
                 ->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
             $this->fail('expected a DocumentNotReadyException');
         } catch (DocumentNotReadyException $exception) {

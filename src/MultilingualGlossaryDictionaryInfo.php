@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Information about a single dictionary in a multilingual glossary, excluding
  * the entry list.
@@ -38,13 +36,11 @@ class MultilingualGlossaryDictionaryInfo
      */
     public static function parseJson(string $content): MultilingualGlossaryDictionaryInfo
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $object = ParsingUtils::decodeJson($content);
 
-        return self::parseObject($object);
+        return ParsingUtils::guard(function () use ($object): MultilingualGlossaryDictionaryInfo {
+            return self::parseObject($object);
+        });
     }
 
     /**
@@ -52,11 +48,13 @@ class MultilingualGlossaryDictionaryInfo
      */
     public static function parseList(array $list): array
     {
-        $result = [];
-        foreach ($list as $object) {
-            $result[] = self::parseObject($object);
-        }
-        return $result;
+        return ParsingUtils::guard(function () use ($list): array {
+            $result = [];
+            foreach ($list as $object) {
+                $result[] = self::parseObject($object);
+            }
+            return $result;
+        });
     }
 
     /**

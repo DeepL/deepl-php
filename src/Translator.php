@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Wrapper for the DeepL API for language translation.
  * Create an instance of Translator to use the DeepL API.
@@ -48,6 +46,7 @@ class Translator
      */
     public function __construct(string $authKey, array $options = [])
     {
+        $authKey = trim($authKey);
         if ($authKey === '') {
             throw new DeepLException('authKey must be a non-empty string');
         }
@@ -188,24 +187,31 @@ class Translator
 
         // Deepl API responses might have invalid UTF8 sequence
         // @see https://github.com/DeepLcom/deepl-php/pull/43
+        // The substitute character is a process-wide setting, so the caller's value is restored.
+        $previousSubstitute = mb_substitute_character();
         mb_substitute_character(0xFFFD);
-        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
-
         try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
+            $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+        } finally {
+            mb_substitute_character($previousSubstitute);
         }
 
-        $textResults = [];
-        foreach ($decoded['translations'] as $textResult) {
-            $textField = $textResult['text'];
-            $detectedSourceLang = $textResult['detected_source_language'];
-            $billedCharacters = $textResult['billed_characters'];
-            $modelTypeUsed = $textResult['model_type_used'] ?? null;
-            $textResults[] = new TextResult($textField, $detectedSourceLang, $billedCharacters, $modelTypeUsed);
-        }
-        return is_array($texts) ? $textResults : $textResults[0];
+        $decoded = ParsingUtils::decodeJson($content);
+
+        return ParsingUtils::guard(function () use ($decoded, $texts) {
+            if (!is_array($decoded['translations'])) {
+                throw ParsingUtils::invalidContent('Expected a translations list in the response');
+            }
+            $textResults = [];
+            foreach ($decoded['translations'] as $textResult) {
+                $textField = $textResult['text'];
+                $detectedSourceLang = $textResult['detected_source_language'];
+                $billedCharacters = $textResult['billed_characters'];
+                $modelTypeUsed = $textResult['model_type_used'] ?? null;
+                $textResults[] = new TextResult($textField, $detectedSourceLang, $billedCharacters, $modelTypeUsed);
+            }
+            return is_array($texts) ? $textResults : $textResults[0];
+        });
     }
 
     /**
@@ -318,7 +324,8 @@ class Translator
 
         $this->applyExtraBodyParameters(
             $params,
-            $options[TranslateDocumentOptions::EXTRA_BODY_PARAMETERS] ?? null
+            $options[TranslateDocumentOptions::EXTRA_BODY_PARAMETERS] ?? null,
+            true
         );
 
         $response = $this->client->sendRequestWithBackoff(
@@ -332,15 +339,11 @@ class Translator
         $this->checkStatusCode($response);
 
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $json = ParsingUtils::decodeJson($content);
 
-        $documentId = $json['document_id'];
-        $documentKey = $json['document_key'];
-        return new DocumentHandle($documentId, $documentKey);
+        return ParsingUtils::guard(function () use ($json): DocumentHandle {
+            return new DocumentHandle($json['document_id'], $json['document_key']);
+        });
     }
 
     /**
@@ -821,15 +824,30 @@ class Translator
 
     /**
      * Adds extra body parameters to the params array. Extra parameters can override existing keys.
-     * Values are converted to strings.
+     * Values are kept as given, for a JSON body. For a form body, booleans become "true"/"false", arrays and
+     * objects their JSON encoding, and other values strings.
      */
-    private function applyExtraBodyParameters(array &$params, ?array $extraParams): void
+    private function applyExtraBodyParameters(array &$params, ?array $extraParams, bool $formBody = false): void
     {
         if ($extraParams !== null) {
             foreach ($extraParams as $key => $value) {
-                $params[$key] = (string)$value;
+                $params[$key] = $formBody ? self::toFormValue($value) : $value;
             }
         }
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private static function toFormValue($value): string
+    {
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value);
+        }
+        return (string)$value;
     }
 
     /**

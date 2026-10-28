@@ -56,7 +56,27 @@ echo $result->text; // Bonjour, le monde!
 ```
 
 `DeepLClient` accepts options as the second argument, see
-[Configuration](#configuration) for more information.
+[Configuration](#configuration) for more information. Whitespace around the
+key is removed; an empty key throws a `DeepLException`.
+
+#### Errors
+
+Every exception this library throws is a `DeepL\DeepLException`. Its
+subclasses tell the cause apart:
+
+- `AuthorizationException`: HTTP 401 or 403, the authentication key is invalid
+  or not authorized.
+- `NotFoundException`: HTTP 404 (`GlossaryNotFoundException` on glossary
+  requests).
+- `QuotaExceededException`: HTTP 456, the quota is exceeded.
+- `TooManyRequestsException`: HTTP 429 after all retries.
+- `DocumentNotReadyException`: HTTP 503 when downloading a document.
+- `ConnectionException`: no HTTP response, for example a DNS, connect or
+  timeout failure.
+- `InvalidContentException`: the response is not valid JSON or lacks a required
+  field.
+
+Any other status that is not 2xx throws a `DeepLException`.
 
 ### Translating text
 
@@ -178,6 +198,10 @@ using the following keys:
                                     language pair.
     - `'latency_optimized'`: use a translation model that minimizes response time, at the
                              cost of translation quality.
+-   `extra_body_parameters`: an associative array of additional parameters to send in
+    the request body, for example API parameters this library does not support yet.
+    They are added last and replace a parameter of the same name. Values may be any
+    JSON value (string, number, boolean, array or object) and are sent as given.
 
 The following options are only used if `tag_handling` is `'xml'`:
 
@@ -373,6 +397,9 @@ using the following keys:
     in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can
     be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in
     between.
+-   `extra_body_parameters`: same as in [Text translation options](#text-translation-options).
+    The document request is a multipart form, so booleans are sent as `'true'`/`'false'`,
+    arrays and objects as their JSON encoding, and other values as strings.
 
 The `uploadDocument` function also supports these options.
 
@@ -1289,7 +1316,7 @@ speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`).
 
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
 request was not processed: after HTTP 429, or when the connection failed before
-the request was sent. With a custom HTTP client, only HTTP 429 is retried. The
+the request was sent (DNS resolution failure or refused connection). With a custom HTTP client, only HTTP 429 is retried. The
 other functions are retried like all other requests.
 
 #### Retrieving usage analytics
@@ -1364,8 +1391,9 @@ $deeplClient = new \DeepL\DeepLClient('YOUR_AUTH_KEY', $options);
 
 Provide the options as an associative array with the following keys: 
 
-- `max_retries`: the maximum number of failed HTTP requests to retry, per
-    function call. By default, 5 retries are made. See
+- `max_retries`: the maximum number of retries after the first attempt of an
+    HTTP request, per function call. By default, 5 retries are made, so a
+    request is sent at most 6 times; `0` disables retries. See
     [Request retries](#request-retries).
 - `timeout`: the number of seconds used as connection timeout for each
     HTTP request retry. The default value is `10.0` (10 seconds).
@@ -1374,7 +1402,9 @@ Provide the options as an associative array with the following keys:
     the user account type (free or paid).
 - `headers`: extra HTTP headers attached to every HTTP request. By default, no
     extra headers are used. Note that Authorization and User-Agent headers are
-    added automatically but may be overridden by this option.
+    added automatically but may be overridden by this option. Header names are
+    compared case-insensitively, so `user-agent` replaces the default
+    `User-Agent`.
 - `proxy`: specify a proxy server URL.
 - `logger`: specify a [`PSR-3` compatible logger][PSR-3-logger] that the library
     should log messages to.
@@ -1401,7 +1431,7 @@ To enable logging, specify a [`PSR-3` compatible logger][PSR-3-logger] as the
 
 #### Anonymous platform information
 
-By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, you can opt-out when creating your `DeepLClient` object by setting the `send_platform_info` flag in the options like so:
+By default, we send some basic information about the platform the client library is running on with each request: the User-Agent header has the form `deepl-php/<version> (<os> <os-release> <os-version> <machine>) php/<version>`, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, you can opt-out when creating your `DeepLClient` object by setting the `send_platform_info` flag in the options like so:
 
 ```php
 $deeplClient = new \DeepL\DeepLClient('YOUR_AUTH_KEY', ['send_platform_info' => false]);
@@ -1434,9 +1464,10 @@ $deeplClient->getUsage(); // Or a translate call, etc
 
 ### Request retries
 
-Requests to the DeepL API that fail due to transient conditions (for example,
-network timeouts or high server-load) will be retried. The maximum number of
-retries can be configured when constructing the `DeepLClient` object using the
+Requests to the DeepL API that fail due to transient conditions will be
+retried: HTTP 429, any 5xx status, and network failures such as DNS
+resolution errors, refused connections and timeouts. The maximum number of
+retries after the first attempt can be configured when constructing the `DeepLClient` object using the
 `max_retries` option. The timeout for each request attempt may be controlled
 using the `timeout` option. An exponential-backoff strategy is used, so
 requests that fail multiple times will incur delays.

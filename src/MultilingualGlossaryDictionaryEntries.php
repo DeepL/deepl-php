@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Stores the entries of a dictionary, for a single source-target language pair.
  */
@@ -41,13 +39,11 @@ class MultilingualGlossaryDictionaryEntries
      */
     public static function parseJsonList(string $content): array
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $object = ParsingUtils::decodeJson($content);
 
-        return self::parseList($object['dictionaries']);
+        return ParsingUtils::guard(function () use ($object): array {
+            return self::parseList($object['dictionaries']);
+        });
     }
 
     /**

@@ -7,7 +7,6 @@
 namespace DeepL;
 
 use DateTime;
-use JsonException;
 
 /**
  * Information about a spoken terms collection, excluding the entries.
@@ -47,7 +46,10 @@ class SpokenTerms
      */
     public static function parseJson(string $content): SpokenTerms
     {
-        return self::parseObject(self::decode($content));
+        $object = self::decode($content);
+        return ParsingUtils::guard(function () use ($object): SpokenTerms {
+            return self::parseObject($object);
+        });
     }
 
     /**
@@ -56,11 +58,14 @@ class SpokenTerms
      */
     public static function parseListJson(string $content): array
     {
-        $result = [];
-        foreach (self::decode($content)['spoken_terms'] ?? [] as $object) {
-            $result[] = self::parseObject($object);
-        }
-        return $result;
+        $decoded = self::decode($content);
+        return ParsingUtils::guard(function () use ($decoded): array {
+            $result = [];
+            foreach ($decoded['spoken_terms'] ?? [] as $object) {
+                $result[] = self::parseObject($object);
+            }
+            return $result;
+        });
     }
 
     /**
@@ -68,11 +73,7 @@ class SpokenTerms
      */
     private static function decode(string $content): array
     {
-        try {
-            return json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        return ParsingUtils::decodeJson($content);
     }
 
     /**
@@ -83,7 +84,7 @@ class SpokenTerms
         return new SpokenTerms(
             $object['spoken_terms_id'],
             $object['name'] ?? '',
-            new DateTime($object['creation_time']),
+            ParsingUtils::parseTimestamp($object['creation_time'] ?? null),
             SpokenTermsList::parseList($object['term_lists'] ?? [])
         );
     }

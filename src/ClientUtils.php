@@ -30,10 +30,11 @@ class ClientUtils
 
     /**
      * Returns the Authorization and User-Agent headers, overridden by any custom headers in the options.
+     * Header names are compared case-insensitively, so a custom header replaces the default of the same name.
      */
     public static function buildHeaders(string $authKey, array $options): array
     {
-        return array_replace(
+        return self::mergeHeaders(
             [
                 'Authorization' => "DeepL-Auth-Key $authKey",
                 'User-Agent' => self::constructUserAgentString(
@@ -43,6 +44,22 @@ class ClientUtils
             ],
             $options[TranslatorOptions::HEADERS] ?? []
         );
+    }
+
+    /**
+     * Returns the default headers replaced by the given headers, comparing header names case-insensitively.
+     */
+    public static function mergeHeaders(array $defaults, array $overrides): array
+    {
+        foreach ($overrides as $name => $value) {
+            foreach (array_keys($defaults) as $existing) {
+                if (strcasecmp((string)$existing, (string)$name) === 0) {
+                    unset($defaults[$existing]);
+                }
+            }
+            $defaults[$name] = $value;
+        }
+        return $defaults;
     }
 
     /**
@@ -72,7 +89,7 @@ class ClientUtils
     ): void {
         list($statusCode, $content) = $response;
 
-        if (200 <= $statusCode && $statusCode < 400) {
+        if (200 <= $statusCode && $statusCode < 300) {
             return;
         }
 
@@ -90,31 +107,40 @@ class ClientUtils
             $message = ", $content";
         }
 
+        throw self::exceptionForStatus($statusCode, $message, $content, $inDocumentDownload, $usingGlossary);
+    }
+
+    private static function exceptionForStatus(
+        int $statusCode,
+        string $message,
+        $content,
+        bool $inDocumentDownload,
+        bool $usingGlossary
+    ): DeepLException {
         switch ($statusCode) {
+            case 401:
             case 403:
-                throw new AuthorizationException("Authorization failure, check authentication key$message");
+                return new AuthorizationException("Authorization failure, check authentication key$message");
             case 456:
-                throw new QuotaExceededException("Quota for this billing period has been exceeded$message");
+                return new QuotaExceededException("Quota for this billing period has been exceeded$message");
             case 404:
                 if ($usingGlossary) {
-                    throw new GlossaryNotFoundException("Glossary not found$message");
+                    return new GlossaryNotFoundException("Glossary not found$message");
                 }
-                throw new NotFoundException("Not found$message");
+                return new NotFoundException("Not found$message");
             case 400:
-                throw new DeepLException("Bad request$message");
+                return new DeepLException("Bad request$message");
             case 429:
-                throw new TooManyRequestsException(
+                return new TooManyRequestsException(
                     "Too many requests, DeepL servers are currently experiencing high load$message"
                 );
             case 503:
                 if ($inDocumentDownload) {
-                    throw new DocumentNotReadyException("Document not ready$message");
-                } else {
-                    throw new DeepLException("Service unavailable$message");
+                    return new DocumentNotReadyException("Document not ready$message");
                 }
-                break; // break required by phpcs although it is unnecessary
+                return new DeepLException("Service unavailable$message");
             default:
-                throw new DeepLException(
+                return new DeepLException(
                     "Unexpected status code: $statusCode $message, content: $content."
                 );
         }
@@ -126,11 +152,9 @@ class ClientUtils
         $libraryInfoStr = "deepl-php/$libraryVersion";
         try {
             if ($sendPlatformInfo) {
-                $platformStr = php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('v') . php_uname('m');
+                $platformStr = php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('v') . ' ' . php_uname('m');
                 $phpVersion = phpversion();
                 $libraryInfoStr .= " ($platformStr) php/$phpVersion";
-                $curlVer = curl_version()['version'];
-                $libraryInfoStr .= " curl/$curlVer";
             }
             if (!is_null($appInfo)) {
                 $libraryInfoStr .= " $appInfo->appName/$appInfo->appVersion";

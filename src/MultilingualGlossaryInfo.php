@@ -7,7 +7,6 @@
 namespace DeepL;
 
 use DateTime;
-use JsonException;
 
 /**
  * Information about a multilingual glossary, excluding the entry list.
@@ -52,13 +51,11 @@ class MultilingualGlossaryInfo
      */
     public static function parseJson(string $content): MultilingualGlossaryInfo
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $object = ParsingUtils::decodeJson($content);
 
-        return self::parseObject($object);
+        return ParsingUtils::guard(function () use ($object): MultilingualGlossaryInfo {
+            return self::parseObject($object);
+        });
     }
 
     /**
@@ -66,17 +63,15 @@ class MultilingualGlossaryInfo
      */
     public static function parseListJson(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $decoded = ParsingUtils::decodeJson($content);
 
-        $result = [];
-        foreach ($decoded['glossaries'] as $object) {
-            $result[] = self::parseObject($object);
-        }
-        return $result;
+        return ParsingUtils::guard(function () use ($decoded): array {
+            $result = [];
+            foreach ($decoded['glossaries'] as $object) {
+                $result[] = self::parseObject($object);
+            }
+            return $result;
+        });
     }
 
     /**
@@ -87,7 +82,7 @@ class MultilingualGlossaryInfo
         return new MultilingualGlossaryInfo(
             $object['glossary_id'],
             $object['name'] ?? null,
-            new DateTime($object['creation_time']) ?? null,
+            ParsingUtils::parseTimestamp($object['creation_time'] ?? null),
             MultilingualGlossaryDictionaryInfo::parseList($object['dictionaries'])
         );
     }
