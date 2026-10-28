@@ -510,12 +510,12 @@ class DeepLClient extends Translator
 
     /**
      * Validates and prepares HTTP parameters for rephrase requests.
-     * @param string|string[] $texts Text(s) to rephrase
      * @param string|null $targetLang Target language code, or null to use default
      * @param string|null $style Writing style option, or null if not specified
      * @param string|null $tone Tone option, or null if not specified
      * @return array Associative array of HTTP parameters
      * @throws DeepLException
+     * @deprecated Internal; will be made private in the next major version.
      */
     public function buildRephraseBodyParams(
         ?string $targetLang = null,

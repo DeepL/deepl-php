@@ -67,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (see https://developers.deepl.com/docs/resources/usage-limits).
   `translateDocument()` raises a silenced `E_USER_DEPRECATED` notice, once per
   process, when the option is set.
+- Deprecated `DeepLClient::buildRephraseBodyParams()` and the `GlossaryUtils`
+  class, which are internal. They keep working; in the next major version
+  `buildRephraseBodyParams()` becomes private and `GlossaryUtils` is removed
+  from the public API. Use `GlossaryEntries::fromTsv()`,
+  `GlossaryEntries::fromEntries()` and `GlossaryEntries::convertToTsv()`
+  instead of `GlossaryUtils`.
 
 ### Fixed
 - Fixed the README entry of the document minification option: it is named

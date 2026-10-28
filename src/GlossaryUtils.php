@@ -6,6 +6,11 @@
 
 namespace DeepL;
 
+/**
+ * @deprecated Internal; will be removed from the public API in the next major version. Use
+ * GlossaryEntries::fromTsv(), GlossaryEntries::fromEntries() (validates the entries) and
+ * GlossaryEntries::convertToTsv().
+ */
 class GlossaryUtils
 {
     /**
