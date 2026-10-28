@@ -363,7 +363,16 @@ using the following keys:
 -   `enable_watermark`: a `bool` value. If set to `true`, a "Translated by DeepL" watermark is
     added to the translated document. Only supported for `docx` and `pdf` output; for other
     output formats the API ignores it. If unset, the parameter is not sent.
--   `minification`: A `bool` value. If set to `true`, the library will try to minify a document before translating it through the API, sending a smaller document if the file contains a lot of media. This is currently only supported for `pptx` files. See also [Document minification](#document-minification). Note that this only works in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in between.
+-   `enable_document_minification`: a `bool` value. **Deprecated**, will be removed in the next
+    major version: the DeepL API accepts larger documents (see
+    [Usage limits](https://developers.deepl.com/docs/resources/usage-limits)). If set to `true`,
+    the library tries to minify a document before translating it through the API, sending a
+    smaller document if the file contains a lot of media. Supported for `pptx` and `docx` files;
+    other files are uploaded unchanged. Setting it raises an `E_USER_DEPRECATED` notice once per
+    process. See also [Document minification](#document-minification). Note that this only works
+    in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can
+    be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in
+    between.
 
 The `uploadDocument` function also supports these options.
 
@@ -372,11 +381,18 @@ for example `TranslateDocumentOptions::FORMALITY` is defined as `'formality'`.
 
 #### Document minification
 
+> **Deprecated:** document minification (`TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION`,
+> `DocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`)
+> will be removed in the next major version. The DeepL API accepts larger documents; see
+> [Usage limits](https://developers.deepl.com/docs/resources/usage-limits) for the current
+> file size limits.
+
 In some contexts, one can end up with large document files (e.g. PowerPoint presentations
-or Word files with many contributors, especially in a larger organization). However, the
-DeepL API enforces a limit of 30 MB for most of these files (see Usage Limits in the docs).
-In the case that most of this size comes from media included in the documents (e.g. images,
-videos, animations), document minification can help.
+or Word files with many contributors, especially in a larger organization). If such a file
+exceeds the API's file size limits (see
+[Usage limits](https://developers.deepl.com/docs/resources/usage-limits)) and most of its
+size comes from media included in the document (e.g. images, videos, animations), document
+minification can help.
 In this case, the library will create a temporary directory to extract the document into,
 replace the large media with tiny placeholders, create a minified document, translate that
 via the API, and re-insert the original media into the original file. Please note that this

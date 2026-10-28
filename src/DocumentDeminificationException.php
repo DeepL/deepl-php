@@ -10,6 +10,8 @@ namespace DeepL;
  * Exception thrown if an error occurs during document minification.
  * @see Translator::translateDocument()
  * @see DocumentMinifier::deminifyDocument
+ * @deprecated The DeepL API accepts larger documents, see https://developers.deepl.com/docs/resources/usage-limits.
+ * Will be removed in the next major version.
  */
 class DocumentDeminificationException extends DocumentTranslationException
 {

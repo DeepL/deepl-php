@@ -9,6 +9,7 @@ namespace DeepL\Offline;
 use DeepL\DocumentMinifier;
 use DeepL\Fixtures;
 use DeepL\TranslateDocumentOptions;
+use DeepL\Translator;
 
 class DocumentMinificationTest extends OfflineTestCase
 {
@@ -138,6 +139,43 @@ class DocumentMinificationTest extends OfflineTestCase
 
         $this->assertMultipart(['target_lang' => 'de', 'source_lang' => 'en'], 'example_zip_template.zip');
         $this->assertStringContainsString(file_get_contents($input), (string)$this->request()->getBody());
+    }
+
+    public function testMinificationOptionRaisesOneDeprecationPerProcess(): void
+    {
+        $deprecationFlag = new \ReflectionProperty(Translator::class, 'minificationDeprecationTriggered');
+        $deprecationFlag->setAccessible(true);
+        $deprecationFlag->setValue(null, false);
+        $translate = function (array $options): void {
+            $this->reply(['document_id' => 'doc1', 'document_key' => 'k']);
+            $this->reply(['document_id' => 'doc1', 'status' => 'done']);
+            $this->mock->append(new \GuzzleHttp\Psr7\Response(200, [], 'zip'));
+            $output = Fixtures::tempDir() . '/output.zip';
+            $this->makeTranslator()->translateDocument(
+                Fixtures::resourcePath('example_zip_template.zip'),
+                $output,
+                'en',
+                'de',
+                $options
+            );
+        };
+        $deprecations = [];
+        set_error_handler(function (int $errno, string $errstr) use (&$deprecations): bool {
+            $deprecations[] = $errstr;
+            return true;
+        }, E_USER_DEPRECATED);
+        try {
+            $translate([]);
+            $this->assertSame([], $deprecations);
+            $translate([TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION => true]);
+            $translate([TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION => true]);
+        } finally {
+            restore_error_handler();
+            $deprecationFlag->setValue(null, false);
+        }
+
+        $this->assertCount(1, $deprecations);
+        $this->assertStringContainsString('enable_document_minification option is deprecated', $deprecations[0]);
     }
 
     public function testChecksWhichFilesCanBeMinified(): void

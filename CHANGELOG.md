@@ -59,8 +59,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Pass the language code string instead, for example `'de'`, or use
   `getSourceLanguages()` / `getTargetLanguages()`. The constants keep working
   and will be removed in the next major version.
+- Deprecated document minification: the
+  `TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION` option and the
+  `DocumentMinifier`, `DocumentMinificationException` and
+  `DocumentDeminificationException` classes. They keep working and will be
+  removed in the next major version; the DeepL API accepts larger documents
+  (see https://developers.deepl.com/docs/resources/usage-limits).
+  `translateDocument()` raises a silenced `E_USER_DEPRECATED` notice, once per
+  process, when the option is set.
 
 ### Fixed
+- Fixed the README entry of the document minification option: it is named
+  `enable_document_minification` and supports `docx` as well as `pptx`. The
+  README no longer states a 30 MB document size limit.
 - Fixed `downloadDocument()` and `downloadTranslationMemoryExport()` returning
   without an error and without writing a file when the directory of the output
   file does not exist. They now throw a `DeepLException` before sending a

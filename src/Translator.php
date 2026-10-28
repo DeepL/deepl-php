@@ -33,6 +33,12 @@ class Translator
     protected $storageClient;
 
     /**
+     * Whether the enable_document_minification deprecation notice was already raised in this process.
+     * @var bool
+     */
+    private static $minificationDeprecationTriggered = false;
+
+    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -232,7 +238,17 @@ class Translator
             $minifier = null;
             // The media removed by minification can only be reinserted into a file of the input's format.
             $outputFormat = $options[TranslateDocumentOptions::OUTPUT_FORMAT] ?? null;
-            $willMinify = ($options[TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION] ?? false) &&
+            $enableMinification = $options[TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION] ?? false;
+            if ($enableMinification && !self::$minificationDeprecationTriggered) {
+                self::$minificationDeprecationTriggered = true;
+                @trigger_error(
+                    'The enable_document_minification option is deprecated and will be removed in the next major ' .
+                    'version. The DeepL API accepts larger documents; see ' .
+                    'https://developers.deepl.com/docs/resources/usage-limits.',
+                    E_USER_DEPRECATED
+                );
+            }
+            $willMinify = $enableMinification &&
                 DocumentMinifier::canMinifyFile($inputFile) &&
                 ($outputFormat === null ||
                     strcasecmp($outputFormat, pathinfo($inputFile, PATHINFO_EXTENSION)) === 0);

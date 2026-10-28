@@ -9,7 +9,7 @@ namespace DeepL;
 /**
  * Class that implements document minification: Stripping supported files like pptx and docx
  * of their media (images, videos, etc) before uploading them to the DeepL API to be translated.
- * This allows users to translate files that would usually hit the size limit for files.
+ * This reduces the size of the uploaded file.
  *
  * Please note the following:
  * 1. To use this class, you first need to check by calling `DocumentMinifier::canMinifyFile` if
@@ -55,6 +55,9 @@ namespace DeepL;
  *     // and deminification)
  *   }
  * }
+ *
+ * @deprecated The DeepL API accepts larger documents, see https://developers.deepl.com/docs/resources/usage-limits.
+ * Will be removed in the next major version.
  */
 class DocumentMinifier
 {

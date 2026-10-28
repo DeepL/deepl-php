@@ -41,7 +41,10 @@ final class TranslateDocumentOptions
      */
     public const ENABLE_WATERMARK = 'enable_watermark';
 
-    /** Set to `true` in order to use Document Minification for translation, if available. */
+    /** Set to `true` in order to use Document Minification for translation, if available.
+     *  @deprecated The DeepL API accepts larger documents, see
+     *  https://developers.deepl.com/docs/resources/usage-limits. Will be removed in the next major version.
+     */
     public const ENABLE_DOCUMENT_MINIFICATION = 'enable_document_minification';
 
     /** Set to string containing a style rule ID to use the style rule for translation.
