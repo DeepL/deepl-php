@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the `httpStatusCode` and `shouldRetry` properties to `DeepLException`.
+  `httpStatusCode` is the HTTP status of the failed response, or `null` if
+  there was none. `shouldRetry` is `true` for HTTP 429, any 5xx status and
+  transient connection failures; it was previously only set on
+  `ConnectionException`.
+- Added `Translator::isFreeAccountAuthKey()` (also available on `DeepLClient`),
+  replacing `isAuthKeyFreeAccount()`.
 - Added the `style_profile_id` option (`TranslateTextOptions::STYLE_PROFILE_ID`
   and `TranslateDocumentOptions::STYLE_PROFILE_ID`) to translate text and
   documents with a style profile, given as an ID string or a `StyleProfile`.
@@ -71,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Deprecated
+- Deprecated `Translator::isAuthKeyFreeAccount()`; use
+  `isFreeAccountAuthKey()` instead. It keeps working and raises a silenced
+  `E_USER_DEPRECATED` notice once per process.
 - Deprecated the `LanguageCode` constants (for example `LanguageCode::GERMAN`).
   Pass the language code string instead, for example `'de'`, or use
   `getSourceLanguages()` / `getTargetLanguages()`. The constants keep working

@@ -195,6 +195,13 @@ class TranslatorOptionsTest extends OfflineTestCase
         );
     }
 
+    public function testIsFreeAccountAuthKey(): void
+    {
+        $this->assertTrue(Translator::isFreeAccountAuthKey('abc:fx'));
+        $this->assertTrue(Translator::isFreeAccountAuthKey("abc:fx\n"));
+        $this->assertFalse(Translator::isFreeAccountAuthKey('abc'));
+    }
+
     public function testRecognizesFreeAccountKeys(): void
     {
         $this->assertTrue(Translator::isAuthKeyFreeAccount('abc:fx'));

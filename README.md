@@ -59,6 +59,11 @@ echo $result->text; // Bonjour, le monde!
 [Configuration](#configuration) for more information. Whitespace around the
 key is removed; an empty key throws a `DeepLException`.
 
+`DeepLClient::isFreeAccountAuthKey($authKey)` returns `true` if the key belongs
+to a DeepL API Free account (it ends with `:fx`). Without a `server_url` option,
+such a key is sent to `https://api-free.deepl.com`. It replaces the deprecated
+`isAuthKeyFreeAccount()`, which keeps working.
+
 #### Errors
 
 Every exception this library throws is a `DeepL\DeepLException`. Its
@@ -76,7 +81,18 @@ subclasses tell the cause apart:
 - `InvalidContentException`: the response is not valid JSON or lacks a required
   field.
 
-Any other status that is not 2xx throws a `DeepLException`.
+Any other status that is not 2xx throws a `DeepLException`. Two properties
+describe the failure: `httpStatusCode` is the HTTP status of the failed
+response, or `null` if there was none; `shouldRetry` is `true` if a retry could
+succeed (HTTP 429, any 5xx status and transient connection failures).
+
+```php
+try {
+    $deeplClient->translateText('Hello', null, 'de');
+} catch (\DeepL\DeepLException $error) {
+    echo $error->httpStatusCode, ' ', $error->shouldRetry ? 'retryable' : 'final';
+}
+```
 
 ### Translating text
 
@@ -1316,8 +1332,9 @@ speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`).
 
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
 request was not processed: after HTTP 429, or when the connection failed before
-the request was sent (DNS resolution failure or refused connection). With a custom HTTP client, only HTTP 429 is retried. The
-other functions are retried like all other requests.
+the request was sent (DNS resolution failure or refused connection). With a
+custom HTTP client, only HTTP 429 is retried. The other functions are retried
+like all other requests.
 
 #### Retrieving usage analytics
 

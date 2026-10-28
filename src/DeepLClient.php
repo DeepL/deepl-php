@@ -1500,6 +1500,9 @@ class DeepLClient extends Translator
             return;
         }
         $detail = $detailOverride ?? (is_string($content) ? $content : '');
-        throw new DeepLException("Error $description, HTTP status: $statusCode, content: $detail");
+        throw ClientUtils::withStatus(
+            new DeepLException("Error $description, HTTP status: $statusCode, content: $detail"),
+            $statusCode
+        );
     }
 }

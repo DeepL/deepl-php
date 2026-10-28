@@ -32,6 +32,8 @@ class ErrorsTest extends OfflineTestCase
             $this->fail("expected a $class");
         } catch (DeepLException $exception) {
             $this->assertSame($class, get_class($exception));
+            $this->assertSame($status, $exception->httpStatusCode);
+            $this->assertSame($status === 429 || $status >= 500, $exception->shouldRetry);
             $this->assertStringStartsWith($message, $exception->getMessage());
             $this->assertStringEndsWith(', message: the message, detail: the detail', $exception->getMessage());
         }
@@ -59,6 +61,8 @@ class ErrorsTest extends OfflineTestCase
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertSame(DeepLException::class, get_class($exception));
+            $this->assertSame(413, $exception->httpStatusCode);
+            $this->assertFalse($exception->shouldRetry);
             $this->assertSame(
                 'Unexpected status code: 413 , message: too big, content: {"message":"too big"}.',
                 $exception->getMessage()
@@ -105,6 +109,7 @@ class ErrorsTest extends OfflineTestCase
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertSame(DeepLException::class, get_class($exception));
+            $this->assertSame(302, $exception->httpStatusCode);
             $this->assertStringStartsWith('Unexpected status code: 302', $exception->getMessage());
         }
     }

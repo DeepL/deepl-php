@@ -37,6 +37,12 @@ class Translator
     private static $minificationDeprecationTriggered = false;
 
     /**
+     * Whether the isAuthKeyFreeAccount() deprecation notice was already raised in this process.
+     * @var bool
+     */
+    private static $isAuthKeyFreeAccountDeprecationTriggered = false;
+
+    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -55,7 +61,7 @@ class Translator
 
         $serverUrl = ClientUtils::resolveServerUrl(
             $options,
-            self::isAuthKeyFreeAccount($authKey) ? TranslatorOptions::DEFAULT_SERVER_URL_FREE
+            self::isFreeAccountAuthKey($authKey) ? TranslatorOptions::DEFAULT_SERVER_URL_FREE
                 : TranslatorOptions::DEFAULT_SERVER_URL
         );
 
@@ -865,8 +871,27 @@ class Translator
      * @param string $authKey The authentication key to check.
      * @return bool True if the key is associated with a free account, otherwise false.
      */
+    public static function isFreeAccountAuthKey(string $authKey): bool
+    {
+        return substr(trim($authKey), -3) === ':fx';
+    }
+
+    /**
+     * Returns true if the specified DeepL Authentication Key is associated with a free account,
+     * otherwise false.
+     * @param string $authKey The authentication key to check.
+     * @return bool True if the key is associated with a free account, otherwise false.
+     * @deprecated Use isFreeAccountAuthKey() instead.
+     */
     public static function isAuthKeyFreeAccount(string $authKey): bool
     {
+        if (!self::$isAuthKeyFreeAccountDeprecationTriggered) {
+            self::$isAuthKeyFreeAccountDeprecationTriggered = true;
+            @trigger_error(
+                'Translator::isAuthKeyFreeAccount() is deprecated, use Translator::isFreeAccountAuthKey() instead.',
+                E_USER_DEPRECATED
+            );
+        }
         return substr($authKey, -3) === ':fx';
     }
 }

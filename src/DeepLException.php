@@ -11,4 +11,15 @@ namespace DeepL;
  */
 class DeepLException extends \Exception
 {
+    /**
+     * @var int|null HTTP status code of the failed response, or null if the error did not come from an HTTP
+     * response.
+     */
+    public $httpStatusCode = null;
+
+    /**
+     * @var bool True if the error is due to a transient condition and a retry could succeed: HTTP 429, any 5xx
+     * status, and transient connection failures. False otherwise.
+     */
+    public $shouldRetry = false;
 }

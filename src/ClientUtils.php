@@ -107,7 +107,23 @@ class ClientUtils
             $message = ", $content";
         }
 
-        throw self::exceptionForStatus($statusCode, $message, $content, $inDocumentDownload, $usingGlossary);
+        throw self::withStatus(
+            self::exceptionForStatus($statusCode, $message, $content, $inDocumentDownload, $usingGlossary),
+            $statusCode
+        );
+    }
+
+    /**
+     * Sets the HTTP status code of the exception, and whether a retry could succeed (HTTP 429 or 5xx).
+     * @template T of DeepLException
+     * @param T $exception
+     * @return T
+     */
+    public static function withStatus(DeepLException $exception, int $statusCode): DeepLException
+    {
+        $exception->httpStatusCode = $statusCode;
+        $exception->shouldRetry = $statusCode === 429 || $statusCode >= 500;
+        return $exception;
     }
 
     private static function exceptionForStatus(
