@@ -14,6 +14,7 @@ use DeepL\Fixtures;
 use DeepL\GlossaryInfo;
 use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
+use DeepL\TextResult;
 use DeepL\TranslateDocumentOptions;
 use DeepL\TranslationMemoryInfo;
 use DeepL\TranslatorOptions;
@@ -98,6 +99,10 @@ class TranslateDocumentTest extends OfflineTestCase
             'extra body parameters' => [
                 [TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => ['custom' => 1, 'target_lang' => 'fr']],
                 ['custom' => '1', 'target_lang' => 'fr'],
+            ],
+            'extra body parameter object with __toString sent as its string' => [
+                [TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => ['context' => new TextResult('ctx', 'EN', 3)]],
+                ['context' => 'ctx'],
             ],
             'extra body parameters of other JSON types' => [
                 [TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => [

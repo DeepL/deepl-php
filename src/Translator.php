@@ -831,13 +831,19 @@ class Translator
     /**
      * Adds extra body parameters to the params array. Extra parameters can override existing keys.
      * Values are kept as given, for a JSON body. For a form body, booleans become "true"/"false", arrays and
-     * objects their JSON encoding, and other values strings.
+     * objects their JSON encoding, and other values strings. Objects with __toString that are not
+     * JsonSerializable are sent as their string in both cases.
      */
     private function applyExtraBodyParameters(array &$params, ?array $extraParams, bool $formBody = false): void
     {
         if ($extraParams !== null) {
             foreach ($extraParams as $key => $value) {
-                $params[$key] = $formBody ? self::toFormValue($value) : $value;
+                if (self::isStringableObject($value)) {
+                    // Objects with __toString were sent as their string before values kept their JSON type
+                    $params[$key] = (string)$value;
+                } else {
+                    $params[$key] = $formBody ? self::toFormValue($value) : $value;
+                }
             }
         }
     }
@@ -845,13 +851,28 @@ class Translator
     /**
      * @param mixed $value
      */
+    private static function isStringableObject($value): bool
+    {
+        return is_object($value) && method_exists($value, '__toString') && !($value instanceof \JsonSerializable);
+    }
+
+    /**
+     * @param mixed $value
+     * @throws DeepLException
+     */
     private static function toFormValue($value): string
     {
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }
         if (is_array($value) || is_object($value)) {
-            return json_encode($value);
+            $encoded = json_encode($value);
+            if ($encoded === false) {
+                throw new DeepLException(
+                    'Failed to JSON-encode an extra_body_parameters value: ' . json_last_error_msg()
+                );
+            }
+            return $encoded;
         }
         return (string)$value;
     }

@@ -68,7 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (text translation): booleans, numbers, arrays and objects keep their JSON
   type. Previously every value was converted to a string, so `true` was sent as
   `"1"` and arrays failed. In document uploads (a multipart form), booleans are
-  now sent as `true`/`false` and arrays and objects as JSON.
+  now sent as `true`/`false` and arrays and objects as JSON. Objects with
+  `__toString()` that are not `JsonSerializable` are still sent as their
+  string, and a value that cannot be JSON-encoded throws a `DeepLException`.
 - Target languages `en` and `pt` are no longer rejected client-side; the API
   translates them to `en-US` and `pt-PT` respectively.
 - `getSourceLanguages()`, `getTargetLanguages()`, and `getGlossaryLanguages()`

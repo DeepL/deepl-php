@@ -185,6 +185,10 @@ class TranslateTextTest extends OfflineTestCase
                 ['target_lang' => 'fr', 'source_lang' => 'en', 'show_billed_characters' => true,
                     'text' => ['Hello'], 'new_param' => 7],
             ],
+            'extra body parameter object with __toString sent as its string' => [
+                [TranslateTextOptions::EXTRA_BODY_PARAMETERS => ['context' => new TextResult('ctx', 'EN', 3)]],
+                $base + $tail + ['context' => 'ctx'],
+            ],
             'extra body parameters keep their JSON type' => [
                 [TranslateTextOptions::EXTRA_BODY_PARAMETERS => [
                     'flag_on' => true, 'flag_off' => false, 'list' => ['a', 'b'], 'object' => ['k' => 1.5],
