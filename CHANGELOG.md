@@ -103,6 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of `GlossaryUtils`.
 
 ### Fixed
+- Fixed `translateText()` raising `InvalidContentException` when a translation
+  has no `billed_characters`; `TextResult::$billedCharacters` is now `null` in
+  that case.
 - Fixed HTTP 401 raising a generic `DeepLException`; it now raises
   `AuthorizationException`, like 403.
 - Fixed 3xx responses being parsed as successful results; only 2xx statuses

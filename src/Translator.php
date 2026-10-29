@@ -212,7 +212,7 @@ class Translator
             foreach ($decoded['translations'] as $textResult) {
                 $textField = $textResult['text'];
                 $detectedSourceLang = $textResult['detected_source_language'];
-                $billedCharacters = $textResult['billed_characters'];
+                $billedCharacters = $textResult['billed_characters'] ?? null;
                 $modelTypeUsed = $textResult['model_type_used'] ?? null;
                 $textResults[] = new TextResult($textField, $detectedSourceLang, $billedCharacters, $modelTypeUsed);
             }

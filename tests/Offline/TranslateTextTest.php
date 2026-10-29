@@ -304,6 +304,16 @@ class TranslateTextTest extends OfflineTestCase
         $this->assertSame('quality_optimized', $result->modelTypeUsed);
     }
 
+    public function testParsesMissingBilledCharactersAsNull(): void
+    {
+        $this->reply(['translations' => [['text' => 'Hallo', 'detected_source_language' => 'EN']]]);
+
+        $result = $this->makeTranslator()->translateText('Hello', null, 'de');
+
+        $this->assertNull($result->billedCharacters);
+        $this->assertSame('Hallo', $result->text);
+    }
+
     public function testParsesMissingModelTypeAsNull(): void
     {
         $this->reply(self::REPLY);

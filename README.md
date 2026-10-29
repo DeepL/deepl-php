@@ -118,7 +118,8 @@ below.
 corresponding to your input text(s). `TextResult` has the following properties:
 - `text` is the translated text,
 - `detectedSourceLang` is the detected source language code,
-- `billedCharacters` is the number of characters billed for the text.
+- `billedCharacters` is the number of characters billed for the text, or `null`
+  if the response does not include it.
 - `modelTypeUsed` indicates the translation model used, but is `null` unless the
   `model_type` option is specified.
 

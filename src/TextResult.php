@@ -23,7 +23,7 @@ class TextResult
     public $detectedSourceLang;
 
     /**
-     * @var int Number of characters billed for this text.
+     * @var int|null Number of characters billed for this text, or null if the response did not include it.
      */
     public $billedCharacters;
 
@@ -39,7 +39,7 @@ class TextResult
     public function __construct(
         string $text,
         string $detectedSourceLang,
-        int $billedCharacters,
+        ?int $billedCharacters,
         ?string $modelTypeUsed = null
     ) {
         $this->text = $text;
