@@ -11,7 +11,7 @@ namespace DeepL;
  */
 class CustomInstruction
 {
-    /** @var string|null Unique ID assigned to the custom instruction. */
+    /** @var string Unique ID assigned to the custom instruction, always set on instructions returned by the API. */
     public $id;
 
     /** @var string Label for the custom instruction. */
@@ -36,16 +36,19 @@ class CustomInstruction
     }
 
     /**
-     * @throws InvalidContentException
+     * @throws InvalidContentException If a required field (id, label, prompt) is missing or invalid.
      */
     public static function fromJson(array $json): CustomInstruction
     {
         return ParsingUtils::guard(function () use ($json): CustomInstruction {
+            if (!is_string($json['id'] ?? null)) {
+                throw ParsingUtils::invalidContent('Expected a custom instruction id in the response');
+            }
             return new CustomInstruction(
                 $json['label'],
                 $json['prompt'],
                 $json['source_language'] ?? null,
-                $json['id'] ?? null
+                $json['id']
             );
         });
     }

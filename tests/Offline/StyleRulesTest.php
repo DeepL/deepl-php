@@ -204,6 +204,7 @@ class StyleRulesTest extends OfflineTestCase
         $getInstruction = function (DeepLClient $c) {
             $c->getStyleRuleCustomInstruction('sid', 'i1');
         };
+        $withoutId = array_diff_key(self::INSTRUCTION, ['id' => 1]);
         return [
             'style rule body is not an object' => [$getRule, '"sid"'],
             'created style rule body is null' => [function (DeepLClient $c) {
@@ -222,6 +223,12 @@ class StyleRulesTest extends OfflineTestCase
             'updated instruction body is not an object' => [function (DeepLClient $c) {
                 $c->updateStyleRuleCustomInstruction('sid', 'i1', 'L', 'P');
             }, '"i1"'],
+            'instruction without id' => [$getInstruction, $withoutId],
+            'instruction id is not a string' => [$getInstruction, ['id' => 7] + self::INSTRUCTION],
+            'style rule instruction without id' => [
+                $getRule,
+                ['custom_instructions' => [$withoutId]] + self::STYLE_RULE,
+            ],
         ];
     }
 

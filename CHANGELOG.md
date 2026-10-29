@@ -279,6 +279,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the style rule and custom instruction methods raising a `TypeError`
   when the response body is valid JSON but not an object (for example a string
   or `null`). They now raise `InvalidContentException`.
+- Fixed `CustomInstruction::$id` being `null` when a returned custom instruction
+  has no `id`, both from the custom instruction methods and in
+  `StyleRuleInfo::$customInstructions`. A missing or non-string `id` now raises
+  `InvalidContentException`.
 
 ## [1.20.0] - 2026-08-11
 ### Added
