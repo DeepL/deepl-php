@@ -535,16 +535,19 @@ class DeepLClient extends Translator
     }
 
     /**
-     * Checks every term like a glossary term before the terms are joined with newlines: a term
-     * containing a newline would otherwise be sent as several terms.
+     * Trims every term and checks it like a glossary term before the terms are joined with newlines:
+     * a term containing a newline would otherwise be sent as several terms.
      * @throws DeepLException
      */
     private static function spokenTermsEntriesToObject(SpokenTermsEntries $entries): array
     {
+        $terms = [];
         foreach ($entries->entries as $term) {
-            GlossaryUtils::validateGlossaryTerm($term);
+            $trimmed = trim($term);
+            GlossaryUtils::validateGlossaryTerm($trimmed);
+            $terms[] = $trimmed;
         }
-        return $entries->toObject();
+        return (new SpokenTermsEntries($entries->lang, $terms))->toObject();
     }
 
     /**

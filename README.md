@@ -750,9 +750,9 @@ names. Each collection has a user-specified name, a uniquely-assigned ID and
 one term list per language. The `DeepLClient` methods below accept either the
 spoken terms ID or a `SpokenTerms` object. Terms are passed and returned as
 arrays of strings. `createSpokenTerms()`, `updateSpokenTerms()` and
-`replaceSpokenTermsList()` check each term like a glossary term before sending
-anything: a term that is blank or contains a control character such as a newline
-throws a `DeepLException`.
+`replaceSpokenTermsList()` trim each term and check it like a glossary term
+before sending anything: a term that is blank or contains a control character
+such as a newline throws a `DeepLException`. The trimmed terms are sent.
 
 `updateSpokenTerms()` takes its changes as an options array with the keys of
 `SpokenTermsOptions`: `NAME` (new name) and `TERM_LISTS` (an array of

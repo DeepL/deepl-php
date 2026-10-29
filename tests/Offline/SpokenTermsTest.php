@@ -148,6 +148,24 @@ class SpokenTermsTest extends OfflineTestCase
         $this->assertSame(['lang' => 'en', 'entries' => 'a', 'name' => 'Override', 'flag' => true], $this->jsonBody(2));
     }
 
+    public function testSendsTrimmedTerms(): void
+    {
+        $this->reply(self::INFO, 201);
+        $this->reply(self::INFO);
+        $this->reply(['lang' => 'en', 'entry_count' => 2]);
+        $client = $this->makeDeepLClient();
+        $entries = new SpokenTermsEntries('en', [' DeepL ', "webhook\t"]);
+
+        $client->createSpokenTerms('My terms', [$entries]);
+        $client->updateSpokenTerms('sid', [SpokenTermsOptions::TERM_LISTS => [$entries]]);
+        $client->replaceSpokenTermsList('sid', $entries);
+
+        $expected = ['lang' => 'en', 'entries' => "DeepL\nwebhook"];
+        $this->assertSame([$expected], $this->jsonBody(0)['term_lists']);
+        $this->assertSame([$expected], $this->jsonBody(1)['term_lists']);
+        $this->assertSame($expected, $this->jsonBody(2));
+    }
+
     /**
      * @dataProvider malformedResponses
      */
