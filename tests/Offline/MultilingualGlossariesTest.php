@@ -95,6 +95,15 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc', 5);
     }
 
+    public function testSendsAnEmptyObjectWhenNoUpdateFieldIsSet(): void
+    {
+        $this->reply(self::GLOSSARY);
+
+        $this->makeDeepLClient()->updateMultilingualGlossary('gid', null, null);
+
+        $this->assertSame('{}', (string)$this->request()->getBody());
+    }
+
     public function testThrowsWhenTheNameIsEmpty(): void
     {
         $client = $this->makeDeepLClient();

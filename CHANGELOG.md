@@ -254,6 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   multilingual glossary methods, and the source and target language not being
   URL-encoded in the query of `getMultilingualGlossaryEntries()` and
   `deleteMultilingualGlossaryDictionary()`.
+- Fixed `updateMultilingualGlossary()` sending `[]` instead of `{}` as the
+  request body when neither a name nor dictionaries are given.
 
 ## [1.20.0] - 2026-08-11
 ### Added

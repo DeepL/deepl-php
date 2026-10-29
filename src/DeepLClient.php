@@ -221,7 +221,7 @@ class DeepLClient extends Translator
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
             "/v3/glossaries/" . rawurlencode($glossaryId),
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => json_encode((object)$params)]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
