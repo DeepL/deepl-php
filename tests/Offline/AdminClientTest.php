@@ -290,6 +290,23 @@ class AdminClientTest extends OfflineTestCase
         $this->assertSame(['key_id' => self::KEY_ID, 'characters' => 2000, 'minutes' => 5], $this->jsonBody(3));
     }
 
+    public function testReturnsNullForOmittedLabelsAndUsageLimits(): void
+    {
+        $this->reply([['key_id' => self::KEY_ID, 'is_deactivated' => false]]);
+        $this->reply(['usage_report' => [
+            'total_usage' => [],
+            'key_usages' => [['api_key' => 'dc88****3a2c', 'usage' => []]],
+        ]]);
+        $client = $this->makeAdminClient();
+
+        $keys = $client->listDeveloperKeys();
+        $report = $client->getUsageAnalytics('2025-09-29', '2025-10-01');
+
+        $this->assertNull($keys[0]->label);
+        $this->assertNull($keys[0]->usageLimits);
+        $this->assertNull($report->keyUsages[0]->apiKeyLabel);
+    }
+
     public function testRetriesKeyCreationAfterTooManyRequests(): void
     {
         $this->useFakeClock();
@@ -555,7 +572,7 @@ class AdminClientTest extends OfflineTestCase
         $this->assertCount(1, $keys);
         $this->assertSame('kept', $keys[0]->label);
         $this->assertNull($keys[0]->creationTime);
-        $this->assertNull($keys[0]->usageLimits->characters);
+        $this->assertNull($keys[0]->usageLimits);
         $this->assertSame(0, $report->totalUsage->totalCharacters);
         $this->assertSame(7, $report->totalUsage->textTranslationCharacters);
         $this->assertNull($report->startDate);

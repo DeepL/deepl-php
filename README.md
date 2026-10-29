@@ -1405,6 +1405,9 @@ trailing options array with `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`. The
 extra body parameters are an associative array added to the JSON request body
 after the library's fields, replacing fields with the same key.
 
+`DeveloperKey::$label`, `DeveloperKey::$usageLimits` and `KeyUsage::$apiKeyLabel`
+are `null` when the API response does not include them.
+
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
 request was not processed: after HTTP 429, or when the connection failed before
 the request was sent (DNS resolution failure or refused connection). With a

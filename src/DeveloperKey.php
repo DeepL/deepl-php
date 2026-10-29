@@ -17,7 +17,7 @@ class DeveloperKey
     /** @var string Unique ID of the key. */
     public $keyId;
 
-    /** @var string Label assigned to the key. */
+    /** @var string|null Label assigned to the key, or null if the response does not include it. */
     public $label;
 
     /** @var DateTime|null Timestamp when the key was created. */
@@ -29,16 +29,16 @@ class DeveloperKey
     /** @var bool True if the key is deactivated. */
     public $isDeactivated;
 
-    /** @var DeveloperKeyUsageLimits Usage limits configured for the key. */
+    /** @var DeveloperKeyUsageLimits|null Usage limits configured for the key, or null if the response omits them. */
     public $usageLimits;
 
     public function __construct(
         string $keyId,
-        string $label,
+        ?string $label,
         ?DateTime $creationTime,
         ?DateTime $deactivatedTime,
         bool $isDeactivated,
-        DeveloperKeyUsageLimits $usageLimits
+        ?DeveloperKeyUsageLimits $usageLimits
     ) {
         $this->keyId = $keyId;
         $this->label = $label;
@@ -52,12 +52,21 @@ class DeveloperKey
     {
         return new DeveloperKey(
             is_string($json['key_id'] ?? null) ? $json['key_id'] : '',
-            is_string($json['label'] ?? null) ? $json['label'] : '',
+            is_string($json['label'] ?? null) ? $json['label'] : null,
             ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null, new DateTimeZone('UTC')),
             ParsingUtils::parseOptionalTimestamp($json['deactivated_time'] ?? null, new DateTimeZone('UTC')),
             ($json['is_deactivated'] ?? null) === true,
-            DeveloperKeyUsageLimits::fromJson(ParsingUtils::objectOrNull($json['usage_limits'] ?? null))
+            self::parseUsageLimits($json['usage_limits'] ?? null)
         );
+    }
+
+    /**
+     * @param mixed $usageLimits
+     */
+    private static function parseUsageLimits($usageLimits): ?DeveloperKeyUsageLimits
+    {
+        $json = ParsingUtils::objectOrNull($usageLimits);
+        return $json === null ? null : DeveloperKeyUsageLimits::fromJson($json);
     }
 
     public function __toString(): string

@@ -17,7 +17,7 @@ class KeyUsage
     /** @var string Masked API key. */
     public $apiKey;
 
-    /** @var string Label of the API key. */
+    /** @var string|null Label of the API key, or null if the response does not include it. */
     public $apiKeyLabel;
 
     /** @var AdminUsageBreakdown Usage of the API key. */
@@ -28,7 +28,7 @@ class KeyUsage
 
     public function __construct(
         string $apiKey,
-        string $apiKeyLabel,
+        ?string $apiKeyLabel,
         AdminUsageBreakdown $usage,
         ?DateTime $usageDate = null
     ) {
@@ -42,7 +42,7 @@ class KeyUsage
     {
         return new KeyUsage(
             is_string($json['api_key'] ?? null) ? $json['api_key'] : '',
-            is_string($json['api_key_label'] ?? null) ? $json['api_key_label'] : '',
+            is_string($json['api_key_label'] ?? null) ? $json['api_key_label'] : null,
             AdminUsageBreakdown::fromJson(ParsingUtils::objectOrNull($json['usage'] ?? null)),
             ParsingUtils::parseOptionalTimestamp($json['usage_date'] ?? null, new DateTimeZone('UTC'))
         );

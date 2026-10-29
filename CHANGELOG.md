@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`), added last to the JSON body.
   `setDeveloperKeyUsageLimits()` changes only the limits given with the
   `DeveloperKeyUsageLimitsOptions` keys, including speech-to-speech.
+  `DeveloperKey::$label`, `DeveloperKey::$usageLimits` and
+  `KeyUsage::$apiKeyLabel` are `null` when the response omits them.
   New public types: `DeveloperKey`, `DeveloperKeyUsageLimits`,
   `DeveloperKeyUsageLimitsOptions`, `CreateDeveloperKeyOptions`,
   `DeveloperKeyOptions`, `AdminUsageReport`, `AdminUsageBreakdown`,
