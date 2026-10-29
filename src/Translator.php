@@ -244,7 +244,7 @@ class Translator
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
      * @throws DocumentTranslationException If a file already exists at the output file path, or if any error occurs
-     * during document upload, translation or download. The `documentHandle` property of the exception, if not null,
+     * during document upload, translation or download. The `handle` property of the exception, if not null,
      * may be used to recover the document ID and key of an in-progress translation. This includes the expiry of the
      * TranslateDocumentOptions::TIMEOUT option.
      * @see \DeepL\TranslateDocumentOptions

@@ -366,10 +366,10 @@ try {
     );
 } catch (\DeepL\DocumentTranslationException $error) {
     // If the error occurs after the document was already uploaded,
-    // documentHandle will contain the document ID and key
+    // handle will contain the document ID and key
     echo 'Error occurred while translating document: ' . ($error->getMessage() ?? 'unknown error');
-    if ($error->documentHandle) {
-        $handle = $error->documentHandle;
+    if ($error->handle) {
+        $handle = $error->handle;
         echo "Document ID: {$handle->documentId}, document key: {$handle->documentKey}";
     } else {
         echo 'Unknown document handle';
@@ -443,7 +443,7 @@ using the following keys:
     the input file path is sent.
 -   `timeout`: the maximum time in seconds (`float`) that `translateDocument()` waits for the
     translation to complete after the upload. When it expires, `translateDocument()` throws a
-    `DocumentTranslationException` whose `documentHandle` can be used to resume. If
+    `DocumentTranslationException` whose `handle` can be used to resume. If
     unspecified, it waits without limit. Not sent to the API.
 -   `output_format`: a string containing the file extension of the desired format of the
     translated document, for example `'docx'`. If unspecified, the translated document is in
