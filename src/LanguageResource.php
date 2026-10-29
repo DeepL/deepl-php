@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Information about a single DeepL resource and the features it supports, as
  * returned by {@see DeepLClient::getLanguageResources()}.
@@ -52,32 +50,33 @@ class LanguageResource
         return isset($this->features[$feature]);
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or has the wrong type.
+     */
     public static function fromJson(array $json): LanguageResource
     {
+        if (!is_string($json['name'] ?? null)) {
+            throw ParsingUtils::invalidContent('Expected a string name in each resource of the response');
+        }
         $features = [];
         if (isset($json['features']) && is_array($json['features'])) {
             foreach ($json['features'] as $value) {
-                $features[$value['name']] = ResourceFeature::fromJson($value);
+                if (!is_array($value)) {
+                    throw ParsingUtils::invalidContent("Expected objects in the features of resource {$json['name']}");
+                }
+                $feature = ResourceFeature::fromJson($value);
+                $features[$feature->name] = $feature;
             }
         }
         return new LanguageResource($json['name'], $features);
     }
 
     /**
-     * @throws InvalidContentException
+     * @return LanguageResource[]
+     * @throws InvalidContentException If the content is not a JSON list of valid resources.
      */
     public static function parseList(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-
-        $result = [];
-        foreach ($decoded as $object) {
-            $result[] = self::fromJson($object);
-        }
-        return $result;
+        return array_map([self::class, 'fromJson'], ParsingUtils::decodeObjectList($content));
     }
 }

@@ -242,6 +242,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `ResourceFeature::$needsSourceSupport` and `$needsTargetSupport`
   (from `getLanguageResources()`) being `null` when the API omits the flag;
   they are now `false`, as the API defines.
+- Fixed malformed responses of `getSourceLanguages()`, `getTargetLanguages()`,
+  `getGlossaryLanguages()`, `getLanguagesForResource()` and
+  `getLanguageResources()` raising PHP warnings or a `TypeError` (for example a
+  missing `lang`, `name` or `status`, a feature that is not an object, or a
+  body that is not a list), or silently treating a missing `usable_as_source`
+  or `usable_as_target` as `false`. They now raise `InvalidContentException`.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
   which said these codes may only be used as source languages.
 

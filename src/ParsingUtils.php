@@ -36,6 +36,25 @@ class ParsingUtils
         return $decoded;
     }
 
+    /**
+     * Decodes the given JSON content to a list of JSON objects.
+     * @return array[] The decoded objects.
+     * @throws InvalidContentException If the content is not valid JSON or not a JSON list of objects.
+     */
+    public static function decodeObjectList(string $content): array
+    {
+        $decoded = self::decodeJson($content);
+        if ($decoded !== array_values($decoded)) {
+            throw self::invalidContent('Expected a JSON list in the response');
+        }
+        foreach ($decoded as $element) {
+            if (!is_array($element)) {
+                throw self::invalidContent('Expected a list of JSON objects in the response');
+            }
+        }
+        return $decoded;
+    }
+
     public static function invalidContent(string $message, ?\Throwable $previous = null): InvalidContentException
     {
         return new InvalidContentException(new JsonException($message, 0, $previous));

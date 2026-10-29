@@ -43,8 +43,14 @@ class LanguageFeature
         $this->status = $status;
     }
 
+    /**
+     * @throws InvalidContentException If the status is missing or not a string.
+     */
     public static function fromJson(array $json): LanguageFeature
     {
+        if (!is_string($json['status'] ?? null)) {
+            throw ParsingUtils::invalidContent('Expected a string status in each language feature of the response');
+        }
         return new LanguageFeature($json['status']);
     }
 }

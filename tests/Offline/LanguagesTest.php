@@ -8,6 +8,7 @@ namespace DeepL\Offline;
 
 use DeepL\DeepLException;
 use DeepL\GetLanguagesForResourceOptions;
+use DeepL\InvalidContentException;
 use DeepL\GlossaryLanguagePair;
 use DeepL\LanguageFeature;
 use DeepL\LanguageInclude;
@@ -188,5 +189,70 @@ class LanguagesTest extends OfflineTestCase
         $this->assertFalse($resources[0]->features['formality']->needsSourceSupport);
         $this->assertTrue($resources[0]->features['formality']->needsTargetSupport);
         $this->assertSame([], $resources[1]->features);
+    }
+
+    /**
+     * @dataProvider provideMalformedLanguages
+     */
+    public function testThrowsInvalidContentForMalformedLanguages(string $body): void
+    {
+        $this->reply($body);
+        $this->expectException(InvalidContentException::class);
+
+        $this->makeDeepLClient()->getLanguagesForResource(LanguageResourceName::TRANSLATE_TEXT);
+    }
+
+    /**
+     * @dataProvider provideMalformedLanguages
+     */
+    public function testThrowsInvalidContentForMalformedSourceLanguages(string $body): void
+    {
+        $this->reply($body);
+        $this->expectException(InvalidContentException::class);
+
+        $this->makeTranslator()->getSourceLanguages();
+    }
+
+    public function provideMalformedLanguages(): array
+    {
+        $valid = self::LANGUAGES[2];
+        $without = function (string $field) use ($valid): string {
+            unset($valid[$field]);
+            return json_encode([$valid]);
+        };
+        return [
+            'object body' => ['{"lang":"de"}'],
+            'scalar body' => ['"de"'],
+            'non-object language' => ['["de"]'],
+            'missing lang' => [$without('lang')],
+            'missing name' => [$without('name')],
+            'missing status' => [$without('status')],
+            'missing usable_as_source' => [$without('usable_as_source')],
+            'missing usable_as_target' => [$without('usable_as_target')],
+            'non-object feature' => [json_encode([array_merge($valid, ['features' => ['formality' => 'stable']])])],
+            'feature without status' => [json_encode([array_merge($valid, ['features' => ['formality' => []]])])],
+        ];
+    }
+
+    /**
+     * @dataProvider provideMalformedLanguageResources
+     */
+    public function testThrowsInvalidContentForMalformedLanguageResources(string $body): void
+    {
+        $this->reply($body);
+        $this->expectException(InvalidContentException::class);
+
+        $this->makeDeepLClient()->getLanguageResources();
+    }
+
+    public function provideMalformedLanguageResources(): array
+    {
+        return [
+            'object body' => ['{"name":"glossary"}'],
+            'non-object resource' => ['["glossary"]'],
+            'missing name' => ['[{"features":[]}]'],
+            'non-object feature' => ['[{"name":"glossary","features":["formality"]}]'],
+            'feature without name' => ['[{"name":"glossary","features":[{"needs_target_support":true}]}]'],
+        ];
     }
 }

@@ -31,8 +31,14 @@ class ResourceFeature
         $this->needsTargetSupport = $needsTargetSupport ?? false;
     }
 
+    /**
+     * @throws InvalidContentException If the name is missing or not a string.
+     */
     public static function fromJson(array $json): ResourceFeature
     {
+        if (!is_string($json['name'] ?? null)) {
+            throw ParsingUtils::invalidContent('Expected a string name in each resource feature of the response');
+        }
         return new ResourceFeature(
             $json['name'],
             $json['needs_source_support'] ?? false,

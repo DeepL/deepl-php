@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Information about a language supported by the DeepL API for a given resource,
  * as returned by {@see DeepLClient::getLanguagesForResource()}.
@@ -65,11 +63,27 @@ class LanguageSupport
         return isset($this->features[$feature]);
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or has the wrong type.
+     */
     public static function fromJson(array $json): LanguageSupport
     {
+        foreach (['lang', 'name', 'status'] as $field) {
+            if (!is_string($json[$field] ?? null)) {
+                throw ParsingUtils::invalidContent("Expected a string $field in each language of the response");
+            }
+        }
+        foreach (['usable_as_source', 'usable_as_target'] as $field) {
+            if (!is_bool($json[$field] ?? null) && !is_int($json[$field] ?? null)) {
+                throw ParsingUtils::invalidContent("Expected a boolean $field in each language of the response");
+            }
+        }
         $features = [];
         if (isset($json['features']) && is_array($json['features'])) {
             foreach ($json['features'] as $name => $value) {
+                if (!is_array($value)) {
+                    throw ParsingUtils::invalidContent("Expected an object for language feature $name");
+                }
                 $features[$name] = LanguageFeature::fromJson($value);
             }
         }
@@ -84,21 +98,12 @@ class LanguageSupport
     }
 
     /**
-     * @throws InvalidContentException
+     * @return LanguageSupport[]
+     * @throws InvalidContentException If the content is not a JSON list of valid languages.
      */
     public static function parseList(string $content): array
     {
-        try {
-            $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-
-        $result = [];
-        foreach ($decoded as $object) {
-            $result[] = self::fromJson($object);
-        }
-        return $result;
+        return array_map([self::class, 'fromJson'], ParsingUtils::decodeObjectList($content));
     }
 
     public function __toString(): string
