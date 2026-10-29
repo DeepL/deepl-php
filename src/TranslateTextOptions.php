@@ -86,7 +86,7 @@ class TranslateTextOptions
      *  Each element can be a string containing a glossary ID, a GlossaryInfo as returned by createGlossary,
      *  getGlossary or listGlossaries, or a MultilingualGlossaryInfo as returned by
      *  createMultilingualGlossary, getMultilingualGlossary or listMultilingualGlossaries.
-     *  Requires source_lang to be set, and cannot be combined with the singular GLOSSARY option.
+     *  Cannot be combined with the singular GLOSSARY option.
      *  @see \DeepL\Translator::createGlossary()
      *  @see \DeepL\Translator::getGlossary()
      *  @see \DeepL\Translator::listGlossaries()

@@ -198,9 +198,8 @@ using the following keys:
 -   `glossary`: glossary ID of glossary to use for translation.
 -   `glossary_ids`: an array of up to 5 glossaries to apply for translation, allowing
     multiple glossaries to be used in a single request. Each element may be a glossary
-    ID string, a `GlossaryInfo`, or a `MultilingualGlossaryInfo` object. Requires the
-    `sourceLang` argument to be set, and cannot be combined with the singular `glossary`
-    option.
+    ID string, a `GlossaryInfo`, or a `MultilingualGlossaryInfo` object. Cannot be
+    combined with the singular `glossary` option.
 -   `style_rule`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
 -   `style_id`: deprecated alias of `style_rule`, removed in the next major version.
@@ -435,8 +434,10 @@ using the following keys:
 
 -   `formality`: same as in [Text translation options](#text-translation-options).
 -   `glossary`: same as in [Text translation options](#text-translation-options).
+    Requires the `sourceLang` argument to be set.
 -   `glossary_ids`: same as in [Text translation options](#text-translation-options).
-    Apply up to 5 glossaries in a single document translation request.
+    Apply up to 5 glossaries in a single document translation request. Requires the
+    `sourceLang` argument to be set.
 -   `style_rule`: same as in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
@@ -745,8 +746,10 @@ echo $myNewGlossaryDict->entryCount; // 1
 #### Using a stored glossary
 
 You can use a stored glossary for text translation by setting the `glossary`
-option to either the glossary ID or `MultilingualGlossaryInfo` object. You must
-also specify the `sourceLang` argument (it is required when using a glossary):
+option to either the glossary ID or `MultilingualGlossaryInfo` object. If you
+omit the `sourceLang` argument, the API detects the source language and uses
+the glossary's dictionary for the detected language pair; the request fails if
+the glossary has no dictionary for that pair:
 
 ```php
 $text = 'The artist was awarded a prize.';
@@ -773,8 +776,10 @@ support the `glossary` argument.
 To apply multiple glossaries (up to 5) in a single request, use the
 `glossary_ids` option instead of `glossary`, for both text and document
 translation. Set it to an array of glossary IDs, `GlossaryInfo`, or
-`MultilingualGlossaryInfo` objects. The `sourceLang` argument is required, and
-`glossary_ids` cannot be combined with the singular `glossary` option:
+`MultilingualGlossaryInfo` objects. As with `glossary`, the `sourceLang`
+argument is optional for text translation and required for document
+translation. `glossary_ids` cannot be combined with the singular `glossary`
+option:
 
 ```php
 $deeplClient->translateText(

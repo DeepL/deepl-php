@@ -267,6 +267,39 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertStringContainsString(file_get_contents($docx), (string)$this->request()->getBody());
     }
 
+    /**
+     * @dataProvider provideGlossaryOptions
+     */
+    public function testRejectsGlossaryWithoutSourceLanguage(array $options, string $message): void
+    {
+        try {
+            $this->makeTranslator()->translateDocumentUpload(
+                Fixtures::tempFile('input.txt', 'Hello'),
+                null,
+                'de',
+                $options
+            );
+            $this->fail('Expected DeepLException');
+        } catch (DeepLException $e) {
+            $this->assertSame($message, $e->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideGlossaryOptions(): array
+    {
+        return [
+            'glossary' => [
+                [TranslateDocumentOptions::GLOSSARY => 'gid'],
+                'sourceLang is required if using a glossary',
+            ],
+            'glossary_ids' => [
+                [TranslateDocumentOptions::GLOSSARY_IDS => ['gid']],
+                'sourceLang is required if using glossary_ids',
+            ],
+        ];
+    }
+
     public function testThrowsWhenThresholdHasNoTranslationMemory(): void
     {
         $this->expectException(DeepLException::class);

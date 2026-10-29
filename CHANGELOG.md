@@ -130,6 +130,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GlossaryNotFoundException` if the glossary has no such dictionary.
 
 ### Changed
+- `translateText()` accepts the `glossary` and `glossary_ids` options without a
+  source language; the API detects the source language. Document translation
+  still requires `sourceLang` with a glossary.
 - The `max_retries` option now counts retries after the first attempt, as
   documented: `max_retries => 5` (the default) sends a request at most 6
   times, and `0` disables retries. Previously it counted attempts, so the

@@ -187,7 +187,8 @@ class Translator
             $targetLang,
             $options[TranslateTextOptions::FORMALITY] ?? null,
             $options[TranslateTextOptions::GLOSSARY] ?? null,
-            $options[TranslateTextOptions::GLOSSARY_IDS] ?? null
+            $options[TranslateTextOptions::GLOSSARY_IDS] ?? null,
+            false
         );
         // Always send show_billed_characters=true, remove when the API default is changed to true
         $params["show_billed_characters"] = true;
@@ -377,7 +378,8 @@ class Translator
             $targetLang,
             $options[TranslateDocumentOptions::FORMALITY] ?? null,
             $options[TranslateDocumentOptions::GLOSSARY] ?? null,
-            $options[TranslateDocumentOptions::GLOSSARY_IDS] ?? null
+            $options[TranslateDocumentOptions::GLOSSARY_IDS] ?? null,
+            true
         );
 
         if (isset($options[TranslateDocumentOptions::OUTPUT_FORMAT])) {
@@ -756,6 +758,8 @@ class Translator
      *  MultilingualGlossaryInfo, or null if not specified.
      * @param (string|GlossaryInfo|MultilingualGlossaryInfo)[]|null $glossaryIds Array of up to 5 glossary IDs,
      *  GlossaryInfos, or MultilingualGlossaryInfos, or null if not specified.
+     * @param bool $glossaryRequiresSourceLang True to reject a glossary or glossary_ids without sourceLang
+     *  (document translation); text translation lets the API detect the source language.
      * @return array Associative array of HTTP parameters.
      * @throws DeepLException
      */
@@ -764,7 +768,8 @@ class Translator
         string $targetLang,
         ?string $formality,
         $glossary,
-        ?array $glossaryIds = null
+        ?array $glossaryIds,
+        bool $glossaryRequiresSourceLang
     ): array {
         $targetLang = LanguageCode::standardizeLanguageCode($targetLang);
         if (isset($sourceLang)) {
@@ -780,7 +785,7 @@ class Translator
             $params['formality'] = $formality_str;
         }
         if (isset($glossary)) {
-            if (!isset($sourceLang)) {
+            if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
                 throw new DeepLException('sourceLang is required if using a glossary');
             }
             if (!is_string($glossary)) {
@@ -794,7 +799,7 @@ class Translator
                     'The glossary_ids option cannot be used together with the singular glossary option'
                 );
             }
-            if (!isset($sourceLang)) {
+            if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
                 throw new DeepLException('sourceLang is required if using glossary_ids');
             }
             if (count($glossaryIds) > 5) {

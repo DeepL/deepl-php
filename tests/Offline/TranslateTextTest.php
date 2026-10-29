@@ -76,6 +76,29 @@ class TranslateTextTest extends OfflineTestCase
     }
 
     /**
+     * @dataProvider provideGlossaryOptions
+     */
+    public function testSendsGlossaryWithoutSourceLanguage(array $options, array $expectedFields): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeTranslator()->translateText('Hello', null, 'de', $options);
+
+        $this->assertSame(
+            ['target_lang' => 'de'] + $expectedFields + ['show_billed_characters' => true, 'text' => ['Hello']],
+            $this->jsonBody()
+        );
+    }
+
+    public static function provideGlossaryOptions(): array
+    {
+        return [
+            'glossary' => [[TranslateTextOptions::GLOSSARY => 'gid'], ['glossary_id' => 'gid']],
+            'glossary_ids' => [[TranslateTextOptions::GLOSSARY_IDS => ['gid']], ['glossary_ids' => ['gid']]],
+        ];
+    }
+
+    /**
      * @dataProvider provideOptions
      */
     public function testSendsOption(array $options, array $expectedBody): void
@@ -289,12 +312,6 @@ class TranslateTextTest extends OfflineTestCase
         return [
             'a number instead of text' => [42, null, [], 'texts parameter'],
             'a number inside the texts' => [[42], null, [], 'texts parameter'],
-            'glossary without source language' => [
-                'Hello', null, [TranslateTextOptions::GLOSSARY => 'gid'], 'sourceLang is required if using a glossary',
-            ],
-            'glossary_ids without source language' => [
-                'Hello', null, [TranslateTextOptions::GLOSSARY_IDS => ['a']], 'sourceLang is required',
-            ],
             'glossary together with glossary_ids' => [
                 'Hello',
                 'en',
