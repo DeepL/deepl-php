@@ -210,6 +210,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process.
 
 ### Fixed
+- Fixed `getUsage()` raising a raw `TypeError` for a malformed response. A
+  response body that is not a JSON object now raises
+  `InvalidContentException`, and a usage type whose `*_count` or `*_limit` is
+  missing, `null` or not numeric is left `null` instead.
 - Fixed `translateDocumentUpload()` (and the deprecated `uploadDocument()`)
   accepting a non-string `document_id` or `document_key` in the response, for
   example a number; it now raises `InvalidContentException`.

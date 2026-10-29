@@ -6,6 +6,8 @@
 
 namespace DeepL\Offline;
 
+use DeepL\InvalidContentException;
+
 class UsageTest extends OfflineTestCase
 {
     public function testParsesCharacterAndDocumentLimits(): void
@@ -143,5 +145,54 @@ class UsageTest extends OfflineTestCase
         $this->reply(['character_count' => 0, 'character_limit' => 20]);
 
         $this->assertFalse($this->makeTranslator()->getUsage()->anyLimitReached());
+    }
+
+    public function nonObjectBodies(): array
+    {
+        return [
+            'null' => ['null'],
+            'string' => ['"usage"'],
+            'number' => ['42'],
+        ];
+    }
+
+    /**
+     * @dataProvider nonObjectBodies
+     */
+    public function testThrowsInvalidContentExceptionForNonObjectBody(string $body): void
+    {
+        $this->reply($body);
+
+        $this->expectException(InvalidContentException::class);
+        $this->makeTranslator()->getUsage();
+    }
+
+    public function testSkipsUsageDetailsWithMissingOrNonNumericValues(): void
+    {
+        $this->reply([
+            'character_count' => null,
+            'character_limit' => 500000,
+            'document_count' => 'many',
+            'document_limit' => 10,
+            'team_document_count' => 1,
+            'team_document_limit' => ['unlimited'],
+            'api_key_character_count' => 636,
+            'api_key_character_limit' => 1000,
+            'speech_to_text_minutes_count' => true,
+            'speech_to_text_minutes_limit' => 600,
+            'speech_to_speech_minutes_count' => 12,
+            'speech_to_speech_minutes_limit' => null,
+        ]);
+
+        $usage = $this->makeTranslator()->getUsage();
+
+        $this->assertNull($usage->character);
+        $this->assertNull($usage->document);
+        $this->assertNull($usage->teamDocument);
+        $this->assertSame(636, $usage->apiKeyCharacter->count);
+        $this->assertSame(1000, $usage->apiKeyCharacter->limit);
+        $this->assertNull($usage->speechToTextMinutes);
+        $this->assertNull($usage->speechToSpeechMinutes);
+        $this->assertFalse($usage->anyLimitReached());
     }
 }

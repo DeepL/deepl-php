@@ -7,7 +7,6 @@
 namespace DeepL;
 
 use DateTime;
-use JsonException;
 
 /**
  * Information about the API usage: how much has been translated in this billing period, and the
@@ -101,11 +100,7 @@ class Usage
      */
     public function __construct(string $content)
     {
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
+        $json = ParsingUtils::decodeJson($content);
 
         $this->character = $this->buildUsageDetail('character', $json);
         $this->document = $this->buildUsageDetail('document', $json);
@@ -132,9 +127,9 @@ class Usage
     {
         $count = "{$prefix}_count";
         $limit = "{$prefix}_limit";
-        if (array_key_exists($count, $json) && array_key_exists($limit, $json)) {
-            return new UsageDetail($json[$count], $json[$limit]);
+        if (!isset($json[$count], $json[$limit]) || !is_numeric($json[$count]) || !is_numeric($json[$limit])) {
+            return null;
         }
-        return null;
+        return new UsageDetail((int)$json[$count], (int)$json[$limit]);
     }
 }
