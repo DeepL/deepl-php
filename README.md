@@ -754,6 +754,14 @@ arrays of strings. `createSpokenTerms()`, `updateSpokenTerms()` and
 anything: a term that is blank or contains a control character such as a newline
 throws a `DeepLException`.
 
+`updateSpokenTerms()` takes its changes as an options array with the keys of
+`SpokenTermsOptions`: `NAME` (new name) and `TERM_LISTS` (an array of
+`SpokenTermsEntries` to merge into the term lists). Options that are not set, or
+`null`, are not sent. `createSpokenTerms()`, `updateSpokenTerms()` and
+`replaceSpokenTermsList()` also accept `SpokenTermsOptions::EXTRA_BODY_PARAMETERS`,
+an associative array of additional fields added last to the JSON request body;
+a field the library already sets is replaced.
+
 ```php
 // Create a collection with an English term list
 $spokenTerms = $deeplClient->createSpokenTerms(
@@ -771,12 +779,11 @@ foreach ($deeplClient->listSpokenTerms() as $item) {
 }
 $spokenTerms = $deeplClient->getSpokenTerms($spokenTerms->spokenTermsId);
 
-// Rename the collection and/or merge terms into its term lists; null arguments are not sent
-$spokenTerms = $deeplClient->updateSpokenTerms(
-    $spokenTerms,
-    'Product names v2',
-    [new SpokenTermsEntries('en', ['authentication'])]
-);
+// Rename the collection and/or merge terms into its term lists; unset options are not sent
+$spokenTerms = $deeplClient->updateSpokenTerms($spokenTerms, [
+    SpokenTermsOptions::NAME => 'Product names v2',
+    SpokenTermsOptions::TERM_LISTS => [new SpokenTermsEntries('en', ['authentication'])],
+]);
 
 // Read the terms of one language
 $entries = $deeplClient->getSpokenTermsEntries($spokenTerms, 'en');

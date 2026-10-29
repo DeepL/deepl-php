@@ -9,6 +9,7 @@ namespace DeepL\RealApi;
 use DeepL\NotFoundException;
 use DeepL\SpokenTerms;
 use DeepL\SpokenTermsEntries;
+use DeepL\SpokenTermsOptions;
 
 class SpokenTermsTest extends RealApiTestCase
 {
@@ -35,7 +36,7 @@ class SpokenTermsTest extends RealApiTestCase
             $this->assertContains($spokenTerms->spokenTermsId, $ids);
 
             $merge = [new SpokenTermsEntries('en', ['authentication'])];
-            $updated = $client->updateSpokenTerms($spokenTerms, null, $merge);
+            $updated = $client->updateSpokenTerms($spokenTerms, [SpokenTermsOptions::TERM_LISTS => $merge]);
             $this->assertSame([['en', 3]], self::termLists($updated));
 
             $entries = $client->getSpokenTermsEntries($spokenTerms, 'en');

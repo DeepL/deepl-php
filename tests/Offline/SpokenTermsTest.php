@@ -9,6 +9,7 @@ namespace DeepL\Offline;
 use DeepL\DeepLException;
 use DeepL\InvalidContentException;
 use DeepL\SpokenTermsEntries;
+use DeepL\SpokenTermsOptions;
 
 class SpokenTermsTest extends OfflineTestCase
 {
@@ -53,7 +54,7 @@ class SpokenTermsTest extends OfflineTestCase
                 $client->createSpokenTerms('My terms', [$entries]);
             },
             function () use ($client, $entries) {
-                $client->updateSpokenTerms('sid', null, [$entries]);
+                $client->updateSpokenTerms('sid', [SpokenTermsOptions::TERM_LISTS => [$entries]]);
             },
             function () use ($client, $entries) {
                 $client->replaceSpokenTermsList('sid', $entries);
@@ -67,6 +68,57 @@ class SpokenTermsTest extends OfflineTestCase
             }
         }
         $this->assertRequestCount(0);
+    }
+
+    public function testUpdateSendsOnlyTheOptionsThatAreSet(): void
+    {
+        $this->reply(self::INFO);
+        $this->reply(self::INFO);
+        $this->reply(self::INFO);
+        $client = $this->makeDeepLClient();
+
+        $client->updateSpokenTerms('sid');
+        $client->updateSpokenTerms('sid', [SpokenTermsOptions::NAME => 'New name']);
+        $client->updateSpokenTerms('sid', [
+            SpokenTermsOptions::NAME => null,
+            SpokenTermsOptions::TERM_LISTS => [new SpokenTermsEntries('en', ['a', 'b'])],
+        ]);
+
+        $this->assertSame('{}', (string)$this->request(0)->getBody());
+        $this->assertSame(['name' => 'New name'], $this->jsonBody(1));
+        $this->assertSame(['term_lists' => [['lang' => 'en', 'entries' => "a\nb"]]], $this->jsonBody(2));
+    }
+
+    public function testRejectsAnUnknownOptionBeforeSending(): void
+    {
+        $client = $this->makeDeepLClient();
+
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('Unknown spoken terms option: name');
+        try {
+            $client->createSpokenTerms('My terms', [], [SpokenTermsOptions::NAME => 'x']);
+        } finally {
+            $this->assertRequestCount(0);
+        }
+    }
+
+    public function testAddsExtraBodyParametersLast(): void
+    {
+        $this->reply(self::INFO, 201);
+        $this->reply(self::INFO);
+        $this->reply(['lang' => 'en', 'entry_count' => 1]);
+        $client = $this->makeDeepLClient();
+        $extra = [SpokenTermsOptions::EXTRA_BODY_PARAMETERS => ['name' => 'Override', 'flag' => true]];
+        $entries = new SpokenTermsEntries('en', ['a']);
+
+        $client->createSpokenTerms('My terms', [$entries], $extra);
+        $client->updateSpokenTerms('sid', [SpokenTermsOptions::NAME => 'New name'] + $extra);
+        $client->replaceSpokenTermsList('sid', $entries, $extra);
+
+        $termLists = [['lang' => 'en', 'entries' => 'a']];
+        $this->assertSame(['name' => 'Override', 'term_lists' => $termLists, 'flag' => true], $this->jsonBody(0));
+        $this->assertSame(['name' => 'Override', 'flag' => true], $this->jsonBody(1));
+        $this->assertSame(['lang' => 'en', 'entries' => 'a', 'name' => 'Override', 'flag' => true], $this->jsonBody(2));
     }
 
     /**

@@ -346,16 +346,18 @@ class DeepLClient extends Translator
      * Creates a spoken terms collection with the given name and term lists.
      * @param string $name User-defined name to assign to the collection.
      * @param SpokenTermsEntries[] $termLists Term lists to add, one per language.
+     * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
      * @return SpokenTerms Details about the created collection.
      * @throws DeepLException
      */
-    public function createSpokenTerms(string $name, array $termLists): SpokenTerms
+    public function createSpokenTerms(string $name, array $termLists, array $options = []): SpokenTerms
     {
+        self::checkSpokenTermsOptions($options, []);
         $params = ['name' => $name, 'term_lists' => self::spokenTermsListsToObjects($termLists)];
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/spoken-terms',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::spokenTermsJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -383,8 +385,7 @@ class DeepLClient extends Translator
      */
     public function getSpokenTerms($spokenTerms): SpokenTerms
     {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
-        $response = $this->client->sendRequestWithBackoff('GET', "/v3/spoken-terms/$spokenTermsId");
+        $response = $this->client->sendRequestWithBackoff('GET', self::spokenTermsPath($spokenTerms));
         $this->checkStatusCode($response);
         list(, $content) = $response;
         return SpokenTerms::parseJson($content);
@@ -392,27 +393,28 @@ class DeepLClient extends Translator
 
     /**
      * Renames a spoken terms collection and/or merges terms into its term lists. A term list for a
-     * language not yet in the collection is added. Arguments that are null are not sent.
+     * language not yet in the collection is added. Options that are not set, or null, are not sent;
+     * without any, the body is {}.
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
-     * @param string|null $name New name for the collection, or null to keep it.
-     * @param SpokenTermsEntries[]|null $termLists Terms to merge into the term lists, or null.
+     * @param array $options Fields to change, see \DeepL\SpokenTermsOptions: NAME (new name), TERM_LISTS
+     *  (SpokenTermsEntries[] to merge) and EXTRA_BODY_PARAMETERS.
      * @return SpokenTerms Details about the updated collection.
      * @throws DeepLException
      */
-    public function updateSpokenTerms($spokenTerms, ?string $name, ?array $termLists): SpokenTerms
+    public function updateSpokenTerms($spokenTerms, array $options = []): SpokenTerms
     {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
-        $params = new \stdClass();
-        if ($name !== null) {
-            $params->name = $name;
+        self::checkSpokenTermsOptions($options, [SpokenTermsOptions::NAME, SpokenTermsOptions::TERM_LISTS]);
+        $params = [];
+        if (isset($options[SpokenTermsOptions::NAME])) {
+            $params['name'] = (string)$options[SpokenTermsOptions::NAME];
         }
-        if ($termLists !== null) {
-            $params->term_lists = self::spokenTermsListsToObjects($termLists);
+        if (isset($options[SpokenTermsOptions::TERM_LISTS])) {
+            $params['term_lists'] = self::spokenTermsListsToObjects($options[SpokenTermsOptions::TERM_LISTS]);
         }
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
-            "/v3/spoken-terms/$spokenTermsId",
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            self::spokenTermsPath($spokenTerms),
+            [HttpClientWrapper::OPTION_JSON => self::spokenTermsJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -428,9 +430,8 @@ class DeepLClient extends Translator
      */
     public function getSpokenTermsEntries($spokenTerms, string $lang): SpokenTermsEntries
     {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
         $query = http_build_query(['lang' => $lang]);
-        $url = "/v3/spoken-terms/$spokenTermsId/entries?$query";
+        $url = self::spokenTermsPath($spokenTerms) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -442,16 +443,21 @@ class DeepLClient extends Translator
      * collection has no list for that language.
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
      * @param SpokenTermsEntries $entries Language and terms of the replacement list.
+     * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
      * @return SpokenTermsList Details about the term list.
      * @throws DeepLException
      */
-    public function replaceSpokenTermsList($spokenTerms, SpokenTermsEntries $entries): SpokenTermsList
-    {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
+    public function replaceSpokenTermsList(
+        $spokenTerms,
+        SpokenTermsEntries $entries,
+        array $options = []
+    ): SpokenTermsList {
+        self::checkSpokenTermsOptions($options, []);
+        $params = self::spokenTermsEntriesToObject($entries);
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
-            "/v3/spoken-terms/$spokenTermsId/term-lists",
-            [HttpClientWrapper::OPTION_JSON => json_encode(self::spokenTermsEntriesToObject($entries))]
+            self::spokenTermsPath($spokenTerms) . '/term-lists',
+            [HttpClientWrapper::OPTION_JSON => self::spokenTermsJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -465,8 +471,7 @@ class DeepLClient extends Translator
      */
     public function deleteSpokenTerms($spokenTerms): void
     {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
-        $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/spoken-terms/$spokenTermsId");
+        $response = $this->client->sendRequestWithBackoff('DELETE', self::spokenTermsPath($spokenTerms));
         $this->checkStatusCode($response);
     }
 
@@ -478,21 +483,55 @@ class DeepLClient extends Translator
      */
     public function deleteSpokenTermsList($spokenTerms, string $lang): void
     {
-        $spokenTermsId = SpokenTerms::getSpokenTermsId($spokenTerms);
         $query = http_build_query(['lang' => $lang]);
-        $url = "/v3/spoken-terms/$spokenTermsId/term-lists?$query";
+        $url = self::spokenTermsPath($spokenTerms) . "/term-lists?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
         $this->checkStatusCode($response);
     }
 
     /**
+     * @param string|SpokenTerms $spokenTerms
+     */
+    private static function spokenTermsPath($spokenTerms): string
+    {
+        return '/v3/spoken-terms/' . SpokenTerms::getSpokenTermsId($spokenTerms);
+    }
+
+    /**
+     * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
+     * @throws DeepLException If an option key is unknown to the method.
+     */
+    private static function checkSpokenTermsOptions(array $options, array $allowed): void
+    {
+        $allowed[] = SpokenTermsOptions::EXTRA_BODY_PARAMETERS;
+        foreach (array_keys($options) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                throw new DeepLException("Unknown spoken terms option: $key");
+            }
+        }
+    }
+
+    /**
+     * Encodes the JSON body of a spoken terms request, with the extra body parameters added last. An
+     * empty body encodes as {}.
+     */
+    private static function spokenTermsJsonBody(array $params, array $options): string
+    {
+        foreach ($options[SpokenTermsOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
+        return json_encode((object)$params);
+    }
+
+    /**
      * @param SpokenTermsEntries[] $termLists
+     * @throws DeepLException
      */
     private static function spokenTermsListsToObjects(array $termLists): array
     {
-        return array_map(function (SpokenTermsEntries $entries) {
+        return array_values(array_map(function (SpokenTermsEntries $entries) {
             return self::spokenTermsEntriesToObject($entries);
-        }, $termLists);
+        }, $termLists));
     }
 
     /**

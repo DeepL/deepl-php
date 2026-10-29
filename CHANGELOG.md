@@ -77,7 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getSpokenTerms()`, `updateSpokenTerms()`, `getSpokenTermsEntries()`,
   `replaceSpokenTermsList()`, `deleteSpokenTerms()` and
   `deleteSpokenTermsList()`, with the new classes `SpokenTerms`,
-  `SpokenTermsList` and `SpokenTermsEntries`.
+  `SpokenTermsList`, `SpokenTermsEntries` and `SpokenTermsOptions`.
+  `updateSpokenTerms()` takes the new name and the term lists to merge as the
+  options `SpokenTermsOptions::NAME` and `SpokenTermsOptions::TERM_LISTS`.
+  `createSpokenTerms()`, `updateSpokenTerms()` and `replaceSpokenTermsList()`
+  accept `SpokenTermsOptions::EXTRA_BODY_PARAMETERS`.
 - Added support for the style profile management API (`/v3/style_profiles`) in
   the `DeepLClient` class: `listStyleProfiles()`, `createStyleProfile()`,
   `getStyleProfile()`, `updateStyleProfile()` and `deleteStyleProfile()`, with
