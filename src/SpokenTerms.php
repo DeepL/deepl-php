@@ -60,11 +60,11 @@ class SpokenTerms
     {
         $decoded = self::decode($content);
         return ParsingUtils::guard(function () use ($decoded): array {
-            $result = [];
-            foreach ($decoded['spoken_terms'] ?? [] as $object) {
-                $result[] = self::parseObject($object);
+            $list = $decoded['spoken_terms'] ?? [];
+            if (!is_array($list)) {
+                throw ParsingUtils::invalidContent('Expected spoken_terms to be a list in the response');
             }
-            return $result;
+            return array_values(array_map([self::class, 'parseObject'], $list));
         });
     }
 
@@ -77,13 +77,25 @@ class SpokenTerms
     }
 
     /**
-     * @throws \Exception
+     * @param mixed $object
+     * @throws InvalidContentException
      */
-    private static function parseObject(array $object): SpokenTerms
+    private static function parseObject($object): SpokenTerms
     {
+        if (!is_array($object)) {
+            throw ParsingUtils::invalidContent('Expected a spoken terms object in the response');
+        }
+        $id = $object['spoken_terms_id'] ?? null;
+        if (!is_string($id) || $id === '') {
+            throw ParsingUtils::invalidContent('Expected a spoken_terms_id string in the response');
+        }
+        $name = $object['name'] ?? '';
+        if (!is_string($name)) {
+            throw ParsingUtils::invalidContent('Expected name to be a string in the response');
+        }
         return new SpokenTerms(
-            $object['spoken_terms_id'],
-            $object['name'] ?? '',
+            $id,
+            $name,
             ParsingUtils::parseTimestamp($object['creation_time'] ?? null),
             SpokenTermsList::parseList($object['term_lists'] ?? [])
         );

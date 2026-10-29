@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * The terms of one language in a spoken terms collection.
  */
@@ -34,19 +32,16 @@ class SpokenTermsEntries
      */
     public static function parseJson(string $content): SpokenTermsEntries
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
+        $object = ParsingUtils::decodeJson($content);
+        $lang = $object['lang'] ?? '';
+        $entries = $object['entries'] ?? '';
+        if (!is_string($lang) || !is_string($entries)) {
+            throw ParsingUtils::invalidContent('Expected lang and entries to be strings in the response');
         }
-
-        $entries = array_values(array_filter(
-            explode("\n", $object['entries'] ?? ''),
-            function (string $line) {
-                return $line !== '';
-            }
-        ));
-        return new SpokenTermsEntries($object['lang'] ?? '', $entries);
+        $terms = array_values(array_filter(explode("\n", $entries), function (string $line) {
+            return $line !== '';
+        }));
+        return new SpokenTermsEntries($lang, $terms);
     }
 
     /** Request body of this term list: the API takes the terms as one newline-separated string. */

@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 /**
  * Information about the term list of one language in a spoken terms collection, excluding the entries.
  */
@@ -30,29 +28,35 @@ class SpokenTermsList
      */
     public static function parseJson(string $content): SpokenTermsList
     {
-        try {
-            $object = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-
-        return self::parseObject($object);
+        return self::parseObject(ParsingUtils::decodeJson($content));
     }
 
     /**
+     * @param mixed $list
      * @return SpokenTermsList[]
+     * @throws InvalidContentException
      */
-    public static function parseList(array $list): array
+    public static function parseList($list): array
     {
-        $result = [];
-        foreach ($list as $object) {
-            $result[] = self::parseObject($object);
+        if (!is_array($list)) {
+            throw ParsingUtils::invalidContent('Expected term_lists to be a list in the response');
         }
-        return $result;
+        return array_values(array_map([self::class, 'parseObject'], $list));
     }
 
+    /**
+     * @param mixed $object
+     * @throws InvalidContentException
+     */
     private static function parseObject($object): SpokenTermsList
     {
-        return new SpokenTermsList($object['lang'] ?? '', $object['entry_count'] ?? 0);
+        if (!is_array($object)) {
+            throw ParsingUtils::invalidContent('Expected a term list object in the response');
+        }
+        $lang = $object['lang'] ?? '';
+        if (!is_string($lang)) {
+            throw ParsingUtils::invalidContent('Expected lang to be a string in the response');
+        }
+        return new SpokenTermsList($lang, (int)ParsingUtils::numberOrZero($object['entry_count'] ?? 0));
     }
 }

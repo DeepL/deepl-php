@@ -7,10 +7,18 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLException;
+use DeepL\InvalidContentException;
 use DeepL\SpokenTermsEntries;
 
 class SpokenTermsTest extends OfflineTestCase
 {
+    private const INFO = [
+        'spoken_terms_id' => 'a/b c',
+        'name' => 'My terms',
+        'creation_time' => '2026-10-23T17:15:53.434769Z',
+        'term_lists' => [['lang' => 'en', 'entry_count' => 1]],
+    ];
+
     public function testJoinsEntriesWithNewlinesAndSplitsThemOnRead(): void
     {
         $this->reply([
@@ -59,5 +67,39 @@ class SpokenTermsTest extends OfflineTestCase
             }
         }
         $this->assertRequestCount(0);
+    }
+
+    /**
+     * @dataProvider malformedResponses
+     */
+    public function testThrowsInvalidContentExceptionOnAMalformedResponse(string $method, $body): void
+    {
+        $this->reply($body);
+        $client = $this->makeDeepLClient();
+
+        $this->expectException(InvalidContentException::class);
+        switch ($method) {
+            case 'get':
+                $client->getSpokenTerms('sid');
+                break;
+            case 'entries':
+                $client->getSpokenTermsEntries('sid', 'en');
+                break;
+            case 'replace':
+                $client->replaceSpokenTermsList('sid', new SpokenTermsEntries('en', ['a']));
+                break;
+        }
+    }
+
+    public static function malformedResponses(): array
+    {
+        $info = self::INFO;
+        return [
+            'id is not a string' => ['get', ['spoken_terms_id' => 5] + $info],
+            'term list is not an object' => ['get', ['term_lists' => ['en']] + $info],
+            'entries is not a string' => ['entries', ['lang' => 'en', 'entries' => ['a']]],
+            'entries body is not an object' => ['entries', '"a"'],
+            'term list body is not an object' => ['replace', '"a"'],
+        ];
     }
 }
