@@ -115,6 +115,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `LanguageResourceName` constants class for the resource values of
   `getLanguagesForResource()` and `LanguageResource::$resource`, and the
   `LanguageInclude` constants class for its include values.
+- `getLanguagesForResource()` also accepts an options array as its second
+  parameter, with the `include` option
+  (`GetLanguagesForResourceOptions::INCLUDE`). The plain list of include values
+  keeps working.
 
 ### Changed
 - The `max_retries` option now counts retries after the first attempt, as

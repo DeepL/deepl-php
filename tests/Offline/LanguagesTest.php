@@ -7,6 +7,7 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLException;
+use DeepL\GetLanguagesForResourceOptions;
 use DeepL\GlossaryLanguagePair;
 use DeepL\LanguageFeature;
 use DeepL\LanguageInclude;
@@ -104,6 +105,29 @@ class LanguagesTest extends OfflineTestCase
         );
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=translation_memory&include=beta&include=external');
+    }
+
+    public function testSendsTheIncludeOptionOfAnOptionsArray(): void
+    {
+        $this->reply(self::LANGUAGES);
+
+        $this->makeDeepLClient()->getLanguagesForResource(
+            LanguageResourceName::GLOSSARY,
+            [GetLanguagesForResourceOptions::INCLUDE => [LanguageInclude::BETA, LanguageInclude::EXTERNAL]]
+        );
+
+        $this->assertRequest('GET', '/v3/languages', 0, 'resource=glossary&include=beta&include=external');
+    }
+
+    public function testThrowsWhenTheIncludeOptionIsNotAnArray(): void
+    {
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('include option must be an array of strings');
+
+        $this->makeDeepLClient()->getLanguagesForResource(
+            LanguageResourceName::GLOSSARY,
+            [GetLanguagesForResourceOptions::INCLUDE => LanguageInclude::BETA]
+        );
     }
 
     public function testParsesLanguageSupportAndFeatures(): void

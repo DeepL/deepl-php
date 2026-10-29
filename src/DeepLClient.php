@@ -1119,9 +1119,9 @@ class DeepLClient extends Translator
      * Queries languages supported by the DeepL API for the given resource. Returns each
      * language with its per-feature support information.
      * @param string $resource Resource to query support for, see {@see LanguageResourceName}.
-     * @param string[]|null $include Optional list of include values, for example
-     *  {@see LanguageInclude::BETA} or {@see LanguageInclude::EXTERNAL}. By default only
-     *  stable languages and features are returned.
+     * @param array|null $include Options array, see {@see GetLanguagesForResourceOptions}, or a plain list of
+     *  include values, for example [{@see LanguageInclude::BETA}, {@see LanguageInclude::EXTERNAL}]. By default
+     *  only stable languages and features are returned.
      * @return LanguageSupport[] Array of LanguageSupport objects containing per-feature support information.
      * @throws DeepLException
      */
@@ -1129,6 +1129,14 @@ class DeepLClient extends Translator
     {
         if (strlen($resource) === 0) {
             throw new DeepLException('resource must be a non-empty string');
+        }
+
+        // The parameter takes an options array or, as released first, the plain list of include values
+        if ($include !== null && $include !== array_values($include)) {
+            $include = $include[GetLanguagesForResourceOptions::INCLUDE] ?? null;
+            if ($include !== null && !is_array($include)) {
+                throw new DeepLException('include option must be an array of strings');
+            }
         }
 
         $queryString = '?' . http_build_query(['resource' => $resource]);

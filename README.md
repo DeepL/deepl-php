@@ -908,6 +908,7 @@ returns a single list per resource in which each `LanguageSupport` exposes
 `usableAsSource` and `usableAsTarget` flags.
 
 ```php
+use DeepL\GetLanguagesForResourceOptions;
 use DeepL\LanguageFeature;
 use DeepL\LanguageInclude;
 use DeepL\LanguageResourceName;
@@ -930,9 +931,13 @@ foreach ($languages as $language) {
 // Optionally include beta and third-party-backed languages/features:
 $languages = $deeplClient->getLanguagesForResource(
     LanguageResourceName::TRANSLATE_TEXT,
-    [LanguageInclude::BETA, LanguageInclude::EXTERNAL]
+    [GetLanguagesForResourceOptions::INCLUDE => [LanguageInclude::BETA, LanguageInclude::EXTERNAL]]
 );
 ```
+
+The second parameter is an options array with the `include` option
+(`GetLanguagesForResourceOptions::INCLUDE`). The plain list of include values,
+for example `[LanguageInclude::BETA]`, is also accepted.
 
 The `LanguageResourceName` constants define the resource values
 (`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`, `GLOSSARY`, `VOICE`, `WRITE`,
