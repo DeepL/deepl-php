@@ -8,6 +8,7 @@ namespace DeepL\Offline;
 
 use DeepL\DeepLException;
 use DeepL\InvalidContentException;
+use DeepL\SpokenTerms;
 use DeepL\SpokenTermsEntries;
 use DeepL\SpokenTermsOptions;
 
@@ -68,6 +69,32 @@ class SpokenTermsTest extends OfflineTestCase
             }
         }
         $this->assertRequestCount(0);
+    }
+
+    public function testUrlEncodesTheSpokenTermsIdInEveryPath(): void
+    {
+        $this->reply(self::INFO);
+        $this->reply(self::INFO);
+        $this->reply('', 204);
+        $this->reply(['lang' => 'en', 'entries' => 'a']);
+        $this->reply(['lang' => 'en', 'entry_count' => 1]);
+        $this->reply('', 204);
+        $client = $this->makeDeepLClient();
+        $spokenTerms = new SpokenTerms('a/b c', 'My terms', new \DateTime(), []);
+
+        $client->getSpokenTerms('a/b c');
+        $client->updateSpokenTerms($spokenTerms);
+        $client->deleteSpokenTerms('a/b c');
+        $client->getSpokenTermsEntries($spokenTerms, 'en');
+        $client->replaceSpokenTermsList('a/b c', new SpokenTermsEntries('en', ['a']));
+        $client->deleteSpokenTermsList($spokenTerms, 'en');
+
+        $this->assertRequest('GET', '/v3/spoken-terms/a%2Fb%20c', 0);
+        $this->assertRequest('PATCH', '/v3/spoken-terms/a%2Fb%20c', 1);
+        $this->assertRequest('DELETE', '/v3/spoken-terms/a%2Fb%20c', 2);
+        $this->assertRequest('GET', '/v3/spoken-terms/a%2Fb%20c/entries', 3, 'lang=en');
+        $this->assertRequest('PUT', '/v3/spoken-terms/a%2Fb%20c/term-lists', 4);
+        $this->assertRequest('DELETE', '/v3/spoken-terms/a%2Fb%20c/term-lists', 5, 'lang=en');
     }
 
     public function testUpdateSendsOnlyTheOptionsThatAreSet(): void

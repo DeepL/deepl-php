@@ -494,7 +494,7 @@ class DeepLClient extends Translator
      */
     private static function spokenTermsPath($spokenTerms): string
     {
-        return '/v3/spoken-terms/' . SpokenTerms::getSpokenTermsId($spokenTerms);
+        return '/v3/spoken-terms/' . rawurlencode(SpokenTerms::getSpokenTermsId($spokenTerms));
     }
 
     /**
