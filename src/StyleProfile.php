@@ -38,10 +38,10 @@ class StyleProfile
     /** @var bool Whether the order of $glossaryIds sets their priority. */
     public $glossaryPriorityOrderEnabled;
 
-    /** @var DateTime|null Time the style profile was created, or null if absent or unparseable. */
+    /** @var DateTime Time the style profile was created. */
     public $creationTime;
 
-    /** @var DateTime|null Time the style profile was last updated, or null if absent or unparseable. */
+    /** @var DateTime Time the style profile was last updated. */
     public $updatedTime;
 
     public function __construct(
@@ -53,8 +53,8 @@ class StyleProfile
         array $styleRuleIds,
         array $translationMemoryIds,
         bool $glossaryPriorityOrderEnabled,
-        ?DateTime $creationTime,
-        ?DateTime $updatedTime
+        DateTime $creationTime,
+        DateTime $updatedTime
     ) {
         $this->styleProfileId = $styleProfileId;
         $this->name = $name;
@@ -81,6 +81,9 @@ class StyleProfile
         return $styleProfileId;
     }
 
+    /**
+     * @throws InvalidContentException If a timestamp is absent or unparseable.
+     */
     public static function fromJson(array $json): StyleProfile
     {
         return new StyleProfile(
@@ -92,8 +95,8 @@ class StyleProfile
             self::idList($json, 'style_rule_ids'),
             self::idList($json, 'translation_memory_ids'),
             ($json['glossary_priority_order_enabled'] ?? false) === true,
-            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
+            ParsingUtils::parseTimestamp($json['creation_time'] ?? null),
+            ParsingUtils::parseTimestamp($json['updated_time'] ?? null)
         );
     }
 

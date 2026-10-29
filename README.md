@@ -1119,7 +1119,8 @@ sends an empty update. The ID lists `GLOSSARY_IDS`, `STYLE_RULE_IDS` and
 (`GlossaryInfo` or `MultilingualGlossaryInfo`, `StyleRuleInfo`,
 `TranslationMemoryInfo`). `EXTRA_BODY_PARAMETERS` takes an associative array of
 additional JSON body fields, added after the library's fields and replacing any
-with the same key.
+with the same key. `StyleProfile::$creationTime` and `$updatedTime` are
+`DateTime` objects.
 
 ```php
 // Create a style profile with only a name

@@ -95,7 +95,7 @@ class TranslateTextTest extends OfflineTestCase
         $multilingual = new MultilingualGlossaryInfo('mid', 'name', new \DateTime(), []);
         $style = new StyleRuleInfo('sid', 'name', new \DateTime(), new \DateTime(), 'en', 1);
         $tm = new TranslationMemoryInfo('tmid', 'name', 'en', ['de'], 1);
-        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, null, null);
+        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, new \DateTime(), new \DateTime());
         $tail = ['show_billed_characters' => true, 'text' => ['Hello']];
         return [
             'formality' => [

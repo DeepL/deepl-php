@@ -93,7 +93,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The glossary, style rule and translation memory ID lists take IDs or
   `GlossaryInfo` / `MultilingualGlossaryInfo`, `StyleRuleInfo` and
   `TranslationMemoryInfo` objects. Both options classes accept
-  `EXTRA_BODY_PARAMETERS`.
+  `EXTRA_BODY_PARAMETERS`. `StyleProfile::$creationTime` and `$updatedTime`
+  are required: a response without a valid timestamp throws an
+  `InvalidContentException`.
 
 ### Changed
 - The `max_retries` option now counts retries after the first attempt, as

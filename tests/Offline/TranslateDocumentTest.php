@@ -65,7 +65,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $glossary = new GlossaryInfo('g1', 'name', true, 'en', 'de', new \DateTime(), 1);
         $style = new StyleRuleInfo('sid', 'name', new \DateTime(), new \DateTime(), 'en', 1);
         $tm = new TranslationMemoryInfo('tmid', 'name', 'en', ['de'], 1);
-        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, null, null);
+        $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, new \DateTime(), new \DateTime());
         return [
             'formality' => [[TranslateDocumentOptions::FORMALITY => 'More'], ['formality' => 'more']],
             'glossary' => [[TranslateDocumentOptions::GLOSSARY => $glossary], ['glossary_id' => 'g1']],

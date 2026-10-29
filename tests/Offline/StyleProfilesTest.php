@@ -10,6 +10,7 @@ use DateTime;
 use DeepL\CreateStyleProfileOptions;
 use DeepL\DeepLException;
 use DeepL\GlossaryInfo;
+use DeepL\InvalidContentException;
 use DeepL\MultilingualGlossaryInfo;
 use DeepL\NotFoundException;
 use DeepL\StyleProfile;
@@ -275,15 +276,33 @@ class StyleProfilesTest extends OfflineTestCase
         $this->assertFalse(property_exists($profile, 'exampleDocumentIds'));
     }
 
-    public function testMalformedCreationTimeIsNull(): void
+    public function testAbsentOrMalformedTimestampsThrowInvalidContentException(): void
     {
+        $profileWithoutUpdatedTime = self::PROFILE;
+        unset($profileWithoutUpdatedTime['updated_time']);
         $this->reply(array_merge(self::PROFILE, ['creation_time' => 'not a timestamp']));
+        $this->reply($profileWithoutUpdatedTime);
+        $this->reply(['style_profiles' => [array_merge(self::PROFILE, ['creation_time' => null])]]);
+        $client = $this->makeDeepLClient();
 
-        $profile = $this->makeDeepLClient()->getStyleProfile('pid');
-
-        $this->assertNull($profile->creationTime);
-        $this->assertSame('Legal, German', $profile->name);
-        $this->assertInstanceOf(\DateTime::class, $profile->updatedTime);
+        foreach ([
+            function () use ($client) {
+                $client->getStyleProfile('pid');
+            },
+            function () use ($client) {
+                $client->getStyleProfile('pid');
+            },
+            function () use ($client) {
+                $client->listStyleProfiles();
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidContentException');
+            } catch (InvalidContentException $exception) {
+                $this->assertStringContainsString('timestamp', $exception->getMessage());
+            }
+        }
     }
 
     public function testNotFoundOnGetThrowsNotFoundException(): void
