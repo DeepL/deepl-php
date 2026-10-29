@@ -7,11 +7,16 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLException;
+use DeepL\Formality;
 use DeepL\GlossaryInfo;
 use DeepL\InvalidContentException;
+use DeepL\ModelType;
 use DeepL\MultilingualGlossaryInfo;
+use DeepL\SentenceSplittingMode;
 use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
+use DeepL\TagHandlingMode;
+use DeepL\TagHandlingVersion;
 use DeepL\TextResult;
 use DeepL\TranslateTextOptions;
 use DeepL\TranslationMemoryInfo;
@@ -97,6 +102,10 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::FORMALITY => 'LESS'],
                 $base + ['formality' => 'less'] + $tail,
             ],
+            'formality constant' => [
+                [TranslateTextOptions::FORMALITY => Formality::PREFER_LESS],
+                $base + ['formality' => 'prefer_less'] + $tail,
+            ],
             'split_sentences on' => [
                 [TranslateTextOptions::SPLIT_SENTENCES => 'on'],
                 $base + $tail + ['split_sentences' => '1'],
@@ -113,6 +122,14 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::SPLIT_SENTENCES => 'nonewlines'],
                 $base + $tail + ['split_sentences' => 'nonewlines'],
             ],
+            'split_sentences constants' => [
+                [TranslateTextOptions::SPLIT_SENTENCES => SentenceSplittingMode::NO_NEWLINES],
+                $base + $tail + ['split_sentences' => 'nonewlines'],
+            ],
+            'split_sentences constant off' => [
+                [TranslateTextOptions::SPLIT_SENTENCES => SentenceSplittingMode::OFF],
+                $base + $tail + ['split_sentences' => '0'],
+            ],
             'booleans' => [
                 [TranslateTextOptions::PRESERVE_FORMATTING => true, TranslateTextOptions::OUTLINE_DETECTION => false],
                 $base + $tail + ['preserve_formatting' => true, 'outline_detection' => false],
@@ -120,6 +137,13 @@ class TranslateTextTest extends OfflineTestCase
             'tag handling' => [
                 [TranslateTextOptions::TAG_HANDLING => 'xml', TranslateTextOptions::TAG_HANDLING_VERSION => 'v2'],
                 $base + $tail + ['tag_handling' => 'xml', 'tag_handling_version' => 'v2'],
+            ],
+            'tag handling constants' => [
+                [
+                    TranslateTextOptions::TAG_HANDLING => TagHandlingMode::HTML,
+                    TranslateTextOptions::TAG_HANDLING_VERSION => TagHandlingVersion::V1,
+                ],
+                $base + $tail + ['tag_handling' => 'html', 'tag_handling_version' => 'v1'],
             ],
             'tag lists from strings' => [
                 [
@@ -137,9 +161,21 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::CONTEXT => 'ctx', TranslateTextOptions::MODEL_TYPE => 'latency_optimized'],
                 $base + $tail + ['context' => 'ctx', 'model_type' => 'latency_optimized'],
             ],
+            'model type constant' => [
+                [TranslateTextOptions::MODEL_TYPE => ModelType::PREFER_QUALITY_OPTIMIZED],
+                $base + $tail + ['model_type' => 'prefer_quality_optimized'],
+            ],
             'custom instructions' => [
                 [TranslateTextOptions::CUSTOM_INSTRUCTIONS => ['Be brief']],
                 $base + $tail + ['custom_instructions' => ['Be brief']],
+            ],
+            'style rule from string' => [
+                [TranslateTextOptions::STYLE_RULE => 'sid'],
+                $base + $tail + ['style_id' => 'sid'],
+            ],
+            'style rule from object' => [
+                [TranslateTextOptions::STYLE_RULE => $style],
+                $base + $tail + ['style_id' => 'sid'],
             ],
             'style id from string' => [
                 [TranslateTextOptions::STYLE_ID => 'sid'],
@@ -166,6 +202,17 @@ class TranslateTextTest extends OfflineTestCase
             ],
             'translation memory from object' => [
                 [TranslateTextOptions::TRANSLATION_MEMORY_ID => $tm],
+                $base + $tail + ['translation_memory_id' => 'tmid'],
+            ],
+            'translation memory option from string with threshold' => [
+                [
+                    TranslateTextOptions::TRANSLATION_MEMORY => 'tmid',
+                    TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD => 80,
+                ],
+                $base + $tail + ['translation_memory_id' => 'tmid', 'translation_memory_threshold' => 80],
+            ],
+            'translation memory option from object' => [
+                [TranslateTextOptions::TRANSLATION_MEMORY => $tm],
                 $base + $tail + ['translation_memory_id' => 'tmid'],
             ],
             'glossary id' => [
@@ -312,6 +359,38 @@ class TranslateTextTest extends OfflineTestCase
 
         $this->assertNull($result->billedCharacters);
         $this->assertSame('Hallo', $result->text);
+    }
+
+    public function testParsesTagHandlingVersion(): void
+    {
+        $this->reply(['translations' => [[
+            'text' => 'Hallo',
+            'detected_source_language' => 'EN',
+            'billed_characters' => 5,
+            'tag_handling_version' => 'v2',
+        ]]]);
+
+        $result = $this->makeTranslator()->translateText('Hello', null, 'de');
+
+        $this->assertSame(TagHandlingVersion::V2, $result->tagHandlingVersion);
+    }
+
+    public function testParsesMissingOrMalformedTagHandlingVersionAsNull(): void
+    {
+        $this->reply(self::REPLY);
+        $this->reply(['translations' => [[
+            'text' => 'Hallo',
+            'detected_source_language' => 'EN',
+            'billed_characters' => 5,
+            'tag_handling_version' => ['v2'],
+        ]]]);
+        $translator = $this->makeTranslator();
+
+        $this->assertNull($translator->translateText('Hello', null, 'de')->tagHandlingVersion);
+        $malformed = $translator->translateText('Hello', null, 'de');
+        $this->assertNull($malformed->tagHandlingVersion);
+        $this->assertSame('Hallo', $malformed->text);
+        $this->assertSame(5, $malformed->billedCharacters);
     }
 
     public function testParsesMissingModelTypeAsNull(): void

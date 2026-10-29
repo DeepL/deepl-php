@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `style_profile` option (`TranslateTextOptions::STYLE_PROFILE`
   and `TranslateDocumentOptions::STYLE_PROFILE`) to translate text and
   documents with a style profile, given as an ID string or a `StyleProfile`.
+- Added the `style_rule` (`TranslateTextOptions::STYLE_RULE`) and
+  `translation_memory` (`TranslateTextOptions::TRANSLATION_MEMORY`) text
+  translation options, taking an ID string or a `StyleRuleInfo` /
+  `TranslationMemoryInfo`. They replace `style_id` and `translation_memory_id`.
+- Added the constants classes `Formality`, `SentenceSplittingMode`,
+  `TagHandlingMode`, `TagHandlingVersion` and `ModelType` for the values of the
+  `formality`, `split_sentences`, `tag_handling`, `tag_handling_version` and
+  `model_type` options. The options still accept any string.
+- Added `TextResult::$tagHandlingVersion`, the `tag_handling_version` returned
+  by the API, or `null` if the response does not include it.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with
   an admin API key and supports managing developer keys
   (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,
@@ -80,6 +90,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Deprecated
+- Deprecated the text translation options `TranslateTextOptions::STYLE_ID`
+  (`style_id`) and `TranslateTextOptions::TRANSLATION_MEMORY_ID`
+  (`translation_memory_id`); use `STYLE_RULE` and `TRANSLATION_MEMORY` instead.
+  They keep working, raise a silenced `E_USER_DEPRECATED` notice once per
+  process, and will be removed in the next major version.
+- Deprecated the `split_sentences` aliases `'on'`, `'default'` and `'off'`;
+  use the `SentenceSplittingMode` values `'1'`, `'0'` and `'nonewlines'`. The
+  aliases keep working and raise a silenced `E_USER_DEPRECATED` notice once per
+  process.
 - Deprecated `Translator::isAuthKeyFreeAccount()`; use
   `isFreeAccountAuthKey()` instead. It keeps working and raises a silenced
   `E_USER_DEPRECATED` notice once per process.

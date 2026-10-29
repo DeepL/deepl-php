@@ -43,6 +43,12 @@ class Translator
     private static $isAuthKeyFreeAccountDeprecationTriggered = false;
 
     /**
+     * Deprecation notices for translateText() options already raised in this process, by option key.
+     * @var array<string, bool>
+     */
+    private static $textOptionDeprecationsTriggered = [];
+
+    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -214,7 +220,14 @@ class Translator
                 $detectedSourceLang = $textResult['detected_source_language'];
                 $billedCharacters = $textResult['billed_characters'] ?? null;
                 $modelTypeUsed = $textResult['model_type_used'] ?? null;
-                $textResults[] = new TextResult($textField, $detectedSourceLang, $billedCharacters, $modelTypeUsed);
+                $tagHandlingVersion = $textResult['tag_handling_version'] ?? null;
+                $textResults[] = new TextResult(
+                    $textField,
+                    $detectedSourceLang,
+                    $billedCharacters,
+                    $modelTypeUsed,
+                    is_string($tagHandlingVersion) ? $tagHandlingVersion : null
+                );
             }
             return is_array($texts) ? $textResults : $textResults[0];
         });
@@ -717,19 +730,19 @@ class Translator
             return;
         }
         if (isset($options[TranslateTextOptions::SPLIT_SENTENCES])) {
-            $split_sentences = strtolower($options[TranslateTextOptions::SPLIT_SENTENCES]);
-            switch ($split_sentences) {
-                case 'on':
-                case 'default':
-                    $params[TranslateTextOptions::SPLIT_SENTENCES] = '1';
-                    break;
-                case 'off':
-                    $params[TranslateTextOptions::SPLIT_SENTENCES] = '0';
-                    break;
-                default:
-                    $params[TranslateTextOptions::SPLIT_SENTENCES] = $split_sentences;
-                    break;
+            // Lower-cased as in released versions: the API rejects upper-case values.
+            $splitSentences = strtolower($options[TranslateTextOptions::SPLIT_SENTENCES]);
+            $aliases = ['on' => SentenceSplittingMode::ALL, 'default' => SentenceSplittingMode::ALL,
+                'off' => SentenceSplittingMode::OFF];
+            if (isset($aliases[$splitSentences])) {
+                self::triggerTextOptionDeprecation(
+                    'split_sentences',
+                    "The split_sentences values 'on', 'default' and 'off' are deprecated, use the " .
+                    "SentenceSplittingMode values '1', '0' or 'nonewlines' instead."
+                );
+                $splitSentences = $aliases[$splitSentences];
             }
+            $params[TranslateTextOptions::SPLIT_SENTENCES] = $splitSentences;
         }
         if (isset($options[TranslateTextOptions::PRESERVE_FORMATTING])) {
             $params[TranslateTextOptions::PRESERVE_FORMATTING] =
@@ -763,6 +776,19 @@ class Translator
             $params[TranslateTextOptions::IGNORE_TAGS] =
                 $this->toTagList($options[TranslateTextOptions::IGNORE_TAGS]);
         }
+        if (isset($options[TranslateTextOptions::STYLE_ID])) {
+            self::triggerTextOptionDeprecation(
+                TranslateTextOptions::STYLE_ID,
+                'TranslateTextOptions::STYLE_ID is deprecated, use TranslateTextOptions::STYLE_RULE instead.'
+            );
+        }
+        if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
+            self::triggerTextOptionDeprecation(
+                TranslateTextOptions::TRANSLATION_MEMORY_ID,
+                'TranslateTextOptions::TRANSLATION_MEMORY_ID is deprecated, use ' .
+                'TranslateTextOptions::TRANSLATION_MEMORY instead.'
+            );
+        }
         $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
         if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
             $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
@@ -786,14 +812,16 @@ class Translator
         if ($options === null) {
             return;
         }
-        if (isset($options[TranslateTextOptions::STYLE_ID])) {
-            $styleRule = $options[TranslateTextOptions::STYLE_ID];
+        $styleRuleKey = isset($options[TranslateTextOptions::STYLE_RULE]) ? TranslateTextOptions::STYLE_RULE
+            : TranslateTextOptions::STYLE_ID;
+        $styleRule = $options[$styleRuleKey] ?? null;
+        if (isset($styleRule)) {
             if (is_string($styleRule)) {
                 $params['style_id'] = $styleRule;
             } elseif ($styleRule instanceof StyleRuleInfo) {
                 $params['style_id'] = $styleRule->styleId;
             } else {
-                throw new DeepLException('style_id must be a string or StyleRuleInfo object');
+                throw new DeepLException("$styleRuleKey must be a string or StyleRuleInfo object");
             }
         }
         if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
@@ -806,25 +834,35 @@ class Translator
                 throw new DeepLException('style_profile must be a string or StyleProfile object');
             }
         }
-        if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
-            $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY_ID];
+        $tmKey = isset($options[TranslateTextOptions::TRANSLATION_MEMORY]) ? TranslateTextOptions::TRANSLATION_MEMORY
+            : TranslateTextOptions::TRANSLATION_MEMORY_ID;
+        $tm = $options[$tmKey] ?? null;
+        if (isset($tm)) {
             if (is_string($tm)) {
                 $params['translation_memory_id'] = $tm;
             } elseif ($tm instanceof TranslationMemoryInfo) {
                 $params['translation_memory_id'] = $tm->translationMemoryId;
             } else {
-                throw new DeepLException('translation_memory_id must be a string or TranslationMemoryInfo object');
+                throw new DeepLException("$tmKey must be a string or TranslationMemoryInfo object");
             }
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD])) {
-            if (!isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
-                throw new DeepLException('translation_memory_threshold requires translation_memory_id');
+            if (!isset($tm)) {
+                throw new DeepLException("translation_memory_threshold requires $tmKey");
             }
             $threshold = $options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD];
             if (!is_int($threshold) || $threshold < 0 || $threshold > 100) {
                 throw new DeepLException('translation_memory_threshold must be an integer between 0 and 100');
             }
             $params['translation_memory_threshold'] = $threshold;
+        }
+    }
+
+    private static function triggerTextOptionDeprecation(string $key, string $message): void
+    {
+        if (!isset(self::$textOptionDeprecationsTriggered[$key])) {
+            self::$textOptionDeprecationsTriggered[$key] = true;
+            @trigger_error($message, E_USER_DEPRECATED);
         }
     }
 

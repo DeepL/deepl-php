@@ -121,7 +121,10 @@ corresponding to your input text(s). `TextResult` has the following properties:
 - `billedCharacters` is the number of characters billed for the text, or `null`
   if the response does not include it.
 - `modelTypeUsed` indicates the translation model used, but is `null` unless the
-  `model_type` option is specified.
+  `model_type` option is specified. The `ModelType` class defines constants for
+  its values.
+- `tagHandlingVersion` is the version of the tag handling algorithm used (see
+  `TagHandlingVersion`), or `null` if the response does not include it.
 
 ```php
 // Translate text into a target language, in this case, French:
@@ -152,29 +155,34 @@ Provide options to the `translateText` function as an associative array,
 using the following keys:
 
 -   `split_sentences`: specify how input text should be split into sentences,
-    default: `'on'`.
-    -   `'on'`: input text will be split into sentences using both newlines and
-        punctuation.
-    -   `'off'`: input text will not be split into sentences. Use this for
-        applications where each input text contains only one sentence.
-    -   `'nonewlines'`: input text will be split into sentences using punctuation
-        but not newlines.
+    default: `'1'`. The `SentenceSplittingMode` class defines constants for the
+    values.
+    -   `'1'` (`SentenceSplittingMode::ALL`): input text will be split into
+        sentences using both newlines and punctuation.
+    -   `'0'` (`SentenceSplittingMode::OFF`): input text will not be split into
+        sentences. Use this for applications where each input text contains only
+        one sentence.
+    -   `'nonewlines'` (`SentenceSplittingMode::NO_NEWLINES`): input text will be
+        split into sentences using punctuation but not newlines.
+    -   The aliases `'on'` and `'default'` (sent as `'1'`) and `'off'` (sent as
+        `'0'`) are deprecated.
 -   `preserve_formatting`: controls automatic-formatting-correction. Set to `true`
     to prevent automatic-correction of formatting, default: `false`.
 -   `formality`: controls whether translations should lean toward informal or
     formal language. This option is only available for some target languages, see
     [Listing available languages](#listing-available-languages). Use the
     `prefer_*` options to apply formality if it is available for the target
-    language, or otherwise fallback to the default.  
+    language, or otherwise fallback to the default. The `Formality` class defines
+    constants for the values (`Formality::LESS`, ...).
     - `'less'`: use informal language.
     - `'more'`: use formal, more polite language.
     - `'default'`: use default formality.
     - `'prefer_less'`: use informal language if available, otherwise default.
     - `'prefer_more'`: use formal, more polite language if available, otherwise default.
 -   `tag_handling`: type of tags to parse before translation, options are `'html'`
-    and `'xml'`.
+    and `'xml'` (`TagHandlingMode::HTML`, `TagHandlingMode::XML`).
 -   `tag_handling_version`: specifies which version of the tag handling algorithm to use.
-    Options are `v1` and `v2`. This parameter is only relevant when `tag_handling` is set to
+    Options are `v1` and `v2` (`TagHandlingVersion::V1`, `TagHandlingVersion::V2`). This parameter is only relevant when `tag_handling` is set to
     `'html'` or `'xml'`.
 -   `context`: specifies additional context to influence translations, that is not
     translated itself. Characters in the `context` parameter are not counted toward billing.
@@ -193,21 +201,25 @@ using the following keys:
     ID string, a `GlossaryInfo`, or a `MultilingualGlossaryInfo` object. Requires the
     `sourceLang` argument to be set, and cannot be combined with the singular `glossary`
     option.
--   `style_id`: specifies a style rule to use with translation, either as a string
+-   `style_rule`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
+-   `style_id`: deprecated alias of `style_rule`, removed in the next major version.
 -   `style_profile`: specifies a style profile to use with translation, either as
     a string containing the ID of the style profile, or a `StyleProfile` object. The
     profile applies its linked glossaries, style rule lists and translation memories;
     a component that does not fit the language pair is left out. Cannot be combined
-    with `glossary`, `glossary_ids`, `style_id`, `translation_memory_id`,
+    with `glossary`, `glossary_ids`, `style_rule`, `translation_memory`,
     `translation_memory_threshold` or `custom_instructions`.
--   `translation_memory_id`: specifies a translation memory to use with translation,
+-   `translation_memory`: specifies a translation memory to use with translation,
     either as a string containing the ID of the translation memory, or a
     `TranslationMemoryInfo` object.
+-   `translation_memory_id`: deprecated alias of `translation_memory`, removed in
+    the next major version.
 -   `translation_memory_threshold`: an integer from 0 to 100 controlling the
     minimum matching percentage for translation memory matches. We recommend
     a minimum threshold of 75%.
--   `model_type`: specifies the type of translation model to use, options are:
+-   `model_type`: specifies the type of translation model to use, options are
+    (constants in `ModelType`):
     - `'quality_optimized'`: use a translation model that maximizes translation quality, at
                              the cost of response time. This option may be unavailable for
                              some language pairs.
@@ -383,7 +395,7 @@ using the following keys:
 -   `glossary`: same as in [Text translation options](#text-translation-options).
 -   `glossary_ids`: same as in [Text translation options](#text-translation-options).
     Apply up to 5 glossaries in a single document translation request.
--   `style_id`: same as in [Text translation options](#text-translation-options).
+-   `style_id`: same as `style_rule` in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
 -   `style_profile`: same as in [Text translation options](#text-translation-options).
@@ -391,7 +403,7 @@ using the following keys:
     profile ID string or a `StyleProfile` object. An unknown style profile is not
     rejected at upload: the document translation fails with a
     `DocumentTranslationException` whose message contains `Style profile not found.`.
--   `translation_memory_id`: same as in [Text translation options](#text-translation-options).
+-   `translation_memory_id`: same as `translation_memory` in [Text translation options](#text-translation-options).
     Specify a translation memory to use for the document translation, either as a
     translation memory ID string or a `TranslationMemoryInfo` object.
 -   `translation_memory_threshold`: same as in [Text translation options](#text-translation-options).
@@ -1012,7 +1024,7 @@ $deeplClient->deleteStyleRuleCustomInstruction($styleRule, $instruction->id);
 
 #### Using a stored style rule
 
-You can use a stored style rule for text translation by setting the `style_id`
+You can use a stored style rule for text translation by setting the `style_rule`
 option to either the style rule ID or a `StyleRuleInfo` object:
 
 ```php
@@ -1021,7 +1033,7 @@ $result = $deeplClient->translateText(
     'Hello, world!',
     'en',
     'de',
-    ['style_id' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
+    ['style_rule' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
 );
 
 // Using a StyleRuleInfo object
@@ -1030,12 +1042,12 @@ $result = $deeplClient->translateText(
     'Hello, world!',
     'en',
     'de',
-    ['style_id' => $styleRules[0]]
+    ['style_rule' => $styleRules[0]]
 );
 ```
 
 Style rules are also supported for document translation. Set the `style_id`
-option on `translateDocument()` (or `uploadDocument()`) in the same way:
+option (`TranslateDocumentOptions::STYLE_ID`) on `translateDocument()` (or `uploadDocument()`) in the same way:
 
 ```php
 $deeplClient->translateDocument(
@@ -1244,7 +1256,7 @@ $deeplClient->deleteTranslationMemory('YOUR_TM_ID');
 #### Using a translation memory for translation
 
 You can use a translation memory for text translation by setting the
-`translation_memory_id` option to either the translation memory ID or a
+`translation_memory` option to either the translation memory ID or a
 `TranslationMemoryInfo` object. Optionally, set `translation_memory_threshold`
 to control the minimum similarity score for matches:
 
@@ -1254,7 +1266,7 @@ $result = $deeplClient->translateText(
     'Hello, world!',
     'en',
     'de',
-    ['translation_memory_id' => 'tm-example-id-0001']
+    ['translation_memory' => 'tm-example-id-0001']
 );
 
 // Using a TranslationMemoryInfo object with threshold
@@ -1264,7 +1276,7 @@ $result = $deeplClient->translateText(
     'en',
     'de',
     [
-        'translation_memory_id' => $translationMemories[0],
+        'translation_memory' => $translationMemories[0],
         'translation_memory_threshold' => 80,
     ]
 );
