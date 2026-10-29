@@ -14,22 +14,22 @@ use JsonException;
  */
 class LanguageResource
 {
-    /** Resource value: text translation. */
-    public const RESOURCE_TRANSLATE_TEXT = 'translate_text';
-    /** Resource value: document translation. */
-    public const RESOURCE_TRANSLATE_DOCUMENT = 'translate_document';
-    /** Resource value: glossary. */
-    public const RESOURCE_GLOSSARY = 'glossary';
-    /** Resource value: voice. */
-    public const RESOURCE_VOICE = 'voice';
-    /** Resource value: write (rephrase). */
-    public const RESOURCE_WRITE = 'write';
-    /** Resource value: style rules. */
-    public const RESOURCE_STYLE_RULES = 'style_rules';
-    /** Resource value: translation memory. */
-    public const RESOURCE_TRANSLATION_MEMORY = 'translation_memory';
+    /** @deprecated Use LanguageResourceName::TRANSLATE_TEXT instead. */
+    public const RESOURCE_TRANSLATE_TEXT = LanguageResourceName::TRANSLATE_TEXT;
+    /** @deprecated Use LanguageResourceName::TRANSLATE_DOCUMENT instead. */
+    public const RESOURCE_TRANSLATE_DOCUMENT = LanguageResourceName::TRANSLATE_DOCUMENT;
+    /** @deprecated Use LanguageResourceName::GLOSSARY instead. */
+    public const RESOURCE_GLOSSARY = LanguageResourceName::GLOSSARY;
+    /** @deprecated Use LanguageResourceName::VOICE instead. */
+    public const RESOURCE_VOICE = LanguageResourceName::VOICE;
+    /** @deprecated Use LanguageResourceName::WRITE instead. */
+    public const RESOURCE_WRITE = LanguageResourceName::WRITE;
+    /** @deprecated Use LanguageResourceName::STYLE_RULES instead. */
+    public const RESOURCE_STYLE_RULES = LanguageResourceName::STYLE_RULES;
+    /** @deprecated Use LanguageResourceName::TRANSLATION_MEMORY instead. */
+    public const RESOURCE_TRANSLATION_MEMORY = LanguageResourceName::TRANSLATION_MEMORY;
 
-    /** @var string Name of the resource, for example 'translate_text'. */
+    /** @var string Name of the resource, for example 'translate_text'; see {@see LanguageResourceName}. */
     public $resource;
 
     /** @var ResourceFeature[] Map of feature name to ResourceFeature describing each feature

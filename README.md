@@ -908,11 +908,11 @@ returns a single list per resource in which each `LanguageSupport` exposes
 `usableAsSource` and `usableAsTarget` flags.
 
 ```php
-use DeepL\LanguageSupport;
-use DeepL\LanguageResource;
 use DeepL\LanguageFeature;
+use DeepL\LanguageInclude;
+use DeepL\LanguageResourceName;
 
-$languages = $deeplClient->getLanguagesForResource(LanguageResource::RESOURCE_TRANSLATE_TEXT);
+$languages = $deeplClient->getLanguagesForResource(LanguageResourceName::TRANSLATE_TEXT);
 foreach ($languages as $language) {
     echo $language->name . ' (' . $language->code . ')';
     if ($language->usableAsSource) {
@@ -929,10 +929,17 @@ foreach ($languages as $language) {
 
 // Optionally include beta and third-party-backed languages/features:
 $languages = $deeplClient->getLanguagesForResource(
-    LanguageResource::RESOURCE_TRANSLATE_TEXT,
-    [LanguageSupport::INCLUDE_BETA, LanguageSupport::INCLUDE_EXTERNAL]
+    LanguageResourceName::TRANSLATE_TEXT,
+    [LanguageInclude::BETA, LanguageInclude::EXTERNAL]
 );
 ```
+
+The `LanguageResourceName` constants define the resource values
+(`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`, `GLOSSARY`, `VOICE`, `WRITE`,
+`STYLE_RULES`, `TRANSLATION_MEMORY`) and the `LanguageInclude` constants the
+include values (`BETA`, `EXTERNAL`); other strings are also accepted. The older
+`LanguageResource::RESOURCE_*` and `LanguageSupport::INCLUDE_*` constants are
+deprecated aliases.
 
 To discover which features each resource exposes (and whether a feature needs
 source/target language support), use `getLanguageResources()`:

@@ -1118,10 +1118,9 @@ class DeepLClient extends Translator
     /**
      * Queries languages supported by the DeepL API for the given resource. Returns each
      * language with its per-feature support information.
-     * @param string $resource Resource to query support for, see the RESOURCE_* constants on
-     *  {@see LanguageResource}.
+     * @param string $resource Resource to query support for, see {@see LanguageResourceName}.
      * @param string[]|null $include Optional list of include values, for example
-     *  {@see LanguageSupport::INCLUDE_BETA} or {@see LanguageSupport::INCLUDE_EXTERNAL}. By default only
+     *  {@see LanguageInclude::BETA} or {@see LanguageInclude::EXTERNAL}. By default only
      *  stable languages and features are returned.
      * @return LanguageSupport[] Array of LanguageSupport objects containing per-feature support information.
      * @throws DeepLException

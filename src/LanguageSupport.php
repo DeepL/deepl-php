@@ -14,10 +14,10 @@ use JsonException;
  */
 class LanguageSupport
 {
-    /** Include value: also return beta languages and features. */
-    public const INCLUDE_BETA = 'beta';
-    /** Include value: also return third-party-backed languages and features. */
-    public const INCLUDE_EXTERNAL = 'external';
+    /** @deprecated Use LanguageInclude::BETA instead. */
+    public const INCLUDE_BETA = LanguageInclude::BETA;
+    /** @deprecated Use LanguageInclude::EXTERNAL instead. */
+    public const INCLUDE_EXTERNAL = LanguageInclude::EXTERNAL;
 
     /** @var string BCP-47 language code, for example 'de', 'en-US', 'pt-BR', 'zh-Hans'. */
     public $code;

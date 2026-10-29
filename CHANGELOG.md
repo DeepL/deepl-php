@@ -112,6 +112,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `EXTRA_BODY_PARAMETERS`. `StyleProfile::$creationTime` and `$updatedTime`
   are required: a response without a valid timestamp throws an
   `InvalidContentException`.
+- Added the `LanguageResourceName` constants class for the resource values of
+  `getLanguagesForResource()` and `LanguageResource::$resource`, and the
+  `LanguageInclude` constants class for its include values.
 
 ### Changed
 - The `max_retries` option now counts retries after the first attempt, as
@@ -183,6 +186,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the public API. Use `GlossaryEntries::fromTsv()`,
   `GlossaryEntries::fromEntries()` and `GlossaryEntries::convertToTsv()`
   instead of `GlossaryUtils`.
+- Deprecated the `LanguageResource::RESOURCE_*` constants; use the
+  `LanguageResourceName` constants instead. Deprecated
+  `LanguageSupport::INCLUDE_BETA` and `INCLUDE_EXTERNAL`; use
+  `LanguageInclude::BETA` and `EXTERNAL` instead. They keep working and will be
+  removed in the next major version.
 
 ### Fixed
 - Fixed `translateDocumentUpload()` (and the deprecated `uploadDocument()`)

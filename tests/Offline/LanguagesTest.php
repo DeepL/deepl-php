@@ -9,7 +9,9 @@ namespace DeepL\Offline;
 use DeepL\DeepLException;
 use DeepL\GlossaryLanguagePair;
 use DeepL\LanguageFeature;
+use DeepL\LanguageInclude;
 use DeepL\LanguageResource;
+use DeepL\LanguageResourceName;
 use DeepL\LanguageSupport;
 
 class LanguagesTest extends OfflineTestCase
@@ -90,6 +92,18 @@ class LanguagesTest extends OfflineTestCase
         );
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=write&include=beta&include=external');
+    }
+
+    public function testSendsTheLanguageResourceNameAndLanguageIncludeValues(): void
+    {
+        $this->reply(self::LANGUAGES);
+
+        $this->makeDeepLClient()->getLanguagesForResource(
+            LanguageResourceName::TRANSLATION_MEMORY,
+            [LanguageInclude::BETA, LanguageInclude::EXTERNAL]
+        );
+
+        $this->assertRequest('GET', '/v3/languages', 0, 'resource=translation_memory&include=beta&include=external');
     }
 
     public function testParsesLanguageSupportAndFeatures(): void
