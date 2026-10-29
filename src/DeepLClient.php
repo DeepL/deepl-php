@@ -34,31 +34,7 @@ class DeepLClient extends Translator
             $options[RephraseTextOptions::TONE] ?? null
         );
         $this->validateAndAppendTexts($params, $texts);
-
-        $response = $this->client->sendRequestWithBackoff(
-            'POST',
-            '/v2/write/rephrase',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
-        );
-        $this->checkStatusCode($response);
-        list(, $content) = $response;
-
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-
-        $improvements = isset($json['improvements']) && is_array($json['improvements']) ? $json['improvements'] : [];
-        $output = [];
-        foreach ($improvements as $improvement) {
-            $text = $improvement['text'] ?? '';
-            $detectedSourceLanguage = $improvement['detected_source_language'] ?? '';
-            $targetLanguage = $improvement['target_language'] ?? '';
-            $output[] = new RephraseTextResult($text, $detectedSourceLanguage, $targetLanguage);
-        }
-
-        return is_array($texts) ? $output : $output[0];
+        return $this->sendWriteRequest('/v2/write/rephrase', $params, $texts);
     }
 
     /**
@@ -79,28 +55,44 @@ class DeepLClient extends Translator
             $params['target_lang'] = LanguageCode::standardizeLanguageCode($targetLang);
         }
         $this->validateAndAppendTexts($params, $texts);
+        return $this->sendWriteRequest('/v2/write/correct', $params, $texts);
+    }
 
+    /**
+     * Sends a rephrase or correct request and parses one RephraseTextResult per input text.
+     * @param string|string[] $texts
+     * @return RephraseTextResult|RephraseTextResult[]
+     * @throws DeepLException
+     */
+    private function sendWriteRequest(string $path, array $params, $texts)
+    {
         $response = $this->client->sendRequestWithBackoff(
             'POST',
-            '/v2/write/correct',
+            $path,
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
 
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
+        $json = ParsingUtils::decodeJson($content);
+        $improvements = $json['improvements'] ?? null;
+        if (!is_array($improvements) || array_values($improvements) !== $improvements) {
+            throw ParsingUtils::invalidContent('Expected an improvements list in the response');
         }
-
-        $improvements = isset($json['improvements']) && is_array($json['improvements']) ? $json['improvements'] : [];
+        $expected = is_array($texts) ? count($texts) : 1;
+        if (count($improvements) !== $expected) {
+            throw ParsingUtils::invalidContent(
+                'Expected ' . $expected . ' improvements in the response, got ' . count($improvements)
+            );
+        }
         $output = [];
         foreach ($improvements as $improvement) {
-            $text = $improvement['text'] ?? '';
+            if (!is_array($improvement) || !is_string($improvement['text'] ?? null)) {
+                throw ParsingUtils::invalidContent('Expected a text in every improvement in the response');
+            }
             $detectedSourceLanguage = $improvement['detected_source_language'] ?? '';
             $targetLanguage = $improvement['target_language'] ?? '';
-            $output[] = new RephraseTextResult($text, $detectedSourceLanguage, $targetLanguage);
+            $output[] = new RephraseTextResult($improvement['text'], $detectedSourceLanguage, $targetLanguage);
         }
 
         return is_array($texts) ? $output : $output[0];

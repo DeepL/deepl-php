@@ -213,6 +213,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request.
 - Fixed `rephraseText()` throwing a `TypeError` when called without a target
   language and without options.
+- Fixed `rephraseText()` and `correctText()` accepting malformed responses: a
+  response without an `improvements` list returned `null` for a single text,
+  fewer improvements than texts returned a short array, and an improvement
+  without `text` returned an empty text. These now throw an
+  `InvalidContentException`.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
   which said these codes may only be used as source languages.
 

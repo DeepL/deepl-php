@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\InvalidContentException;
 use DeepL\RephraseTextOptions;
 use DeepL\RephraseTextResult;
 
@@ -74,5 +75,27 @@ class RephraseTextTest extends OfflineTestCase
         $result = $this->makeDeepLClient()->rephraseText('Hello', 'en-GB');
 
         $this->assertInstanceOf(RephraseTextResult::class, $result);
+    }
+
+    public function malformedResponses(): array
+    {
+        return [
+            'improvements missing' => ['Hello', []],
+            'improvements not a list' => ['Hello', ['improvements' => ['a' => ['text' => 'x']]]],
+            'fewer improvements than texts' => [['a', 'b'], self::REPLY],
+            'improvement without text' => ['Hello', ['improvements' => [['detected_source_language' => 'en']]]],
+        ];
+    }
+
+    /**
+     * @dataProvider malformedResponses
+     * @param string|string[] $texts
+     */
+    public function testThrowsInvalidContentExceptionOnAMalformedResponse($texts, array $body): void
+    {
+        $this->reply($body);
+
+        $this->expectException(InvalidContentException::class);
+        $this->makeDeepLClient()->rephraseText($texts);
     }
 }

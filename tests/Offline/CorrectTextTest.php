@@ -7,6 +7,7 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLException;
+use DeepL\InvalidContentException;
 use DeepL\RephraseTextResult;
 
 class CorrectTextTest extends OfflineTestCase
@@ -27,7 +28,10 @@ class CorrectTextTest extends OfflineTestCase
 
     public function testSendsOnlyTheTextWithoutTargetLanguage(): void
     {
-        $this->reply(self::REPLY);
+        $this->reply(['improvements' => [
+            ['text' => 'Hello', 'detected_source_language' => 'en', 'target_language' => 'en-US'],
+            ['text' => 'World', 'detected_source_language' => 'en', 'target_language' => 'en-US'],
+        ]]);
 
         $this->makeDeepLClient()->correctText(['Helo', 'Wrold']);
 
@@ -53,5 +57,26 @@ class CorrectTextTest extends OfflineTestCase
         $this->expectExceptionMessage('text must not be empty');
 
         $this->makeDeepLClient()->correctText('');
+    }
+
+    public function malformedResponses(): array
+    {
+        return [
+            'improvements missing' => ['Helo', []],
+            'more improvements than texts' => ['Helo', ['improvements' => [['text' => 'a'], ['text' => 'b']]]],
+            'improvement without text' => [['Helo'], ['improvements' => [['target_language' => 'en-US']]]],
+        ];
+    }
+
+    /**
+     * @dataProvider malformedResponses
+     * @param string|string[] $texts
+     */
+    public function testThrowsInvalidContentExceptionOnAMalformedResponse($texts, array $body): void
+    {
+        $this->reply($body);
+
+        $this->expectException(InvalidContentException::class);
+        $this->makeDeepLClient()->correctText($texts);
     }
 }
