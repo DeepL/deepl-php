@@ -11,6 +11,7 @@ use DeepL\DeepLAdminClient;
 use DeepL\DeepLClient;
 use DeepL\DocumentHandle;
 use DeepL\Fixtures;
+use DeepL\TranslateDocumentOptions;
 use DeepL\TranslatorOptions;
 
 /**
@@ -133,6 +134,20 @@ class CurlTransportTest extends OfflineTestCase
         $this->assertSame(['de', 'en'], [$fields['target_lang'], $fields['source_lang']]);
         $this->assertInstanceOf(\CURLFile::class, $fields['file']);
         $this->assertSame($file, $fields['file']->getFilename());
+    }
+
+    public function testSendsTheFilenameOptionAsThePostedFileName(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->translateDocumentUpload(
+                Fixtures::tempFile('input.txt', 'Hello'),
+                null,
+                'de',
+                [TranslateDocumentOptions::FILENAME => 'report.html']
+            );
+        }, '{"document_id":"d","document_key":"k"}');
+
+        $this->assertSame('report.html', $options[CURLOPT_POSTFIELDS]['file']->getPostFilename());
     }
 
     public function testSendsRawPutBodyWithoutAuthorization(): void

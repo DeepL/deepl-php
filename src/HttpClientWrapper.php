@@ -43,6 +43,8 @@ class HttpClientWrapper
     private $curlHandle;
 
     public const OPTION_FILE = 'file';
+    /** File name sent for the OPTION_FILE part; defaults to the base name of the file path. */
+    public const OPTION_FILENAME = 'filename';
     public const OPTION_HEADERS = 'headers';
     public const OPTION_PARAMS = 'params';
     public const OPTION_OUTFILE = 'outfile';
@@ -135,7 +137,8 @@ class HttpClientWrapper
                     $outFile,
                     $json,
                     $rawBody,
-                    $onlyUnprocessed
+                    $onlyUnprocessed,
+                    $options[self::OPTION_FILENAME] ?? null
                 );
             } catch (ConnectionException $e) {
                 $exception = $e;
@@ -183,6 +186,7 @@ class HttpClientWrapper
      * @param string|null $json If not null, JSON content to include in body.
      * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
      * @param bool $freshConnection If true, cURL sends the request on a new connection.
+     * @param string|null $fileName File name sent for the uploaded file, or null for the path's base name.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -196,7 +200,8 @@ class HttpClientWrapper
         $outFile,
         ?string $json,
         ?string $rawBody = null,
-        bool $freshConnection = false
+        bool $freshConnection = false,
+        ?string $fileName = null
     ): array {
         if ($this->customHttpClient !== null) {
             return $this->sendCustomHttpRequest(
@@ -207,7 +212,8 @@ class HttpClientWrapper
                 $filePath,
                 $outFile,
                 $json,
-                $rawBody
+                $rawBody,
+                $fileName
             );
         } else {
             return $this->sendCurlRequest(
@@ -220,7 +226,8 @@ class HttpClientWrapper
                 $outFile,
                 $json,
                 $rawBody,
-                $freshConnection
+                $freshConnection,
+                $fileName
             );
         }
     }
@@ -253,6 +260,7 @@ class HttpClientWrapper
      * @param resource|null $outFile If not null, file to write output to.
      * @param string|null $json If not null, JSON content to include in body.
      * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
+     * @param string|null $fileName File name sent for the uploaded file, or null for the path's base name.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -264,12 +272,13 @@ class HttpClientWrapper
         ?string $filePath,
         $outFile,
         ?string $json,
-        ?string $rawBody = null
+        ?string $rawBody = null,
+        ?string $fileName = null
     ): array {
         $body = null;
         if ($filePath !== null) {
             $builder = new MultipartStreamBuilder($this->streamClient);
-            $builder->addResource('file', fopen($filePath, 'r'));
+            $builder->addResource('file', fopen($filePath, 'r'), ['filename' => $fileName ?? basename($filePath)]);
             foreach ($params as $param_name => $value) {
                 $builder->addResource($param_name, $value);
             }
@@ -317,6 +326,7 @@ class HttpClientWrapper
      * @param string|null $json If not null, JSON content to include in body.
      * @param string|null $rawBody If not null, raw content to include in body, sent as-is.
      * @param bool $freshConnection If true, the request is sent on a new connection.
+     * @param string|null $fileName File name sent for the uploaded file, or null for the path's base name.
      * @return array Array where the first element is the HTTP status code and the second element is the response body.
      * @throws ConnectionException
      */
@@ -330,7 +340,8 @@ class HttpClientWrapper
         $outFile,
         ?string $json,
         ?string $rawBody = null,
-        bool $freshConnection = false
+        bool $freshConnection = false,
+        ?string $fileName = null
     ): array {
         $curlOptions = [];
         $curlOptions[\CURLOPT_HEADER] = false;
@@ -362,7 +373,7 @@ class HttpClientWrapper
 
         if ($filePath !== null) {
             // If a file is to be uploaded, add it to the list of body parameters
-            $params['file'] = \curl_file_create($filePath);
+            $params['file'] = \curl_file_create($filePath, null, $fileName ?? basename($filePath));
             $curlOptions[\CURLOPT_POSTFIELDS] = $params;
         } elseif (count($params) > 0) {
             // If there are repeated parameters, passing the parameters directly to cURL will index the repeated

@@ -382,9 +382,34 @@ the translation is complete, and downloading. If your application needs to
 execute these steps individually, you can instead use the following functions
 directly:
 
--   `uploadDocument()`,
--   `getDocumentStatus()` (or `waitUntilDocumentTranslationComplete()`), and
--   `downloadDocument()`
+-   `translateDocumentUpload()`,
+-   `translateDocumentGetStatus()` (or `translateDocumentWaitUntilDone()`), and
+-   `translateDocumentDownload()`
+
+```php
+$handle = $deeplClient->translateDocumentUpload('Instruction Manual.docx', 'en', 'de');
+// Polls the status every 5 seconds; throws a DeepLException if the translation
+// fails or is not done within 300 seconds
+$status = $deeplClient->translateDocumentWaitUntilDone($handle, ['timeout' => 300]);
+$deeplClient->translateDocumentDownload($handle, 'Bedienungsanleitung.docx');
+echo "Billed characters: {$status->billedCharacters}";
+```
+
+`translateDocumentWaitUntilDone()` accepts an optional `timeout` (in seconds,
+`TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. As the
+status is polled every 5 seconds, the wait can exceed the timeout by up to that
+interval.
+
+`translateDocumentGetStatus()` returns a `DocumentStatus` with the `documentId`,
+`status`, `secondsRemaining`, `billedCharacters` and `errorMessage` of the
+translation; `done()` and `ok()` tell whether it succeeded and whether it has
+not failed. The `DocumentStatusCode` class defines constants for the `status`
+values `queued`, `translating`, `done` and `error`; the API may add others.
+
+The methods `uploadDocument()`, `getDocumentStatus()`,
+`waitUntilDocumentTranslationComplete()` and `downloadDocument()` are
+deprecated: they keep working and raise a silenced `E_USER_DEPRECATED` notice
+once per process, and will be removed in the next major version.
 
 #### Document translation options
 
@@ -395,20 +420,31 @@ using the following keys:
 -   `glossary`: same as in [Text translation options](#text-translation-options).
 -   `glossary_ids`: same as in [Text translation options](#text-translation-options).
     Apply up to 5 glossaries in a single document translation request.
--   `style_id`: same as `style_rule` in [Text translation options](#text-translation-options).
+-   `style_rule`: same as in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
+-   `style_id`: **deprecated**, use `style_rule`. Raises an `E_USER_DEPRECATED` notice
+    once per process and will be removed in the next major version.
 -   `style_profile`: same as in [Text translation options](#text-translation-options).
     Specify a style profile to use for the document translation, either as a style
     profile ID string or a `StyleProfile` object. An unknown style profile is not
     rejected at upload: the document translation fails with a
     `DocumentTranslationException` whose message contains `Style profile not found.`.
--   `translation_memory_id`: same as `translation_memory` in [Text translation options](#text-translation-options).
+-   `translation_memory`: same as in [Text translation options](#text-translation-options).
     Specify a translation memory to use for the document translation, either as a
     translation memory ID string or a `TranslationMemoryInfo` object.
+-   `translation_memory_id`: **deprecated**, use `translation_memory`. Raises an
+    `E_USER_DEPRECATED` notice once per process and will be removed in the next major version.
 -   `translation_memory_threshold`: same as in [Text translation options](#text-translation-options).
     An integer from 0 to 100 controlling the minimum matching percentage for translation
     memory matches.
+-   `filename`: the file name sent with the uploaded document, for example `'report.docx'`.
+    The API detects the document format from its extension. If unspecified, the base name of
+    the input file path is sent.
+-   `timeout`: the maximum time in seconds (`float`) that `translateDocument()` waits for the
+    translation to complete after the upload. When it expires, `translateDocument()` throws a
+    `DocumentTranslationException` whose `documentHandle` can be used to resume. If
+    unspecified, it waits without limit. Not sent to the API.
 -   `output_format`: a string containing the file extension of the desired format of the
     translated document, for example `'docx'`. If unspecified, the translated document is in
     the same format as the input file. If it differs from the input file's format, document
@@ -423,14 +459,14 @@ using the following keys:
     smaller document if the file contains a lot of media. Supported for `pptx` and `docx` files;
     other files are uploaded unchanged. Setting it raises an `E_USER_DEPRECATED` notice once per
     process. See also [Document minification](#document-minification). Note that this only works
-    in the high-level `translateDocument` method, not `uploadDocument`. However, the behavior can
+    in the high-level `translateDocument` method, not `translateDocumentUpload`. However, the behavior can
     be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in
     between.
 -   `extra_body_parameters`: same as in [Text translation options](#text-translation-options).
     The document request is a multipart form, so booleans are sent as `'true'`/`'false'`,
     arrays and objects as their JSON encoding, and other values as strings.
 
-The `uploadDocument` function also supports these options.
+The `translateDocumentUpload` function also supports these options, except `timeout`.
 
 The `TranslateDocumentOptions` class defines constants for the options above,
 for example `TranslateDocumentOptions::FORMALITY` is defined as `'formality'`.
@@ -463,8 +499,8 @@ $deeplClient->translateDocument(
 );
 ```
 
-In order to use document minification with the lower-level `uploadDocument`, 
-`waitUntilDocumentTranslationComplete` and `downloadDocument` methods as well as other details,
+In order to use document minification with the lower-level `translateDocumentUpload`,
+`translateDocumentWaitUntilDone` and `translateDocumentDownload` methods as well as other details,
 see the `DocumentMinifier` class.
 
 Currently supported document types for minification:
@@ -1046,8 +1082,8 @@ $result = $deeplClient->translateText(
 );
 ```
 
-Style rules are also supported for document translation. Set the `style_id`
-option (`TranslateDocumentOptions::STYLE_ID`) on `translateDocument()` (or `uploadDocument()`) in the same way:
+Style rules are also supported for document translation. Set the `style_rule`
+option (`TranslateDocumentOptions::STYLE_RULE`) on `translateDocument()` (or `translateDocumentUpload()`) in the same way:
 
 ```php
 $deeplClient->translateDocument(
@@ -1055,7 +1091,7 @@ $deeplClient->translateDocument(
     $outFile,
     'de',
     'en-US',
-    ['style_id' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
+    ['style_rule' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
 );
 ```
 
@@ -1283,8 +1319,8 @@ $result = $deeplClient->translateText(
 ```
 
 Translation memories are also supported for document translation. Set the
-`translation_memory_id` (and optionally `translation_memory_threshold`) option
-on `translateDocument()` (or `uploadDocument()`) in the same way:
+`translation_memory` (and optionally `translation_memory_threshold`) option
+on `translateDocument()` (or `translateDocumentUpload()`) in the same way:
 
 ```php
 $deeplClient->translateDocument(
@@ -1293,7 +1329,7 @@ $deeplClient->translateDocument(
     'de',
     'en-US',
     [
-        'translation_memory_id' => 'tm-example-id-0001',
+        'translation_memory' => 'tm-example-id-0001',
         'translation_memory_threshold' => 80,
     ]
 );

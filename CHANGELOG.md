@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the document translation step methods `translateDocumentUpload()`,
+  `translateDocumentGetStatus()`, `translateDocumentWaitUntilDone()` and
+  `translateDocumentDownload()`, replacing `uploadDocument()`,
+  `getDocumentStatus()`, `waitUntilDocumentTranslationComplete()` and
+  `downloadDocument()`.
+- Added the `timeout` option (`TranslateDocumentOptions::TIMEOUT`, seconds) to
+  `translateDocument()` and `translateDocumentWaitUntilDone()`. When it
+  expires, `translateDocumentWaitUntilDone()` throws a `DeepLException` and
+  `translateDocument()` a `DocumentTranslationException` with the document
+  handle. Without it, both wait without limit as before.
+- Added the `filename` document translation option
+  (`TranslateDocumentOptions::FILENAME`), the file name sent with the upload.
+  It defaults to the base name of the input file path.
+- Added the `style_rule` (`TranslateDocumentOptions::STYLE_RULE`) and
+  `translation_memory` (`TranslateDocumentOptions::TRANSLATION_MEMORY`)
+  document translation options, replacing `style_id` and
+  `translation_memory_id`.
+- Added the `DocumentStatusCode` constants class for the values of
+  `DocumentStatus::$status`, and `DocumentStatus::$documentId`, the
+  `document_id` returned by the API, or `null` if the response does not
+  include it.
 - Added the `httpStatusCode` and `shouldRetry` properties to `DeepLException`.
   `httpStatusCode` is the HTTP status of the failed response, or `null` if
   there was none. `shouldRetry` is `true` for HTTP 429, any 5xx status and
@@ -90,6 +111,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Deprecated
+- Deprecated `Translator::uploadDocument()`, `getDocumentStatus()`,
+  `waitUntilDocumentTranslationComplete()` and `downloadDocument()`; use
+  `translateDocumentUpload()`, `translateDocumentGetStatus()`,
+  `translateDocumentWaitUntilDone()` and `translateDocumentDownload()`. They
+  keep working, raise a silenced `E_USER_DEPRECATED` notice once per process,
+  and will be removed in the next major version.
+- Deprecated the document translation options
+  `TranslateDocumentOptions::STYLE_ID` and
+  `TranslateDocumentOptions::TRANSLATION_MEMORY_ID`; use `STYLE_RULE` and
+  `TRANSLATION_MEMORY` instead. They keep working, raise a silenced
+  `E_USER_DEPRECATED` notice once per process, and will be removed in the
+  next major version.
 - Deprecated the text translation options `TranslateTextOptions::STYLE_ID`
   (`style_id`) and `TranslateTextOptions::TRANSLATION_MEMORY_ID`
   (`translation_memory_id`); use `STYLE_RULE` and `TRANSLATION_MEMORY` instead.

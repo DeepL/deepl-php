@@ -9,7 +9,7 @@ namespace DeepL;
 /**
  * Options that can be specified when translating documents.
  * @see Translator::translateDocument()
- * @see Translator::uploadDocument()
+ * @see Translator::translateDocumentUpload()
  */
 final class TranslateDocumentOptions
 {
@@ -31,6 +31,19 @@ final class TranslateDocumentOptions
      */
     public const GLOSSARY_IDS = 'glossary_ids';
 
+    /** Set to a string containing the file name sent with the uploaded document, for example 'report.docx'.
+     *  The API uses its extension to detect the document format. If unspecified, the base name of the input file
+     *  path is sent.
+     */
+    public const FILENAME = 'filename';
+
+    /** Maximum time in seconds (float) that translateDocument() waits for the translation to complete after the
+     *  upload. When it expires, translateDocument() throws a DocumentTranslationException carrying the document
+     *  handle, so the translation can be resumed. If unspecified, it waits without limit. Not sent to the API.
+     *  Also accepted by Translator::translateDocumentWaitUntilDone().
+     */
+    public const TIMEOUT = 'timeout';
+
     /** Set to a string containing the file extension of the desired format of the translated file,
      *  for example 'docx'. If unspecified, the translated file is in the same format as the input file.
      */
@@ -51,6 +64,11 @@ final class TranslateDocumentOptions
      *  Can also be set to a StyleRuleInfo as returned by getAllStyleRules.
      *  @see \DeepL\DeepLClient::getAllStyleRules()
      */
+    public const STYLE_RULE = 'style_rule';
+
+    /** Set to string containing a style rule ID, or a StyleRuleInfo.
+     *  @deprecated Use STYLE_RULE instead; STYLE_ID will be removed in the next major version.
+     */
     public const STYLE_ID = 'style_id';
 
     /** Set to string containing a style profile ID to use the style profile for translation: its
@@ -64,10 +82,15 @@ final class TranslateDocumentOptions
      *  Can also be set to a TranslationMemoryInfo as returned by listTranslationMemories.
      *  @see \DeepL\DeepLClient::listTranslationMemories()
      */
+    public const TRANSLATION_MEMORY = 'translation_memory';
+
+    /** Set to string containing a translation memory ID, or a TranslationMemoryInfo.
+     *  @deprecated Use TRANSLATION_MEMORY instead; TRANSLATION_MEMORY_ID will be removed in the next major version.
+     */
     public const TRANSLATION_MEMORY_ID = 'translation_memory_id';
 
     /** Set to an integer between 0 and 100 to control the minimum matching percentage
-     *  for translation memory matches. We recommend a minimum threshold of 75%.
+     *  for translation memory matches. Requires TRANSLATION_MEMORY. We recommend a minimum threshold of 75%.
      */
     public const TRANSLATION_MEMORY_THRESHOLD = 'translation_memory_threshold';
 

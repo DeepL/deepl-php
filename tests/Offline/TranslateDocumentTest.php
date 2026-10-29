@@ -9,6 +9,7 @@ namespace DeepL\Offline;
 use DeepL\DeepLException;
 use DeepL\DocumentHandle;
 use DeepL\DocumentNotReadyException;
+use DeepL\DocumentStatusCode;
 use DeepL\DocumentTranslationException;
 use DeepL\Fixtures;
 use DeepL\GlossaryInfo;
@@ -81,6 +82,12 @@ class TranslateDocumentTest extends OfflineTestCase
                 ['enable_watermark' => 'false'],
             ],
             'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
+            'style rule' => [[TranslateDocumentOptions::STYLE_RULE => 'sid'], ['style_id' => 'sid']],
+            'style rule from object' => [[TranslateDocumentOptions::STYLE_RULE => $style], ['style_id' => 'sid']],
+            'translation memory' => [
+                [TranslateDocumentOptions::TRANSLATION_MEMORY => $tm],
+                ['translation_memory_id' => 'tmid'],
+            ],
             'style profile id' => [
                 [TranslateDocumentOptions::STYLE_PROFILE => 'spid'],
                 ['style_profile_id' => 'spid'],
@@ -111,6 +118,89 @@ class TranslateDocumentTest extends OfflineTestCase
                 ['flag_on' => 'true', 'flag_off' => 'false', 'list' => '["a","b"]'],
             ],
         ];
+    }
+
+    public function testStepMethodsSendUploadStatusAndDownloadRequests(): void
+    {
+        $output = Fixtures::tempDir() . '/output.txt';
+        $this->reply(self::UPLOAD_REPLY);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'done', 'billed_characters' => 5]);
+        $this->mock->append(new Response(200, [], 'Hallo'));
+        $translator = $this->makeTranslator();
+
+        $handle = $translator->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), 'en', 'de');
+        $status = $translator->translateDocumentGetStatus($handle);
+        $done = $translator->translateDocumentWaitUntilDone($handle);
+        $translator->translateDocumentDownload($handle, $output);
+
+        $this->assertRequest('POST', '/v2/document', 0);
+        $this->assertMultipart(['target_lang' => 'de', 'source_lang' => 'en'], 'input.txt', 0);
+        foreach ([1, 2] as $index) {
+            $this->assertRequest('POST', '/v2/document/doc1', $index);
+            $this->assertSame(['document_key' => 'key/+&='], $this->formBody($index));
+        }
+        $this->assertRequest('POST', '/v2/document/doc1/result', 3);
+        $this->assertSame(['document_key' => 'key/+&='], $this->formBody(3));
+        $this->assertSame(DocumentStatusCode::TRANSLATING, $status->status);
+        $this->assertSame(5, $done->billedCharacters);
+        $this->assertSame('Hallo', file_get_contents($output));
+    }
+
+    public function testSendsTheFilenameOption(): void
+    {
+        $this->reply(self::UPLOAD_REPLY);
+
+        $this->makeTranslator()->translateDocumentUpload(
+            Fixtures::tempFile('input.txt', 'Hello'),
+            null,
+            'de',
+            [TranslateDocumentOptions::FILENAME => 'report.html']
+        );
+
+        $this->assertMultipart(['target_lang' => 'de'], 'report.html');
+    }
+
+    public function testWaitThrowsWhenTheTimeoutExpires(): void
+    {
+        $this->useFakeClock();
+        $this->reply(['document_id' => 'doc1', 'status' => 'queued']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+
+        try {
+            $this->makeTranslator()->translateDocumentWaitUntilDone(
+                new DocumentHandle('doc1', 'k'),
+                [TranslateDocumentOptions::TIMEOUT => 4.5]
+            );
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Timeout of 4.5s exceeded', $exception->getMessage());
+        }
+        $this->assertRequestCount(2);
+    }
+
+    public function testTranslateDocumentThrowsWithTheHandleWhenTheTimeoutExpires(): void
+    {
+        $this->useFakeClock();
+        $output = Fixtures::tempDir() . '/output.txt';
+        $this->reply(self::UPLOAD_REPLY);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+
+        try {
+            $this->makeTranslator()->translateDocument(
+                Fixtures::tempFile('input.txt', 'Hello'),
+                $output,
+                'en',
+                'de',
+                [TranslateDocumentOptions::TIMEOUT => 0]
+            );
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertStringContainsString('Timeout of 0s exceeded', $exception->getMessage());
+            $this->assertSame('doc1', $exception->handle->documentId);
+        }
+        $this->assertMultipart(['target_lang' => 'de', 'source_lang' => 'en'], 'input.txt');
+        $this->assertFileDoesNotExist($output);
     }
 
     public function testTranslateDocumentSendsWatermarkWithOutputFormat(): void
@@ -189,10 +279,23 @@ class TranslateDocumentTest extends OfflineTestCase
 
         $this->assertFalse($translating->done());
         $this->assertTrue($translating->ok());
+        $this->assertSame('doc1', $translating->documentId);
+        $this->assertSame(DocumentStatusCode::ERROR, $failed->status);
         $this->assertSame(7, $translating->secondsRemaining);
         $this->assertNull($translating->billedCharacters);
         $this->assertFalse($failed->ok());
         $this->assertSame('broken', $failed->errorMessage);
+    }
+
+    public function testParsesAMalformedDocumentIdAsNull(): void
+    {
+        $this->reply(['document_id' => 5, 'status' => 'done', 'billed_characters' => 3]);
+
+        $status = $this->makeTranslator()->translateDocumentGetStatus(new DocumentHandle('doc1', 'k'));
+
+        $this->assertNull($status->documentId);
+        $this->assertTrue($status->done());
+        $this->assertSame(3, $status->billedCharacters);
     }
 
     public function testPollsEveryFiveSecondsUntilDone(): void
