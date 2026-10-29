@@ -65,15 +65,17 @@ class TranslationMemoryInfo
      */
     public static function fromJson(array $json): TranslationMemoryInfo
     {
-        return new TranslationMemoryInfo(
-            $json['translation_memory_id'],
-            $json['name'],
-            $json['source_language'],
-            $json['target_languages'] ?? [],
-            $json['segment_count'] ?? 0,
-            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
-        );
+        return ParsingUtils::guard(function () use ($json): TranslationMemoryInfo {
+            return new TranslationMemoryInfo(
+                $json['translation_memory_id'],
+                $json['name'],
+                $json['source_language'],
+                $json['target_languages'] ?? [],
+                $json['segment_count'] ?? 0,
+                ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+                ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null)
+            );
+        });
     }
 
     /**
@@ -91,12 +93,14 @@ class TranslationMemoryInfo
     {
         $decoded = ParsingUtils::decodeJson($content);
 
-        $result = [];
-        $translationMemories = $decoded['translation_memories'] ?? [];
-        foreach ($translationMemories as $object) {
-            $result[] = self::fromJson($object);
-        }
-        return $result;
+        return ParsingUtils::guard(function () use ($decoded): array {
+            $result = [];
+            $translationMemories = $decoded['translation_memories'] ?? [];
+            foreach ($translationMemories as $object) {
+                $result[] = self::fromJson($object);
+            }
+            return $result;
+        });
     }
 
     public function __toString(): string

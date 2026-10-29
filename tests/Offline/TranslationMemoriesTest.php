@@ -6,8 +6,10 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\Fixtures;
+use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\TranslationMemoryImport;
 use DeepL\TranslationMemoryInfo;
@@ -87,6 +89,60 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertSame([], $info->targetLanguages);
         $this->assertSame(0, $info->segmentCount);
         $this->assertNull($info->creationTime);
+    }
+
+    /**
+     * @dataProvider provideResponsesMissingARequiredField
+     */
+    public function testThrowsInvalidContentExceptionWhenARequiredFieldIsMissing(callable $call, array $body): void
+    {
+        $this->reply($body);
+
+        $this->expectException(InvalidContentException::class);
+
+        $call($this->makeDeepLClient());
+    }
+
+    public static function provideResponsesMissingARequiredField(): array
+    {
+        $getTm = function (DeepLClient $c) {
+            $c->getTranslationMemory('tm1');
+        };
+        $listTms = function (DeepLClient $c) {
+            $c->listTranslationMemories();
+        };
+        $listSegments = function (DeepLClient $c) {
+            $c->listTranslationMemorySegments('tm1');
+        };
+        $segment = ['source_segment_id' => 's1', 'source_text' => 'Hello', 'targets' => []];
+        $target = ['target_segment_id' => 't1', 'target_language' => 'de', 'target_text' => 'Hallo'];
+        $cases = [
+            'import without job_id' => [function (DeepLClient $c) {
+                $c->createTranslationMemoryImport('a.tmx', 10);
+            }, ['upload_url' => self::STORAGE_URL]],
+            'import without upload_url' => [function (DeepLClient $c) {
+                $c->createTranslationMemoryImport('a.tmx', 10);
+            }, ['job_id' => 'job1']],
+            'export without job_id' => [function (DeepLClient $c) {
+                $c->createTranslationMemoryExport('tm1');
+            }, ['parameters' => ['translation_memory_id' => 'tm1']]],
+            'job without job_id' => [function (DeepLClient $c) {
+                $c->getTranslationMemoryJob('job1');
+            }, array_diff_key(self::job('completed'), ['job_id' => 0])],
+        ];
+        foreach (['translation_memory_id', 'name', 'source_language'] as $key) {
+            $tm = array_diff_key(self::TM, [$key => 0]);
+            $cases["translation memory without $key"] = [$getTm, $tm];
+            $cases["listed translation memory without $key"] = [$listTms, ['translation_memories' => [$tm]]];
+        }
+        foreach (['source_segment_id', 'source_text'] as $key) {
+            $cases["segment without $key"] = [$listSegments, ['segments' => [array_diff_key($segment, [$key => 0])]]];
+        }
+        foreach (['target_segment_id', 'target_language', 'target_text'] as $key) {
+            $cases["target segment without $key"] =
+                [$listSegments, ['segments' => [['targets' => [array_diff_key($target, [$key => 0])]] + $segment]]];
+        }
+        return $cases;
     }
 
     public function testSendsTheIdOfTranslationMemoryInfoObjects(): void

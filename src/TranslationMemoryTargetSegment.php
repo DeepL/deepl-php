@@ -47,16 +47,21 @@ class TranslationMemoryTargetSegment
         $this->lastUsedTime = $lastUsedTime;
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or invalid.
+     */
     public static function fromJson(array $json): TranslationMemoryTargetSegment
     {
-        return new TranslationMemoryTargetSegment(
-            $json['target_segment_id'],
-            $json['target_language'],
-            $json['target_text'],
-            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
-            ParsingUtils::parseOptionalTimestamp($json['last_used_time'] ?? null)
-        );
+        return ParsingUtils::guard(function () use ($json): TranslationMemoryTargetSegment {
+            return new TranslationMemoryTargetSegment(
+                $json['target_segment_id'],
+                $json['target_language'],
+                $json['target_text'],
+                ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+                ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
+                ParsingUtils::parseOptionalTimestamp($json['last_used_time'] ?? null)
+            );
+        });
     }
 
     public function __toString(): string

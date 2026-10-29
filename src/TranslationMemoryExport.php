@@ -29,13 +29,18 @@ class TranslationMemoryExport
         $this->reusedExisting = $reusedExisting;
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or invalid.
+     */
     public static function fromJson(array $json, bool $reusedExisting): TranslationMemoryExport
     {
-        return new TranslationMemoryExport(
-            $json['job_id'],
-            $json['parameters']['translation_memory_id'] ?? null,
-            $reusedExisting
-        );
+        return ParsingUtils::guard(function () use ($json, $reusedExisting): TranslationMemoryExport {
+            return new TranslationMemoryExport(
+                $json['job_id'],
+                $json['parameters']['translation_memory_id'] ?? null,
+                $reusedExisting
+            );
+        });
     }
 
     /**

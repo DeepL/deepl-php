@@ -75,25 +75,30 @@ class TranslationMemoryJob
         return is_string($job) ? $job : $job->jobId;
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or invalid.
+     */
     public static function fromJson(array $json): TranslationMemoryJob
     {
-        $results = [];
-        foreach ($json['results'] ?? [] as $result) {
-            $results[] = TranslationMemoryJobResult::fromJson($result);
-        }
+        return ParsingUtils::guard(function () use ($json): TranslationMemoryJob {
+            $results = [];
+            foreach ($json['results'] ?? [] as $result) {
+                $results[] = TranslationMemoryJobResult::fromJson($result);
+            }
 
-        return new TranslationMemoryJob(
-            $json['job_id'],
-            $json['operation'] ?? '',
-            $json['product'] ?? 'translation_memory',
-            $results,
-            ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
-            ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
-            $json['parameters']['translation_memory_id'] ?? null,
-            $json['parameters']['display_name'] ?? null,
-            $json['source_file']['content_type'] ?? null,
-            $json['source_file']['content_length'] ?? null
-        );
+            return new TranslationMemoryJob(
+                $json['job_id'],
+                $json['operation'] ?? '',
+                $json['product'] ?? 'translation_memory',
+                $results,
+                ParsingUtils::parseOptionalTimestamp($json['creation_time'] ?? null),
+                ParsingUtils::parseOptionalTimestamp($json['updated_time'] ?? null),
+                $json['parameters']['translation_memory_id'] ?? null,
+                $json['parameters']['display_name'] ?? null,
+                $json['source_file']['content_type'] ?? null,
+                $json['source_file']['content_length'] ?? null
+            );
+        });
     }
 
     /**

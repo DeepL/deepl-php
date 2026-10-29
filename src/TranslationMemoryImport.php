@@ -30,13 +30,18 @@ class TranslationMemoryImport
         $this->expiresAt = $expiresAt;
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or invalid.
+     */
     public static function fromJson(array $json): TranslationMemoryImport
     {
-        return new TranslationMemoryImport(
-            $json['job_id'],
-            $json['upload_url'],
-            ParsingUtils::parseOptionalTimestamp($json['expires_at'] ?? null)
-        );
+        return ParsingUtils::guard(function () use ($json): TranslationMemoryImport {
+            return new TranslationMemoryImport(
+                $json['job_id'],
+                $json['upload_url'],
+                ParsingUtils::parseOptionalTimestamp($json['expires_at'] ?? null)
+            );
+        });
     }
 
     /**

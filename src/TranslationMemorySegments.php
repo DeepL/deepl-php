@@ -33,18 +33,23 @@ class TranslationMemorySegments
         $this->nextPageCursor = $nextPageCursor;
     }
 
+    /**
+     * @throws InvalidContentException If a required field is missing or invalid.
+     */
     public static function fromJson(array $json): TranslationMemorySegments
     {
-        $segments = [];
-        foreach ($json['segments'] ?? [] as $segment) {
-            $segments[] = TranslationMemorySegment::fromJson($segment);
-        }
+        return ParsingUtils::guard(function () use ($json): TranslationMemorySegments {
+            $segments = [];
+            foreach ($json['segments'] ?? [] as $segment) {
+                $segments[] = TranslationMemorySegment::fromJson($segment);
+            }
 
-        return new TranslationMemorySegments(
-            $segments,
-            $json['segment_count'] ?? 0,
-            $json['next_page_cursor'] ?? null
-        );
+            return new TranslationMemorySegments(
+                $segments,
+                $json['segment_count'] ?? 0,
+                $json['next_page_cursor'] ?? null
+            );
+        });
     }
 
     /**

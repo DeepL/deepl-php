@@ -283,6 +283,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   has no `id`, both from the custom instruction methods and in
   `StyleRuleInfo::$customInstructions`. A missing or non-string `id` now raises
   `InvalidContentException`.
+- Fixed the translation memory methods raising an undefined-key warning and a
+  `TypeError` when a response lacks a required field (`translation_memory_id`,
+  `name` or `source_language` of a translation memory; `job_id` of a job,
+  import or export; `upload_url` of an import; the IDs, language and text of a
+  segment or target segment). They now raise `InvalidContentException`.
 
 ## [1.20.0] - 2026-08-11
 ### Added
