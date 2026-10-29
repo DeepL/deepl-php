@@ -56,7 +56,7 @@ class TranslateTextTest extends OfflineTestCase
         $this->reply(self::REPLY);
 
         $this->makeTranslator()->translateText('Hello', null, 'de', [
-            TranslateTextOptions::STYLE_PROFILE_ID => 'spid',
+            TranslateTextOptions::STYLE_PROFILE => 'spid',
         ]);
 
         $this->assertSame(
@@ -150,11 +150,11 @@ class TranslateTextTest extends OfflineTestCase
                 $base + $tail + ['style_id' => 'sid'],
             ],
             'style profile id from string' => [
-                [TranslateTextOptions::STYLE_PROFILE_ID => 'spid'],
+                [TranslateTextOptions::STYLE_PROFILE => 'spid'],
                 $base + $tail + ['style_profile_id' => 'spid'],
             ],
             'style profile id from object' => [
-                [TranslateTextOptions::STYLE_PROFILE_ID => $profile],
+                [TranslateTextOptions::STYLE_PROFILE => $profile],
                 $base + $tail + ['style_profile_id' => 'spid'],
             ],
             'translation memory from string with threshold' => [
@@ -265,7 +265,7 @@ class TranslateTextTest extends OfflineTestCase
                 'Hello', 'en', [TranslateTextOptions::STYLE_ID => 5], 'style_id must be',
             ],
             'style_profile_id of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE_ID => 5], 'style_profile_id must be',
+                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE => 5], 'style_profile must be',
             ],
             'translation_memory_id of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY_ID => 5], 'translation_memory_id must be',

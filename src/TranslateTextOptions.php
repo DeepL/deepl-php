@@ -115,7 +115,7 @@ class TranslateTextOptions
      *  Can also be set to a StyleProfile as returned by getStyleProfile or listStyleProfiles.
      *  @see \DeepL\DeepLClient::listStyleProfiles()
      */
-    public const STYLE_PROFILE_ID = 'style_profile_id';
+    public const STYLE_PROFILE = 'style_profile';
 
     /** Array of custom instructions to customize text translation behavior. Maximum 10 elements, each max
      * 300 characters. Only supported for target languages: `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `zh`

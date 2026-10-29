@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ConnectionException`.
 - Added `Translator::isFreeAccountAuthKey()` (also available on `DeepLClient`),
   replacing `isAuthKeyFreeAccount()`.
-- Added the `style_profile_id` option (`TranslateTextOptions::STYLE_PROFILE_ID`
-  and `TranslateDocumentOptions::STYLE_PROFILE_ID`) to translate text and
+- Added the `style_profile` option (`TranslateTextOptions::STYLE_PROFILE`
+  and `TranslateDocumentOptions::STYLE_PROFILE`) to translate text and
   documents with a style profile, given as an ID string or a `StyleProfile`.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with
   an admin API key and supports managing developer keys

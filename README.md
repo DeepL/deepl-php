@@ -195,7 +195,7 @@ using the following keys:
     option.
 -   `style_id`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
--   `style_profile_id`: specifies a style profile to use with translation, either as
+-   `style_profile`: specifies a style profile to use with translation, either as
     a string containing the ID of the style profile, or a `StyleProfile` object. The
     profile applies its linked glossaries, style rule lists and translation memories;
     a component that does not fit the language pair is left out. Cannot be combined
@@ -386,7 +386,7 @@ using the following keys:
 -   `style_id`: same as in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
--   `style_profile_id`: same as in [Text translation options](#text-translation-options).
+-   `style_profile`: same as in [Text translation options](#text-translation-options).
     Specify a style profile to use for the document translation, either as a style
     profile ID string or a `StyleProfile` object. An unknown style profile is not
     rejected at upload: the document translation fails with a
@@ -1095,13 +1095,13 @@ $deeplClient->deleteStyleProfile($profile);
 ```
 
 To translate with a style profile, pass its ID or the `StyleProfile` object as
-the `style_profile_id` option of `translateText()` or `translateDocument()`:
+the `style_profile` option of `translateText()` or `translateDocument()`:
 
 ```php
 $result = $deeplClient->translateText('The artist is here.', null, 'de', [
-    TranslateTextOptions::STYLE_PROFILE_ID => $profile,
+    TranslateTextOptions::STYLE_PROFILE => $profile,
 ]);
-$deeplClient->translateDocument('in.txt', 'out.txt', null, 'de', [TranslateDocumentOptions::STYLE_PROFILE_ID => $profile]);
+$deeplClient->translateDocument('in.txt', 'out.txt', null, 'de', [TranslateDocumentOptions::STYLE_PROFILE => $profile]);
 ```
 
 ### Translation Memories

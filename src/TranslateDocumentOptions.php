@@ -58,7 +58,7 @@ final class TranslateDocumentOptions
      *  Can also be set to a StyleProfile as returned by getStyleProfile or listStyleProfiles.
      *  @see \DeepL\DeepLClient::listStyleProfiles()
      */
-    public const STYLE_PROFILE_ID = 'style_profile_id';
+    public const STYLE_PROFILE = 'style_profile';
 
     /** Set to string containing a translation memory ID to use the translation memory for translation.
      *  Can also be set to a TranslationMemoryInfo as returned by listTranslationMemories.

@@ -796,14 +796,14 @@ class Translator
                 throw new DeepLException('style_id must be a string or StyleRuleInfo object');
             }
         }
-        if (isset($options[TranslateTextOptions::STYLE_PROFILE_ID])) {
-            $styleProfile = $options[TranslateTextOptions::STYLE_PROFILE_ID];
+        if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
+            $styleProfile = $options[TranslateTextOptions::STYLE_PROFILE];
             if (is_string($styleProfile)) {
                 $params['style_profile_id'] = $styleProfile;
             } elseif ($styleProfile instanceof StyleProfile) {
                 $params['style_profile_id'] = $styleProfile->styleProfileId;
             } else {
-                throw new DeepLException('style_profile_id must be a string or StyleProfile object');
+                throw new DeepLException('style_profile must be a string or StyleProfile object');
             }
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {

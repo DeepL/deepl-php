@@ -82,11 +82,11 @@ class TranslateDocumentTest extends OfflineTestCase
             ],
             'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
             'style profile id' => [
-                [TranslateDocumentOptions::STYLE_PROFILE_ID => 'spid'],
+                [TranslateDocumentOptions::STYLE_PROFILE => 'spid'],
                 ['style_profile_id' => 'spid'],
             ],
             'style profile id from object' => [
-                [TranslateDocumentOptions::STYLE_PROFILE_ID => $profile],
+                [TranslateDocumentOptions::STYLE_PROFILE => $profile],
                 ['style_profile_id' => 'spid'],
             ],
             'translation memory with threshold as string' => [
