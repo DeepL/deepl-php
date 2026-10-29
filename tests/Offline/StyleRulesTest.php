@@ -9,6 +9,7 @@ namespace DeepL\Offline;
 use DeepL\CustomInstruction;
 use DeepL\DeepLClient;
 use DeepL\DeepLException;
+use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\StyleRuleInfo;
 
@@ -181,6 +182,47 @@ class StyleRulesTest extends OfflineTestCase
 
         $this->assertInstanceOf(CustomInstruction::class, $instruction);
         $this->assertNull($instruction->sourceLanguage);
+    }
+
+    /**
+     * @dataProvider provideMalformedResponses
+     */
+    public function testThrowsInvalidContentExceptionOnAMalformedResponse(callable $call, $body): void
+    {
+        $this->reply($body);
+
+        $this->expectException(InvalidContentException::class);
+
+        $call($this->makeDeepLClient());
+    }
+
+    public static function provideMalformedResponses(): array
+    {
+        $getRule = function (DeepLClient $c) {
+            $c->getStyleRule('sid');
+        };
+        $getInstruction = function (DeepLClient $c) {
+            $c->getStyleRuleCustomInstruction('sid', 'i1');
+        };
+        return [
+            'style rule body is not an object' => [$getRule, '"sid"'],
+            'created style rule body is null' => [function (DeepLClient $c) {
+                $c->createStyleRule('n', 'en');
+            }, 'null'],
+            'renamed style rule body is a number' => [function (DeepLClient $c) {
+                $c->updateStyleRuleName('sid', 'n');
+            }, '5'],
+            'configured rules body is not an object' => [function (DeepLClient $c) {
+                $c->updateStyleRuleConfiguredRules('sid', []);
+            }, '"x"'],
+            'instruction body is not an object' => [$getInstruction, '"i1"'],
+            'created instruction body is not an object' => [function (DeepLClient $c) {
+                $c->createStyleRuleCustomInstruction('sid', 'L', 'P');
+            }, 'true'],
+            'updated instruction body is not an object' => [function (DeepLClient $c) {
+                $c->updateStyleRuleCustomInstruction('sid', 'i1', 'L', 'P');
+            }, '"i1"'],
+        ];
     }
 
     public function testThrowsNotFoundWhenTheStyleRuleDoesNotExist(): void

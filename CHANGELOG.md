@@ -276,6 +276,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `getMultilingualGlossaryEntries()` failing on a dictionary without
   entries, and on returned terms that do not pass the validation applied to
   entries sent to the API. Returned entries are now read as they are.
+- Fixed the style rule and custom instruction methods raising a `TypeError`
+  when the response body is valid JSON but not an object (for example a string
+  or `null`). They now raise `InvalidContentException`.
 
 ## [1.20.0] - 2026-08-11
 ### Added

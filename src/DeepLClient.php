@@ -6,8 +6,6 @@
 
 namespace DeepL;
 
-use JsonException;
-
 class DeepLClient extends Translator
 {
     /** @var bool[] Deprecation messages already triggered in this process, by key. */
@@ -853,12 +851,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return StyleRuleInfo::fromJson($json);
+        return StyleRuleInfo::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -877,12 +870,7 @@ class DeepLClient extends Translator
         $response = $this->client->sendRequestWithBackoff('GET', "/v3/style_rules/" . rawurlencode($styleId));
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return StyleRuleInfo::fromJson($json);
+        return StyleRuleInfo::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -911,12 +899,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return StyleRuleInfo::fromJson($json);
+        return StyleRuleInfo::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -958,12 +941,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return StyleRuleInfo::fromJson($json);
+        return StyleRuleInfo::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -1007,12 +985,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return CustomInstruction::fromJson($json);
+        return CustomInstruction::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -1038,12 +1011,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return CustomInstruction::fromJson($json);
+        return CustomInstruction::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
@@ -1092,12 +1060,7 @@ class DeepLClient extends Translator
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        try {
-            $json = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidContentException($exception);
-        }
-        return CustomInstruction::fromJson($json);
+        return CustomInstruction::fromJson(ParsingUtils::decodeJson($content));
     }
 
     /**
