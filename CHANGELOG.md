@@ -256,6 +256,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `deleteMultilingualGlossaryDictionary()`.
 - Fixed `updateMultilingualGlossary()` sending `[]` instead of `{}` as the
   request body when neither a name nor dictionaries are given.
+- Fixed `MultilingualGlossaryDictionaryEntries` validating terms after trimming
+  them but storing and sending them untrimmed, so a leading or trailing tab or
+  newline corrupted the entries sent to the API. Terms are now trimmed, then
+  validated, and a source term that is a duplicate after trimming is rejected.
+- Fixed `getMultilingualGlossaryEntries()` failing on a dictionary without
+  entries, and on returned terms that do not pass the validation applied to
+  entries sent to the API. Returned entries are now read as they are.
 
 ## [1.20.0] - 2026-08-11
 ### Added

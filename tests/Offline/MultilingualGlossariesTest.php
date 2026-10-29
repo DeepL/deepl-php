@@ -104,6 +104,26 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->assertSame('{}', (string)$this->request()->getBody());
     }
 
+    public function testTrimsTermsBeforeValidatingAndSendingThem(): void
+    {
+        $this->reply(self::GLOSSARY, 201);
+        $dictionary = new MultilingualGlossaryDictionaryEntries('en', 'de', ["\tHello " => "Hallo\n"]);
+
+        $this->makeDeepLClient()->createMultilingualGlossary('My glossary', [$dictionary]);
+
+        $this->assertSame(['Hello' => 'Hallo'], $dictionary->entries);
+        $this->assertSame("Hello\tHallo", $this->jsonBody()['dictionaries'][0]['entries']);
+    }
+
+    public function testParsesADictionaryWithoutEntries(): void
+    {
+        $this->reply(['dictionaries' => [array_replace($this->dictionaryBody(), ['entries' => ''])]]);
+
+        $dictionaries = $this->makeDeepLClient()->getMultilingualGlossaryEntries('gid', 'en', 'de');
+
+        $this->assertSame([], $dictionaries[0]->entries);
+    }
+
     public function testThrowsWhenTheNameIsEmpty(): void
     {
         $client = $this->makeDeepLClient();
@@ -270,6 +290,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
             'no entries' => [[], 'no entries'],
             'tab in a term' => [['A' => "B\tC"], 'invalid characters'],
             'unicode line separator' => [['A' => "B\u{2028}C"], 'invalid characters'],
+            'duplicate after trimming' => [['A' => 'B', ' A' => 'C'], 'duplicate source term'],
         ];
     }
 }
