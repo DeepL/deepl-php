@@ -69,6 +69,32 @@ class MultilingualGlossariesTest extends OfflineTestCase
         ], $this->jsonBody());
     }
 
+    public function testEncodesTheGlossaryIdInPathsAndTheLanguagesInQueries(): void
+    {
+        $this->reply(self::GLOSSARY);
+        $this->reply(self::GLOSSARY);
+        $this->reply(self::DICTIONARY);
+        $this->reply(['dictionaries' => [$this->dictionaryBody()]]);
+        $this->reply('', 204);
+        $this->reply('', 204);
+        $client = $this->makeDeepLClient();
+        $id = 'a/b?c';
+
+        $client->getMultilingualGlossary($id);
+        $client->updateMultilingualGlossary($id, 'n', null);
+        $client->replaceMultilingualGlossaryDictionary($id, $this->dictionary());
+        $client->getMultilingualGlossaryEntries($id, 'en&x', 'de');
+        $client->deleteMultilingualGlossaryDictionary($id, null, 'en', 'de#1');
+        $client->deleteMultilingualGlossary($id);
+
+        $this->assertRequest('GET', '/v3/glossaries/a%2Fb%3Fc', 0);
+        $this->assertRequest('PATCH', '/v3/glossaries/a%2Fb%3Fc', 1);
+        $this->assertRequest('PUT', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 2);
+        $this->assertRequest('GET', '/v3/glossaries/a%2Fb%3Fc/entries', 3, 'source_lang=en%26x&target_lang=de');
+        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 4, 'source_lang=en&target_lang=de%231');
+        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc', 5);
+    }
+
     public function testThrowsWhenTheNameIsEmpty(): void
     {
         $client = $this->makeDeepLClient();

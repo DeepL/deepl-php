@@ -220,7 +220,7 @@ class DeepLClient extends Translator
 
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
-            "/v3/glossaries/$glossaryId",
+            "/v3/glossaries/" . rawurlencode($glossaryId),
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
         $this->checkStatusCode($response, false, true);
@@ -247,7 +247,7 @@ class DeepLClient extends Translator
 
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
-            "/v3/glossaries/$glossaryId/dictionaries",
+            "/v3/glossaries/" . rawurlencode($glossaryId) . "/dictionaries",
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
         $this->checkStatusCode($response, false, true);
@@ -265,7 +265,7 @@ class DeepLClient extends Translator
     public function getMultilingualGlossary($glossary): MultilingualGlossaryInfo
     {
         $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $response = $this->client->sendRequestWithBackoff('GET', "/v3/glossaries/$glossaryId");
+        $response = $this->client->sendRequestWithBackoff('GET', "/v3/glossaries/" . rawurlencode($glossaryId));
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseJson($content);
@@ -297,7 +297,8 @@ class DeepLClient extends Translator
     public function getMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
     {
         $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $url = "/v3/glossaries/$glossaryId/entries?source_lang=$sourceLang&target_lang=$targetLang";
+        $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
+        $url = "/v3/glossaries/" . rawurlencode($glossaryId) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -313,7 +314,7 @@ class DeepLClient extends Translator
     public function deleteMultilingualGlossary($glossary): void
     {
         $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/glossaries/$glossaryId");
+        $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/glossaries/" . rawurlencode($glossaryId));
         $this->checkStatusCode($response, false, true);
     }
 
@@ -345,7 +346,8 @@ class DeepLClient extends Translator
             $targetLang = $dictionary->targetLang;
         }
 
-        $url = "/v3/glossaries/$glossaryId/dictionaries?source_lang=$sourceLang&target_lang=$targetLang";
+        $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
+        $url = "/v3/glossaries/" . rawurlencode($glossaryId) . "/dictionaries?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
         $this->checkStatusCode($response, false, true);
     }

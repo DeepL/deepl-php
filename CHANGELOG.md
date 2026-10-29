@@ -250,6 +250,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or `usable_as_target` as `false`. They now raise `InvalidContentException`.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
   which said these codes may only be used as source languages.
+- Fixed the glossary ID not being URL-encoded in the request paths of the
+  multilingual glossary methods, and the source and target language not being
+  URL-encoded in the query of `getMultilingualGlossaryEntries()` and
+  `deleteMultilingualGlossaryDictionary()`.
 
 ## [1.20.0] - 2026-08-11
 ### Added
