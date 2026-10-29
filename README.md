@@ -1369,10 +1369,12 @@ $adminClient = new \DeepL\DeepLAdminClient('YOUR_ADMIN_KEY');
 #### Managing developer keys
 
 ```php
-$key = $adminClient->createDeveloperKey('Staging Team Key');
+$key = $adminClient->createDeveloperKey([
+    \DeepL\CreateDeveloperKeyOptions::LABEL => 'Staging Team Key',
+]);
 echo "Created {$key->label} ({$key->keyId})\n";
 
-foreach ($adminClient->getDeveloperKeys() as $existingKey) {
+foreach ($adminClient->listDeveloperKeys() as $existingKey) {
     echo "{$existingKey->label}: deactivated=" . ($existingKey->isDeactivated ? 'true' : 'false') . "\n";
 }
 
@@ -1394,6 +1396,14 @@ $adminClient->deactivateDeveloperKey($key);
 `deactivateDeveloperKey()` accept either a key ID or a `DeveloperKey` object,
 and return the updated `DeveloperKey`. The usage limits are also available for
 speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`).
+
+`createDeveloperKey()` takes an options array with the `CreateDeveloperKeyOptions`
+keys: `LABEL`, the label of the new key (the API uses "DeepL API Key" if it is
+not set), and `EXTRA_BODY_PARAMETERS`. `deactivateDeveloperKey()`,
+`renameDeveloperKey()` and `setDeveloperKeyUsageLimits()` take an optional
+trailing options array with `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`. The
+extra body parameters are an associative array added to the JSON request body
+after the library's fields, replacing fields with the same key.
 
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
 request was not processed: after HTTP 429, or when the connection failed before

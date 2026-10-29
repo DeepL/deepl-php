@@ -9,6 +9,7 @@ namespace DeepL\RealApi;
 use DateTimeImmutable;
 use DateTimeZone;
 use DeepL\AdminUsageGroupBy;
+use DeepL\CreateDeveloperKeyOptions;
 use DeepL\CustomTagUsageAggregateBy;
 use DeepL\DeepLAdminClient;
 use DeepL\DeveloperKey;
@@ -73,7 +74,7 @@ class AdminClientTest extends RealApiTestCase
     private static function isListed(DeepLAdminClient $client, string $keyId): bool
     {
         for ($attempt = 1; $attempt <= 5; $attempt++) {
-            foreach ($client->getDeveloperKeys() as $listedKey) {
+            foreach ($client->listDeveloperKeys() as $listedKey) {
                 if ($listedKey->keyId === $keyId) {
                     return true;
                 }
@@ -89,7 +90,7 @@ class AdminClientTest extends RealApiTestCase
     {
         $client = $this->makeAdminClient();
         $label = self::uniqueName('admin-key');
-        $key = $client->createDeveloperKey($label);
+        $key = $client->createDeveloperKey([CreateDeveloperKeyOptions::LABEL => $label]);
         $deactivationAttempted = false;
         try {
             $this->assertSame($label, $key->label);

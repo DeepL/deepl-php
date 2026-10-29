@@ -13,10 +13,12 @@ use DateTimeZone;
 use DeepL\AdminUsageGroupBy;
 use DeepL\AuthorizationException;
 use DeepL\ConnectionException;
+use DeepL\CreateDeveloperKeyOptions;
 use DeepL\CustomTagUsageAggregateBy;
 use DeepL\DeepLAdminClient;
 use DeepL\DeepLException;
 use DeepL\DeveloperKey;
+use DeepL\DeveloperKeyOptions;
 use DeepL\DeveloperKeyUsageLimitsOptions;
 use DeepL\InvalidContentException;
 use DeepL\TranslatorOptions;
@@ -65,7 +67,7 @@ class AdminClientTest extends OfflineTestCase
         $client = new DeepLAdminClient('free-key:fx', $options);
         $this->reply([]);
 
-        $client->getDeveloperKeys();
+        $client->listDeveloperKeys();
 
         $this->assertSame('https://api.deepl.com/v2/admin/developer-keys', (string)$this->request()->getUri());
     }
@@ -244,7 +246,7 @@ class AdminClientTest extends OfflineTestCase
         $this->reply(self::DEVELOPER_KEY_JSON);
         $client = $this->makeAdminClient();
 
-        $key = $client->createDeveloperKey('developer key prod');
+        $key = $client->createDeveloperKey([CreateDeveloperKeyOptions::LABEL => 'developer key prod']);
         $client->createDeveloperKey();
 
         $this->assertRequest('POST', '/v2/admin/developer-keys');
@@ -258,6 +260,34 @@ class AdminClientTest extends OfflineTestCase
         $this->assertSame(5000, $key->usageLimits->characters);
         $this->assertNull($key->usageLimits->speechToTextMilliseconds);
         $this->assertSame(60000, $key->usageLimits->speechToSpeechMilliseconds);
+    }
+
+    public function testSendsExtraBodyParametersLast(): void
+    {
+        for ($i = 0; $i < 4; $i++) {
+            $this->reply(self::DEVELOPER_KEY_JSON);
+        }
+        $client = $this->makeAdminClient();
+        $extra = function (array $parameters): array {
+            return [DeveloperKeyOptions::EXTRA_BODY_PARAMETERS => $parameters];
+        };
+
+        $client->createDeveloperKey([
+            CreateDeveloperKeyOptions::LABEL => 'library label',
+            CreateDeveloperKeyOptions::EXTRA_BODY_PARAMETERS => ['label' => 'extra label', 'flag' => true],
+        ]);
+        $client->deactivateDeveloperKey(self::KEY_ID, $extra(['reason' => 'rotated']));
+        $client->renameDeveloperKey(self::KEY_ID, 'renamed', $extra(['label' => 'replaced', 'note' => null]));
+        $client->setDeveloperKeyUsageLimits(
+            self::KEY_ID,
+            [DeveloperKeyUsageLimitsOptions::CHARACTERS => 1000],
+            $extra(['characters' => 2000, 'minutes' => 5])
+        );
+
+        $this->assertSame(['label' => 'extra label', 'flag' => true], $this->jsonBody(0));
+        $this->assertSame(['key_id' => self::KEY_ID, 'reason' => 'rotated'], $this->jsonBody(1));
+        $this->assertSame(['key_id' => self::KEY_ID, 'label' => 'replaced', 'note' => null], $this->jsonBody(2));
+        $this->assertSame(['key_id' => self::KEY_ID, 'characters' => 2000, 'minutes' => 5], $this->jsonBody(3));
     }
 
     public function testRetriesKeyCreationAfterTooManyRequests(): void
@@ -310,7 +340,7 @@ class AdminClientTest extends OfflineTestCase
     {
         $this->reply([]);
 
-        (new DeepLAdminClient(" admin-key\n", $this->clientOptions([])))->getDeveloperKeys();
+        (new DeepLAdminClient(" admin-key\n", $this->clientOptions([])))->listDeveloperKeys();
 
         $this->assertSame(
             'DeepL-Auth-Key admin-key',
@@ -318,7 +348,7 @@ class AdminClientTest extends OfflineTestCase
         );
     }
 
-    public function testGetDeveloperKeys(): void
+    public function testListDeveloperKeys(): void
     {
         $deactivated = array_replace(
             self::DEVELOPER_KEY_JSON,
@@ -326,7 +356,7 @@ class AdminClientTest extends OfflineTestCase
         );
         $this->reply([self::DEVELOPER_KEY_JSON, $deactivated]);
 
-        $keys = $this->makeAdminClient()->getDeveloperKeys();
+        $keys = $this->makeAdminClient()->listDeveloperKeys();
 
         $this->assertRequest('GET', '/v2/admin/developer-keys');
         $this->assertSame([false, true], array_map(function (DeveloperKey $key) {
@@ -396,6 +426,12 @@ class AdminClientTest extends OfflineTestCase
             'empty key ID' => [function (DeepLAdminClient $client) {
                 $client->deactivateDeveloperKey('');
             }, 'key must be'],
+            'unknown create option' => [function (DeepLAdminClient $client) {
+                $client->createDeveloperKey(['name' => 'key']);
+            }, 'Unknown developer key option: name'],
+            'label option on rename' => [function (DeepLAdminClient $client) {
+                $client->renameDeveloperKey(self::KEY_ID, 'renamed', [CreateDeveloperKeyOptions::LABEL => 'other']);
+            }, 'Unknown developer key option: label'],
         ];
     }
 
@@ -416,7 +452,7 @@ class AdminClientTest extends OfflineTestCase
             $client->createDeveloperKey();
         };
         $list = function (DeepLAdminClient $client) {
-            $client->getDeveloperKeys();
+            $client->listDeveloperKeys();
         };
         return [
             'null' => ['null', $create],
@@ -478,7 +514,7 @@ class AdminClientTest extends OfflineTestCase
                 $client->getCustomTagUsageAnalytics('2025-09-29', '2025-10-01');
             }],
             ['Developer keys response is not a list', function () use ($client) {
-                $client->getDeveloperKeys();
+                $client->listDeveloperKeys();
             }],
         ] as [$message, $call]) {
             try {
@@ -512,7 +548,7 @@ class AdminClientTest extends OfflineTestCase
         ]]);
         $client = $this->makeAdminClient();
 
-        $keys = $client->getDeveloperKeys();
+        $keys = $client->listDeveloperKeys();
         $report = $client->getUsageAnalytics('2025-09-29', '2025-10-01');
         $tagReport = $client->getCustomTagUsageAnalytics('2025-09-29', '2025-10-01');
 
@@ -539,6 +575,6 @@ class AdminClientTest extends OfflineTestCase
         $this->reply(['message' => 'Forbidden'], 403);
 
         $this->expectException(AuthorizationException::class);
-        $this->makeAdminClient()->getDeveloperKeys();
+        $this->makeAdminClient()->listDeveloperKeys();
     }
 }

@@ -109,17 +109,23 @@ class DeepLAdminClient
      * Creates a developer key in the organization. To avoid creating duplicate keys, the request is only
      * retried if it was not processed: after HTTP 429, or a connection failure before the request was sent.
      * With a custom HTTP client, only HTTP 429 is retried.
-     * @param string|null $label Label for the new key. The API uses "DeepL API Key" if no label is given.
+     * @param array $options Request options, see CreateDeveloperKeyOptions: LABEL and EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The created key.
      * @throws DeepLException
+     * @see CreateDeveloperKeyOptions
      */
-    public function createDeveloperKey(?string $label = null): DeveloperKey
+    public function createDeveloperKey(array $options = []): DeveloperKey
     {
-        $params = $label === null ? new \stdClass() : ['label' => $label];
+        self::checkOptions($options, [CreateDeveloperKeyOptions::LABEL]);
+        $params = [];
+        if (isset($options[CreateDeveloperKeyOptions::LABEL])) {
+            $params['label'] = (string)$options[CreateDeveloperKeyOptions::LABEL];
+        }
         return $this->sendDeveloperKeyRequest(
             'POST',
             '/v2/admin/developer-keys',
             $params,
+            $options,
             [HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true]
         );
     }
@@ -129,7 +135,7 @@ class DeepLAdminClient
      * @return DeveloperKey[]
      * @throws DeepLException
      */
-    public function getDeveloperKeys(): array
+    public function listDeveloperKeys(): array
     {
         $content = $this->sendRequest('GET', '/v2/admin/developer-keys');
         return self::parse($content, function (array $json): array {
@@ -146,15 +152,18 @@ class DeepLAdminClient
     /**
      * Deactivates a developer key. Deactivation is permanent.
      * @param string|DeveloperKey $key Key ID or DeveloperKey to deactivate.
+     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The deactivated key.
      * @throws DeepLException
      */
-    public function deactivateDeveloperKey($key): DeveloperKey
+    public function deactivateDeveloperKey($key, array $options = []): DeveloperKey
     {
+        self::checkOptions($options, []);
         return $this->sendDeveloperKeyRequest(
             'PUT',
             '/v2/admin/developer-keys/deactivate',
-            ['key_id' => self::keyId($key)]
+            ['key_id' => self::keyId($key)],
+            $options
         );
     }
 
@@ -162,16 +171,19 @@ class DeepLAdminClient
      * Changes the label of a developer key.
      * @param string|DeveloperKey $key Key ID or DeveloperKey to rename.
      * @param string $label New label for the key.
+     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The renamed key.
      * @throws DeepLException
      */
-    public function renameDeveloperKey($key, string $label): DeveloperKey
+    public function renameDeveloperKey($key, string $label, array $options = []): DeveloperKey
     {
+        self::checkOptions($options, []);
         $keyId = self::keyId($key);
         return $this->sendDeveloperKeyRequest(
             'PUT',
             '/v2/admin/developer-keys/label',
-            ['key_id' => $keyId, 'label' => $label]
+            ['key_id' => $keyId, 'label' => $label],
+            $options
         );
     }
 
@@ -181,34 +193,60 @@ class DeepLAdminClient
      * @param string|DeveloperKey $key Key ID or DeveloperKey to modify.
      * @param array $limits Usage limits to change, keyed by the DeveloperKeyUsageLimitsOptions constants. Each
      * value is an int or null. The limits are sent to the API as given.
+     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The modified key.
      * @throws DeepLException
      * @see DeveloperKeyUsageLimitsOptions
      */
-    public function setDeveloperKeyUsageLimits($key, array $limits): DeveloperKey
+    public function setDeveloperKeyUsageLimits($key, array $limits, array $options = []): DeveloperKey
     {
+        self::checkOptions($options, []);
         $keyId = self::keyId($key);
         return $this->sendDeveloperKeyRequest(
             'PUT',
             '/v2/admin/developer-keys/limits',
-            ['key_id' => $keyId] + $limits
+            ['key_id' => $keyId] + $limits,
+            $options
         );
     }
 
     /**
-     * @param array|\stdClass $params
+     * Sends a JSON body of $params with the extra body parameters of $options added last. An empty body
+     * encodes as {}.
      * @throws DeepLException
      */
-    private function sendDeveloperKeyRequest(string $method, string $url, $params, array $options = []): DeveloperKey
-    {
-        $options[HttpClientWrapper::OPTION_JSON] = json_encode($params);
-        $content = $this->sendRequest($method, $url, $options);
+    private function sendDeveloperKeyRequest(
+        string $method,
+        string $url,
+        array $params,
+        array $options,
+        array $requestOptions = []
+    ): DeveloperKey {
+        foreach ($options[DeveloperKeyOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
+        $requestOptions[HttpClientWrapper::OPTION_JSON] = json_encode((object)$params);
+        $content = $this->sendRequest($method, $url, $requestOptions);
         return self::parse($content, function (array $json): DeveloperKey {
             if (!self::hasKeyId($json)) {
                 throw new DeepLException('Developer key response is missing key_id');
             }
             return DeveloperKey::fromJson($json);
         });
+    }
+
+    /**
+     * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
+     * @throws DeepLException If an option key is unknown to the method.
+     */
+    private static function checkOptions(array $options, array $allowed): void
+    {
+        $allowed[] = DeveloperKeyOptions::EXTRA_BODY_PARAMETERS;
+        foreach (array_keys($options) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                throw new DeepLException("Unknown developer key option: $key");
+            }
+        }
     }
 
     /**

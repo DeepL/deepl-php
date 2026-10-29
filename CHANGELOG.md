@@ -49,13 +49,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by the API, or `null` if the response does not include it.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with
   an admin API key and supports managing developer keys
-  (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,
+  (`createDeveloperKey()`, `listDeveloperKeys()`, `deactivateDeveloperKey()`,
   `renameDeveloperKey()`, `setDeveloperKeyUsageLimits()`) and retrieving usage
   analytics (`getUsageAnalytics()`, `getCustomTagUsageAnalytics()`).
+  `createDeveloperKey()` takes the label as an option
+  (`CreateDeveloperKeyOptions::LABEL`). All four developer key changes accept
+  an `extra_body_parameters` option (`CreateDeveloperKeyOptions` and
+  `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`), added last to the JSON body.
   `setDeveloperKeyUsageLimits()` changes only the limits given with the
   `DeveloperKeyUsageLimitsOptions` keys, including speech-to-speech.
   New public types: `DeveloperKey`, `DeveloperKeyUsageLimits`,
-  `DeveloperKeyUsageLimitsOptions`, `AdminUsageReport`, `AdminUsageBreakdown`,
+  `DeveloperKeyUsageLimitsOptions`, `CreateDeveloperKeyOptions`,
+  `DeveloperKeyOptions`, `AdminUsageReport`, `AdminUsageBreakdown`,
   `AdminUsageGroupBy`, `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage`,
   `CustomTagUsageBreakdown` and `CustomTagUsageAggregateBy`.
 - Added language code constants for the target variants `de-CH`, `de-DE`,
