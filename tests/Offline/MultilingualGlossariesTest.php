@@ -8,9 +8,12 @@ namespace DeepL\Offline;
 
 use DeepL\DeepLException;
 use DeepL\GlossaryNotFoundException;
+use DeepL\NotFoundException;
 use DeepL\MultilingualGlossaryDictionaryEntries;
 use DeepL\MultilingualGlossaryDictionaryInfo;
 use DeepL\MultilingualGlossaryInfo;
+use DeepL\MultilingualGlossaryOptions;
+use DeepL\UpdateMultilingualGlossaryOptions;
 
 class MultilingualGlossariesTest extends OfflineTestCase
 {
@@ -69,39 +72,186 @@ class MultilingualGlossariesTest extends OfflineTestCase
         ], $this->jsonBody());
     }
 
-    public function testEncodesTheGlossaryIdInPathsAndTheLanguagesInQueries(): void
+    public function testSendsExtraBodyParametersLastWhenCreatingAndReplacing(): void
+    {
+        $this->reply(self::GLOSSARY, 201);
+        $this->reply(self::GLOSSARY, 201);
+        $this->reply(self::DICTIONARY);
+        $options = [MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS => ['name' => 'Override', 'flag' => true]];
+        $client = $this->makeDeepLClient();
+
+        $client->createMultilingualGlossary('My glossary', [$this->dictionary()], $options);
+        $client->createMultilingualGlossaryFromCsv('My glossary', 'en', 'de', 'Hello,Hallo', $options);
+        $client->replaceMultilingualGlossaryDictionary('gid', $this->dictionary(), $options);
+
+        $this->assertSame(
+            ['name' => 'Override', 'dictionaries' => [$this->dictionaryBody()], 'flag' => true],
+            $this->jsonBody(0)
+        );
+        $this->assertSame('Override', $this->jsonBody(1)['name']);
+        $this->assertTrue($this->jsonBody(1)['flag']);
+        $this->assertSame($this->dictionaryBody() + ['name' => 'Override', 'flag' => true], $this->jsonBody(2));
+    }
+
+    public function testSendsTheUpdateOptions(): void
+    {
+        $this->reply(self::GLOSSARY);
+
+        $this->makeDeepLClient()->updateMultilingualGlossary('gid', [
+            UpdateMultilingualGlossaryOptions::NAME => 'New name',
+            UpdateMultilingualGlossaryOptions::DICTIONARIES => [$this->dictionary()],
+            UpdateMultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS => ['flag' => false],
+        ]);
+
+        $this->assertRequest('PATCH', '/v3/glossaries/gid');
+        $this->assertSame(
+            ['name' => 'New name', 'dictionaries' => [$this->dictionaryBody()], 'flag' => false],
+            $this->jsonBody()
+        );
+    }
+
+    public function testSendsAnEmptyObjectWhenNoUpdateFieldIsSet(): void
     {
         $this->reply(self::GLOSSARY);
         $this->reply(self::GLOSSARY);
+        $client = $this->makeDeepLClient();
+
+        $client->updateMultilingualGlossary('gid');
+        $client->updateMultilingualGlossary('gid', null, null);
+
+        $this->assertSame('{}', (string)$this->request(0)->getBody());
+        $this->assertSame('{}', (string)$this->request(1)->getBody());
+    }
+
+    public function testRejectsUnknownOptionsAndDictionariesNextToAnOptionsArray(): void
+    {
+        $client = $this->makeDeepLClient();
+
+        foreach ([
+            'Unknown multilingual glossary option: name' => function () use ($client) {
+                $client->updateMultilingualGlossaryName('gid', 'n', [UpdateMultilingualGlossaryOptions::NAME => 'x']);
+            },
+            'dictionaries cannot be combined with an options array' => function () use ($client) {
+                $client->updateMultilingualGlossary('gid', [], [$this->dictionary()]);
+            },
+        ] as $message => $call) {
+            try {
+                $call();
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertSame($message, $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testSendsTheConvenienceUpdates(): void
+    {
+        $this->reply(self::GLOSSARY);
+        $this->reply(self::GLOSSARY);
+        $this->reply(self::GLOSSARY);
+        $client = $this->makeDeepLClient();
+        $extra = [MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS => ['flag' => true]];
+
+        $client->updateMultilingualGlossaryName('gid', 'New name', $extra);
+        $client->updateMultilingualGlossaryDictionary('gid', $this->dictionary());
+        $client->updateMultilingualGlossaryDictionaryFromCsv('gid', 'en', 'de', "Hello,Hallo\n");
+
+        foreach ([0, 1, 2] as $index) {
+            $this->assertRequest('PATCH', '/v3/glossaries/gid', $index);
+        }
+        $this->assertSame(['name' => 'New name', 'flag' => true], $this->jsonBody(0));
+        $this->assertSame(['dictionaries' => [$this->dictionaryBody()]], $this->jsonBody(1));
+        $this->assertSame(['dictionaries' => [[
+            'source_lang' => 'en',
+            'target_lang' => 'de',
+            'entries_format' => 'csv',
+            'entries' => "Hello,Hallo\n",
+        ]]], $this->jsonBody(2));
+    }
+
+    public function testSendsTheCsvDictionaryWhenReplacingIt(): void
+    {
         $this->reply(self::DICTIONARY);
+
+        $result = $this->makeDeepLClient()
+            ->replaceMultilingualGlossaryDictionaryFromCsv('gid', 'en', 'de', 'Hello,Hallo');
+
+        $this->assertRequest('PUT', '/v3/glossaries/gid/dictionaries');
+        $this->assertSame(
+            ['source_lang' => 'en', 'target_lang' => 'de', 'entries_format' => 'csv', 'entries' => 'Hello,Hallo'],
+            $this->jsonBody()
+        );
+        $this->assertSame(1, $result->entryCount);
+    }
+
+    public function testReturnsTheSingleDictionaryOfTheEntriesResponse(): void
+    {
         $this->reply(['dictionaries' => [$this->dictionaryBody()]]);
+
+        $dictionary = $this->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
+
+        $this->assertRequest('GET', '/v3/glossaries/gid/entries', 0, 'source_lang=en&target_lang=de');
+        $this->assertInstanceOf(MultilingualGlossaryDictionaryEntries::class, $dictionary);
+        $this->assertSame(['en', 'de', ['Hello' => 'Hallo']], [
+            $dictionary->sourceLang,
+            $dictionary->targetLang,
+            $dictionary->entries,
+        ]);
+    }
+
+    public function testThrowsNotFoundWhenTheEntriesResponseHasNoDictionary(): void
+    {
+        $this->reply(['dictionaries' => []]);
+
+        $this->expectException(NotFoundException::class);
+
+        $this->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
+    }
+
+    public function testParsesADictionaryWithoutEntries(): void
+    {
+        $this->reply(['dictionaries' => [array_replace($this->dictionaryBody(), ['entries' => ''])]]);
+
+        $dictionary = $this->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
+
+        $this->assertSame([], $dictionary->entries);
+    }
+
+    public function testEncodesTheGlossaryIdInPathsAndTheLanguagesInQueries(): void
+    {
+        $dictionaries = ['dictionaries' => [$this->dictionaryBody()]];
+        foreach ([self::GLOSSARY, self::GLOSSARY, self::GLOSSARY, self::GLOSSARY, self::GLOSSARY] as $reply) {
+            $this->reply($reply);
+        }
+        $this->reply(self::DICTIONARY);
+        $this->reply(self::DICTIONARY);
+        $this->reply($dictionaries);
         $this->reply('', 204);
         $this->reply('', 204);
         $client = $this->makeDeepLClient();
         $id = 'a/b?c';
 
         $client->getMultilingualGlossary($id);
-        $client->updateMultilingualGlossary($id, 'n', null);
+        $client->updateMultilingualGlossary($id, [UpdateMultilingualGlossaryOptions::NAME => 'n']);
+        $client->updateMultilingualGlossaryName($id, 'n');
+        $client->updateMultilingualGlossaryDictionary($id, $this->dictionary());
+        $client->updateMultilingualGlossaryDictionaryFromCsv($id, 'en', 'de', 'a,b');
         $client->replaceMultilingualGlossaryDictionary($id, $this->dictionary());
-        $client->getMultilingualGlossaryEntries($id, 'en&x', 'de');
+        $client->replaceMultilingualGlossaryDictionaryFromCsv($id, 'en', 'de', 'a,b');
+        $client->getMultilingualGlossaryDictionaryEntries($id, 'en&x', 'de');
         $client->deleteMultilingualGlossaryDictionary($id, null, 'en', 'de#1');
         $client->deleteMultilingualGlossary($id);
 
         $this->assertRequest('GET', '/v3/glossaries/a%2Fb%3Fc', 0);
-        $this->assertRequest('PATCH', '/v3/glossaries/a%2Fb%3Fc', 1);
-        $this->assertRequest('PUT', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 2);
-        $this->assertRequest('GET', '/v3/glossaries/a%2Fb%3Fc/entries', 3, 'source_lang=en%26x&target_lang=de');
-        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 4, 'source_lang=en&target_lang=de%231');
-        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc', 5);
-    }
-
-    public function testSendsAnEmptyObjectWhenNoUpdateFieldIsSet(): void
-    {
-        $this->reply(self::GLOSSARY);
-
-        $this->makeDeepLClient()->updateMultilingualGlossary('gid', null, null);
-
-        $this->assertSame('{}', (string)$this->request()->getBody());
+        foreach ([1, 2, 3, 4] as $index) {
+            $this->assertRequest('PATCH', '/v3/glossaries/a%2Fb%3Fc', $index);
+        }
+        $this->assertRequest('PUT', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 5);
+        $this->assertRequest('PUT', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 6);
+        $this->assertRequest('GET', '/v3/glossaries/a%2Fb%3Fc/entries', 7, 'source_lang=en%26x&target_lang=de');
+        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc/dictionaries', 8, 'source_lang=en&target_lang=de%231');
+        $this->assertRequest('DELETE', '/v3/glossaries/a%2Fb%3Fc', 9);
     }
 
     public function testTrimsTermsBeforeValidatingAndSendingThem(): void
@@ -113,15 +263,6 @@ class MultilingualGlossariesTest extends OfflineTestCase
 
         $this->assertSame(['Hello' => 'Hallo'], $dictionary->entries);
         $this->assertSame("Hello\tHallo", $this->jsonBody()['dictionaries'][0]['entries']);
-    }
-
-    public function testParsesADictionaryWithoutEntries(): void
-    {
-        $this->reply(['dictionaries' => [array_replace($this->dictionaryBody(), ['entries' => ''])]]);
-
-        $dictionaries = $this->makeDeepLClient()->getMultilingualGlossaryEntries('gid', 'en', 'de');
-
-        $this->assertSame([], $dictionaries[0]->entries);
     }
 
     public function testThrowsWhenTheNameIsEmpty(): void

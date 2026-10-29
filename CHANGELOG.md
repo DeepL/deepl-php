@@ -119,6 +119,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parameter, with the `include` option
   (`GetLanguagesForResourceOptions::INCLUDE`). The plain list of include values
   keeps working.
+- Added an optional trailing options array to `createMultilingualGlossary()`,
+  `createMultilingualGlossaryFromCsv()` and
+  `replaceMultilingualGlossaryDictionary()`, see `MultilingualGlossaryOptions`:
+  `EXTRA_BODY_PARAMETERS` adds parameters to the JSON request body.
+- `updateMultilingualGlossary()` takes an options array as its second
+  parameter, see `UpdateMultilingualGlossaryOptions`: `NAME`, `DICTIONARIES`
+  and `EXTRA_BODY_PARAMETERS`. Options that are not set are not sent.
+- Added `updateMultilingualGlossaryName()`,
+  `updateMultilingualGlossaryDictionary()`,
+  `updateMultilingualGlossaryDictionaryFromCsv()` and
+  `replaceMultilingualGlossaryDictionaryFromCsv()`.
+- Added `getMultilingualGlossaryDictionaryEntries()`, returning the
+  `MultilingualGlossaryDictionaryEntries` of one dictionary, or throwing
+  `GlossaryNotFoundException` if the glossary has no such dictionary.
 
 ### Changed
 - The `max_retries` option now counts retries after the first attempt, as
@@ -195,6 +209,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LanguageSupport::INCLUDE_BETA` and `INCLUDE_EXTERNAL`; use
   `LanguageInclude::BETA` and `EXTERNAL` instead. They keep working and will be
   removed in the next major version.
+- Deprecated `getMultilingualGlossaryEntries()`, which returns the dictionary
+  in a one-element array; use `getMultilingualGlossaryDictionaryEntries()`.
+  Deprecated passing the name and dictionaries of `updateMultilingualGlossary()`
+  as separate parameters; pass an options array. Both keep working and raise a
+  silenced `E_USER_DEPRECATED` notice once per process.
 
 ### Fixed
 - Fixed `translateDocumentUpload()` (and the deprecated `uploadDocument()`)

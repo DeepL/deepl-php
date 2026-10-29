@@ -10,6 +10,8 @@ use JsonException;
 
 class DeepLClient extends Translator
 {
+    /** @var bool[] Deprecation messages already triggered in this process, by key. */
+    private static $multilingualDeprecationsTriggered = [];
 
     public function __construct(string $authKey, array $options = [])
     {
@@ -120,12 +122,14 @@ class DeepLClient extends Translator
      * @param string $name User-defined name to assign to the glossary.
      * @param MultilingualGlossaryDictionaryEntries[] $dictionaries A list of MultilingualGlossaryDictionaryEntries
      *      which each contains entries for a particular language pair
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws DeepLException
      */
     public function createMultilingualGlossary(
         string $name,
-        array $dictionaries
+        array $dictionaries,
+        array $options = []
     ): MultilingualGlossaryInfo {
 
         if (strlen($name) === 0) {
@@ -134,19 +138,9 @@ class DeepLClient extends Translator
 
         $params = [
             'name' => $name,
-            'dictionaries' => array_map(function (MultilingualGlossaryDictionaryEntries $entries) {
-                return $entries->toObject();
-            }, $dictionaries),
+            'dictionaries' => self::multilingualDictionariesToObjects($dictionaries),
         ];
-
-        $response = $this->client->sendRequestWithBackoff(
-            'POST',
-            '/v3/glossaries',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
-        );
-        $this->checkStatusCode($response, false, true);
-        list(, $content) = $response;
-        return MultilingualGlossaryInfo::parseJson($content);
+        return $this->createMultilingualGlossaryWithParams($params, $options);
     }
 
     /**
@@ -155,6 +149,7 @@ class DeepLClient extends Translator
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
      * @param string $csvContent String containing CSV content.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws DeepLException
      */
@@ -162,7 +157,8 @@ class DeepLClient extends Translator
         string $name,
         string $sourceLang,
         string $targetLang,
-        string $csvContent
+        string $csvContent,
+        array $options = []
     ): MultilingualGlossaryInfo {
 
         if (strlen($name) === 0) {
@@ -171,20 +167,21 @@ class DeepLClient extends Translator
 
         $params = [
             'name' => $name,
-            'dictionaries' => [
-                [
-                    'source_lang' => $sourceLang,
-                    'target_lang' => $targetLang,
-                    'entries_format' => 'csv',
-                    'entries' => $csvContent,
-                ]
-            ]
+            'dictionaries' => [self::csvDictionaryObject($sourceLang, $targetLang, $csvContent)],
         ];
+        return $this->createMultilingualGlossaryWithParams($params, $options);
+    }
 
+    /**
+     * @throws DeepLException
+     */
+    private function createMultilingualGlossaryWithParams(array $params, array $options): MultilingualGlossaryInfo
+    {
+        self::checkMultilingualGlossaryOptions($options, []);
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/glossaries',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -192,36 +189,126 @@ class DeepLClient extends Translator
     }
 
     /**
-     * Updates or creates a glossary dictionary with given entries for the
-     * source and target languages. Either updates entries if they exist for
-     * the given language pair, or adds new ones to the dictionary if not.
+     * Renames a glossary and/or merges entries into its dictionaries. For each given dictionary, entries
+     * are added to the dictionary of that language pair (replacing the target term of an existing source
+     * term), or the dictionary is added if the glossary has none for that language pair. Options that are
+     * not set, or null, are not sent; without any, the body is {}.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
-     * @param string|null $name Optional, new name for glossary.
-     * @param array|null $dictionaries Optional, array of MultilingualGlossaryDictionaryEntries to update or add to
-     *  glossary.
+     * @param array|string|null $options Fields to change, see \DeepL\UpdateMultilingualGlossaryOptions: NAME
+     *  (new name), DICTIONARIES (MultilingualGlossaryDictionaryEntries[] to merge) and EXTRA_BODY_PARAMETERS.
+     *  Deprecated: a new name string or null, followed by $dictionaries.
+     * @param array|null $dictionaries Deprecated, use the DICTIONARIES option: array of
+     *  MultilingualGlossaryDictionaryEntries to update or add to the glossary.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws DeepLException
      */
     public function updateMultilingualGlossary(
         $glossary,
-        ?string $name,
-        ?array $dictionaries
+        $options = [],
+        ?array $dictionaries = null
     ): MultilingualGlossaryInfo {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
+        if (!is_array($options) || func_num_args() > 2) {
+            if (is_array($options)) {
+                throw new DeepLException('dictionaries cannot be combined with an options array');
+            }
+            if ($options !== null && !is_string($options)) {
+                throw new DeepLException('options must be an array');
+            }
+            self::triggerMultilingualDeprecation(
+                'updateMultilingualGlossary-positional',
+                'Passing the name and dictionaries of DeepLClient::updateMultilingualGlossary() as separate ' .
+                'parameters is deprecated, pass an options array, see UpdateMultilingualGlossaryOptions.'
+            );
+            $options = [
+                UpdateMultilingualGlossaryOptions::NAME => $options,
+                UpdateMultilingualGlossaryOptions::DICTIONARIES => $dictionaries,
+            ];
+        }
+        self::checkMultilingualGlossaryOptions(
+            $options,
+            [UpdateMultilingualGlossaryOptions::NAME, UpdateMultilingualGlossaryOptions::DICTIONARIES]
+        );
         $params = [];
-        if (isset($name)) {
-            $params['name'] = $name;
+        if (isset($options[UpdateMultilingualGlossaryOptions::NAME])) {
+            $params['name'] = (string)$options[UpdateMultilingualGlossaryOptions::NAME];
         }
-        if (isset($dictionaries) and count($dictionaries) > 0) {
-            $params['dictionaries'] = array_map(function (MultilingualGlossaryDictionaryEntries $entries) {
-                return $entries->toObject();
-            }, $dictionaries);
+        $dictionaries = $options[UpdateMultilingualGlossaryOptions::DICTIONARIES] ?? null;
+        if (isset($dictionaries) && count($dictionaries) > 0) {
+            $params['dictionaries'] = self::multilingualDictionariesToObjects($dictionaries);
         }
+        return $this->patchMultilingualGlossary($glossary, $params, $options);
+    }
 
+    /**
+     * Renames a glossary.
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
+     * @param string $name New name for the glossary.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @return MultilingualGlossaryInfo Info about the updated glossary.
+     * @throws DeepLException
+     */
+    public function updateMultilingualGlossaryName(
+        $glossary,
+        string $name,
+        array $options = []
+    ): MultilingualGlossaryInfo {
+        self::checkMultilingualGlossaryOptions($options, []);
+        return $this->patchMultilingualGlossary($glossary, ['name' => $name], $options);
+    }
+
+    /**
+     * Merges entries into the glossary dictionary of their language pair: new source terms are added and
+     * the target term of an existing source term is replaced. The dictionary is added if the glossary has
+     * none for that language pair.
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
+     * @param MultilingualGlossaryDictionaryEntries $dictionaryEntries Language pair and entries to merge.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @return MultilingualGlossaryInfo Info about the updated glossary.
+     * @throws DeepLException
+     */
+    public function updateMultilingualGlossaryDictionary(
+        $glossary,
+        MultilingualGlossaryDictionaryEntries $dictionaryEntries,
+        array $options = []
+    ): MultilingualGlossaryInfo {
+        self::checkMultilingualGlossaryOptions($options, []);
+        $params = ['dictionaries' => [$dictionaryEntries->toObject()]];
+        return $this->patchMultilingualGlossary($glossary, $params, $options);
+    }
+
+    /**
+     * Merges CSV entries into the glossary dictionary of the given language pair, like
+     * updateMultilingualGlossaryDictionary().
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
+     * @param string $sourceLang Language code of the source terms.
+     * @param string $targetLang Language code of the target terms.
+     * @param string $csvContent String containing CSV content.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @return MultilingualGlossaryInfo Info about the updated glossary.
+     * @throws DeepLException
+     */
+    public function updateMultilingualGlossaryDictionaryFromCsv(
+        $glossary,
+        string $sourceLang,
+        string $targetLang,
+        string $csvContent,
+        array $options = []
+    ): MultilingualGlossaryInfo {
+        self::checkMultilingualGlossaryOptions($options, []);
+        $params = ['dictionaries' => [self::csvDictionaryObject($sourceLang, $targetLang, $csvContent)]];
+        return $this->patchMultilingualGlossary($glossary, $params, $options);
+    }
+
+    /**
+     * @param string|MultilingualGlossaryInfo $glossary
+     * @throws DeepLException
+     */
+    private function patchMultilingualGlossary($glossary, array $params, array $options): MultilingualGlossaryInfo
+    {
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
-            "/v3/glossaries/" . rawurlencode($glossaryId),
-            [HttpClientWrapper::OPTION_JSON => json_encode((object)$params)]
+            self::multilingualGlossaryPath($glossary),
+            [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -235,20 +322,55 @@ class DeepLClient extends Translator
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
      *  update.
      * @param MultilingualGlossaryDictionaryEntries $dictionaryEntries Replacement dictionary with entries.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
      * @throws DeepLException
      */
     public function replaceMultilingualGlossaryDictionary(
         $glossary,
-        MultilingualGlossaryDictionaryEntries $dictionaryEntries
+        MultilingualGlossaryDictionaryEntries $dictionaryEntries,
+        array $options = []
     ): MultilingualGlossaryDictionaryInfo {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $params = $dictionaryEntries->toObject();
+        return $this->putMultilingualGlossaryDictionary($glossary, $dictionaryEntries->toObject(), $options);
+    }
 
+    /**
+     * Replaces a glossary dictionary with the given CSV entries for the source and target languages, like
+     * replaceMultilingualGlossaryDictionary().
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
+     *  update.
+     * @param string $sourceLang Language code of the source terms.
+     * @param string $targetLang Language code of the target terms.
+     * @param string $csvContent String containing CSV content.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
+     * @throws DeepLException
+     */
+    public function replaceMultilingualGlossaryDictionaryFromCsv(
+        $glossary,
+        string $sourceLang,
+        string $targetLang,
+        string $csvContent,
+        array $options = []
+    ): MultilingualGlossaryDictionaryInfo {
+        $params = self::csvDictionaryObject($sourceLang, $targetLang, $csvContent);
+        return $this->putMultilingualGlossaryDictionary($glossary, $params, $options);
+    }
+
+    /**
+     * @param string|MultilingualGlossaryInfo $glossary
+     * @throws DeepLException
+     */
+    private function putMultilingualGlossaryDictionary(
+        $glossary,
+        array $params,
+        array $options
+    ): MultilingualGlossaryDictionaryInfo {
+        self::checkMultilingualGlossaryOptions($options, []);
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
-            "/v3/glossaries/" . rawurlencode($glossaryId) . "/dictionaries",
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            self::multilingualGlossaryPath($glossary) . '/dictionaries',
+            [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -264,8 +386,7 @@ class DeepLClient extends Translator
      */
     public function getMultilingualGlossary($glossary): MultilingualGlossaryInfo
     {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $response = $this->client->sendRequestWithBackoff('GET', "/v3/glossaries/" . rawurlencode($glossaryId));
+        $response = $this->client->sendRequestWithBackoff('GET', self::multilingualGlossaryPath($glossary));
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseJson($content);
@@ -286,6 +407,28 @@ class DeepLClient extends Translator
     }
 
     /**
+     * Retrieves the entries of the dictionary for the given source and target language in the given glossary.
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
+     *  retrieve entries of.
+     * @param string $sourceLang Language code of the glossary source terms.
+     * @param string $targetLang Language code of the glossary target terms.
+     * @return MultilingualGlossaryDictionaryEntries The language pair and entries of the dictionary.
+     * @throws GlossaryNotFoundException If the glossary or the dictionary does not exist.
+     * @throws DeepLException
+     */
+    public function getMultilingualGlossaryDictionaryEntries(
+        $glossary,
+        string $sourceLang,
+        string $targetLang
+    ): MultilingualGlossaryDictionaryEntries {
+        $dictionaries = $this->requestMultilingualGlossaryEntries($glossary, $sourceLang, $targetLang);
+        if (count($dictionaries) === 0) {
+            throw new GlossaryNotFoundException('Glossary dictionary not found');
+        }
+        return $dictionaries[0];
+    }
+
+    /**
      * Retrieves the dictionary entries for a given source and target language in the given glossary.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
      *  retrieve entries of.
@@ -293,12 +436,27 @@ class DeepLClient extends Translator
      * @param string $targetLang Language code of the glossary target terms.
      * @return MultilingualGlossaryDictionaryEntries[] The entries stored in the dictionary.
      * @throws DeepLException
+     * @deprecated Use getMultilingualGlossaryDictionaryEntries(), which returns the dictionary itself.
      */
     public function getMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
     {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
+        self::triggerMultilingualDeprecation(
+            'getMultilingualGlossaryEntries',
+            'DeepLClient::getMultilingualGlossaryEntries() is deprecated, use ' .
+            'DeepLClient::getMultilingualGlossaryDictionaryEntries() instead.'
+        );
+        return $this->requestMultilingualGlossaryEntries($glossary, $sourceLang, $targetLang);
+    }
+
+    /**
+     * @param string|MultilingualGlossaryInfo $glossary
+     * @return MultilingualGlossaryDictionaryEntries[]
+     * @throws DeepLException
+     */
+    private function requestMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
+    {
         $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
-        $url = "/v3/glossaries/" . rawurlencode($glossaryId) . "/entries?$query";
+        $url = self::multilingualGlossaryPath($glossary) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -313,8 +471,7 @@ class DeepLClient extends Translator
      */
     public function deleteMultilingualGlossary($glossary): void
     {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-        $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/glossaries/" . rawurlencode($glossaryId));
+        $response = $this->client->sendRequestWithBackoff('DELETE', self::multilingualGlossaryPath($glossary));
         $this->checkStatusCode($response, false, true);
     }
 
@@ -335,8 +492,6 @@ class DeepLClient extends Translator
         ?string $sourceLang = null,
         ?string $targetLang = null
     ): void {
-        $glossaryId = MultilingualGlossaryInfo::getGlossaryId($glossary);
-
         if (is_null($dictionary)) {
             if (is_null($sourceLang) or is_null($targetLang)) {
                 throw new DeepLException('must provide dictionary or both source_lang and target_lang');
@@ -347,9 +502,71 @@ class DeepLClient extends Translator
         }
 
         $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
-        $url = "/v3/glossaries/" . rawurlencode($glossaryId) . "/dictionaries?$query";
+        $url = self::multilingualGlossaryPath($glossary) . "/dictionaries?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
         $this->checkStatusCode($response, false, true);
+    }
+
+    /**
+     * @param string|MultilingualGlossaryInfo $glossary
+     */
+    private static function multilingualGlossaryPath($glossary): string
+    {
+        return '/v3/glossaries/' . rawurlencode(MultilingualGlossaryInfo::getGlossaryId($glossary));
+    }
+
+    /**
+     * @param MultilingualGlossaryDictionaryEntries[] $dictionaries
+     */
+    private static function multilingualDictionariesToObjects(array $dictionaries): array
+    {
+        return array_values(array_map(function (MultilingualGlossaryDictionaryEntries $entries) {
+            return $entries->toObject();
+        }, $dictionaries));
+    }
+
+    private static function csvDictionaryObject(string $sourceLang, string $targetLang, string $csvContent): array
+    {
+        return [
+            'source_lang' => $sourceLang,
+            'target_lang' => $targetLang,
+            'entries_format' => 'csv',
+            'entries' => $csvContent,
+        ];
+    }
+
+    /**
+     * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
+     * @throws DeepLException If an option key is unknown to the method.
+     */
+    private static function checkMultilingualGlossaryOptions(array $options, array $allowed): void
+    {
+        $allowed[] = MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS;
+        foreach (array_keys($options) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                throw new DeepLException("Unknown multilingual glossary option: $key");
+            }
+        }
+    }
+
+    /**
+     * Encodes the JSON body of a multilingual glossary request, with the extra body parameters added last.
+     * An empty body encodes as {}.
+     */
+    private static function multilingualGlossaryJsonBody(array $params, array $options): string
+    {
+        foreach ($options[MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
+        return json_encode((object)$params);
+    }
+
+    private static function triggerMultilingualDeprecation(string $key, string $message): void
+    {
+        if (!isset(self::$multilingualDeprecationsTriggered[$key])) {
+            self::$multilingualDeprecationsTriggered[$key] = true;
+            @trigger_error($message, E_USER_DEPRECATED);
+        }
     }
 
     /**
