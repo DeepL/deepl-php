@@ -627,10 +627,10 @@ detail.
 source and target term, then rejects empty terms, terms containing control
 characters, and source terms that are duplicates after trimming.
 
-The glossary methods that send a request body (`createMultilingualGlossary()`,
-`createMultilingualGlossaryFromCsv()`, `replaceMultilingualGlossaryDictionary()`,
-`replaceMultilingualGlossaryDictionaryFromCsv()` and the
-`updateMultilingualGlossary*()` methods) take an optional trailing options
+`updateMultilingualGlossaryName()`, `updateMultilingualGlossaryDictionary()`,
+`updateMultilingualGlossaryDictionaryFromCsv()` and
+`replaceMultilingualGlossaryDictionaryFromCsv()` (see
+[Editing a glossary](#editing-a-glossary)) take an optional trailing options
 array. `MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS` is an associative
 array of additional parameters added to the JSON body last, replacing a field
 the library sets with the same key.
@@ -695,16 +695,13 @@ and returns the dictionary in a one-element array.
 Functions to edit stored glossaries are also provided:
 
 - `updateMultilingualGlossary()` takes a glossary ID or 
-  `MultilingualGlossaryInfo` object and an options array, see
-  `UpdateMultilingualGlossaryOptions`: `NAME`, a new name for the glossary,
-  `DICTIONARIES`, an array of `MultilingualGlossaryDictionaryEntries` to merge
-  into the glossary, and `EXTRA_BODY_PARAMETERS`. Options that are not set are
-  not sent. For a given glossary dictionary, it will then either update the
-  list of entries for that dictionary (either inserting new entries or
-  replacing the target phrase for any existing entries) or will insert a new
+  `MultilingualGlossaryInfo` object, a new name for the glossary or `null`, and
+  an array of `MultilingualGlossaryDictionaryEntries` to merge into the
+  glossary or `null`. For a given glossary dictionary, it will then either
+  update the list of entries for that dictionary (either inserting new entries
+  or replacing the target phrase for any existing entries) or will insert a new
   glossary dictionary if that language pair is not currently in the stored
-  glossary. Passing the name and dictionaries as separate parameters,
-  `updateMultilingualGlossary($glossary, $name, $dictionaries)`, is deprecated.
+  glossary.
 - `updateMultilingualGlossaryName()` takes a glossary ID or
   `MultilingualGlossaryInfo` object and a new name for the glossary.
 - `updateMultilingualGlossaryDictionary()` takes a glossary ID or
@@ -729,10 +726,8 @@ $myGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['artist
 $myGlossary = $deeplClient->createMultilingualGlossary('My glossary', [$myGlossaryDict]);
 
 $myUpdatedGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['hello' => 'hallo', 'prize' => 'Gewinn']);
-$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary($myGlossary, [
-    UpdateMultilingualGlossaryOptions::NAME => 'My updated glossary',
-    UpdateMultilingualGlossaryOptions::DICTIONARIES => [$myUpdatedGlossaryDict],
-]);
+$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary(
+    $myGlossary, 'My updated glossary', [$myUpdatedGlossaryDict]);
 echo $myUpdatedGlossary->dictionaries[0]->entryCount; // 3: artist, hello and prize
 
 $deeplClient->updateMultilingualGlossaryName($myGlossary, 'My renamed glossary');

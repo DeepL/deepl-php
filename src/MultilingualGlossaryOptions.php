@@ -7,10 +7,8 @@
 namespace DeepL;
 
 /**
- * Option keys for the multilingual glossary methods of DeepLClient that send a request body:
- * createMultilingualGlossary(), createMultilingualGlossaryFromCsv(), replaceMultilingualGlossaryDictionary(),
- * replaceMultilingualGlossaryDictionaryFromCsv(), updateMultilingualGlossaryName(),
- * updateMultilingualGlossaryDictionary() and updateMultilingualGlossaryDictionaryFromCsv().
+ * Option keys for DeepLClient::updateMultilingualGlossaryName(), updateMultilingualGlossaryDictionary(),
+ * updateMultilingualGlossaryDictionaryFromCsv() and replaceMultilingualGlossaryDictionaryFromCsv().
  */
 class MultilingualGlossaryOptions
 {
