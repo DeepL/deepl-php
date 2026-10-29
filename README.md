@@ -1109,9 +1109,17 @@ translation memories, with an optional description and industry. The
 `DeepLClient` methods below accept either the style profile ID or a
 `StyleProfile` object; an empty ID throws a `DeepLException` before any request
 is sent. Optional fields are passed as an array keyed by the
-`StyleProfileOptions` constants. An option is sent only if it is set and not
-`null`: an empty string `''` clears the description or industry, and an empty
-array `[]` unlinks all components of that kind.
+`CreateStyleProfileOptions` constants for `createStyleProfile()` and the
+`UpdateStyleProfileOptions` constants for `updateStyleProfile()`; only the
+latter has `NAME`. An option is sent only if it is set and not `null`: an empty
+string `''` clears the description or industry, and an empty array `[]`
+unlinks all components of that kind. `updateStyleProfile()` without options
+sends an empty update. The ID lists `GLOSSARY_IDS`, `STYLE_RULE_IDS` and
+`TRANSLATION_MEMORY_IDS` take IDs or the objects returned by the library
+(`GlossaryInfo` or `MultilingualGlossaryInfo`, `StyleRuleInfo`,
+`TranslationMemoryInfo`). `EXTRA_BODY_PARAMETERS` takes an associative array of
+additional JSON body fields, added after the library's fields and replacing any
+with the same key.
 
 ```php
 // Create a style profile with only a name
@@ -1119,12 +1127,12 @@ $profile = $deeplClient->createStyleProfile('Legal, German');
 
 // Create a style profile with components; if any ID cannot be used, nothing is created
 $profile = $deeplClient->createStyleProfile('Legal, German', [
-    StyleProfileOptions::DESCRIPTION => 'Contract wording for the German market.',
-    StyleProfileOptions::INDUSTRY => 'Legal',
-    StyleProfileOptions::GLOSSARY_IDS => [$glossary->glossaryId],
-    StyleProfileOptions::STYLE_RULE_IDS => [$styleRule->styleId],
-    StyleProfileOptions::TRANSLATION_MEMORY_IDS => [$translationMemory->translationMemoryId],
-    StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => true,
+    CreateStyleProfileOptions::DESCRIPTION => 'Contract wording for the German market.',
+    CreateStyleProfileOptions::INDUSTRY => 'Legal',
+    CreateStyleProfileOptions::GLOSSARY_IDS => [$glossary],
+    CreateStyleProfileOptions::STYLE_RULE_IDS => [$styleRule->styleId],
+    CreateStyleProfileOptions::TRANSLATION_MEMORY_IDS => [$translationMemory],
+    CreateStyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => true,
 ]);
 echo "Created: {$profile->name} ({$profile->styleProfileId})\n";
 
@@ -1139,9 +1147,9 @@ foreach ($deeplClient->listStyleProfiles(0, 100) as $item) {
 
 // Update: options you leave out are not changed, an ID list replaces the linked list in full
 $profile = $deeplClient->updateStyleProfile($profile, [
-    StyleProfileOptions::NAME => 'Legal, German v2',
-    StyleProfileOptions::DESCRIPTION => '',    // clears the description
-    StyleProfileOptions::STYLE_RULE_IDS => [], // unlinks all style rule lists
+    UpdateStyleProfileOptions::NAME => 'Legal, German v2',
+    UpdateStyleProfileOptions::DESCRIPTION => '',    // clears the description
+    UpdateStyleProfileOptions::STYLE_RULE_IDS => [], // unlinks all style rule lists
 ]);
 var_dump($profile->description); // NULL
 

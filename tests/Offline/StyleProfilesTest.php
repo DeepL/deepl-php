@@ -6,10 +6,16 @@
 
 namespace DeepL\Offline;
 
+use DateTime;
+use DeepL\CreateStyleProfileOptions;
 use DeepL\DeepLException;
+use DeepL\GlossaryInfo;
+use DeepL\MultilingualGlossaryInfo;
 use DeepL\NotFoundException;
 use DeepL\StyleProfile;
-use DeepL\StyleProfileOptions;
+use DeepL\StyleRuleInfo;
+use DeepL\TranslationMemoryInfo;
+use DeepL\UpdateStyleProfileOptions;
 
 class StyleProfilesTest extends OfflineTestCase
 {
@@ -61,12 +67,12 @@ class StyleProfilesTest extends OfflineTestCase
         $client = $this->makeDeepLClient();
 
         $client->createStyleProfile('Legal, German', [
-            StyleProfileOptions::DESCRIPTION => 'Contract wording',
-            StyleProfileOptions::INDUSTRY => 'Legal',
-            StyleProfileOptions::GLOSSARY_IDS => [3 => 'g2', 1 => 'g1'],
-            StyleProfileOptions::STYLE_RULE_IDS => ['s1'],
-            StyleProfileOptions::TRANSLATION_MEMORY_IDS => ['t1', 't2'],
-            StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => true,
+            CreateStyleProfileOptions::DESCRIPTION => 'Contract wording',
+            CreateStyleProfileOptions::INDUSTRY => 'Legal',
+            CreateStyleProfileOptions::GLOSSARY_IDS => [3 => 'g2', 1 => 'g1'],
+            CreateStyleProfileOptions::STYLE_RULE_IDS => ['s1'],
+            CreateStyleProfileOptions::TRANSLATION_MEMORY_IDS => ['t1', 't2'],
+            CreateStyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => true,
         ]);
 
         $this->assertSame([
@@ -87,13 +93,13 @@ class StyleProfilesTest extends OfflineTestCase
         $client = $this->makeDeepLClient();
 
         $client->updateStyleProfile('pid', [
-            StyleProfileOptions::NAME => 'New name',
-            StyleProfileOptions::DESCRIPTION => '',
-            StyleProfileOptions::INDUSTRY => null,
-            StyleProfileOptions::STYLE_RULE_IDS => [],
-            StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => false,
+            UpdateStyleProfileOptions::NAME => 'New name',
+            UpdateStyleProfileOptions::DESCRIPTION => '',
+            UpdateStyleProfileOptions::INDUSTRY => null,
+            UpdateStyleProfileOptions::STYLE_RULE_IDS => [],
+            UpdateStyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED => false,
         ]);
-        $client->updateStyleProfile('pid', []);
+        $client->updateStyleProfile('pid');
 
         $this->assertRequest('PATCH', '/v3/style_profiles/pid');
         $this->assertSame(
@@ -102,6 +108,59 @@ class StyleProfilesTest extends OfflineTestCase
         );
         $this->assertRequest('PATCH', '/v3/style_profiles/pid', 1);
         $this->assertSame('{}', (string)$this->request(1)->getBody());
+    }
+
+    public function testIdListsAcceptIdsAndResourceObjects(): void
+    {
+        $this->reply(self::PROFILE, 201);
+        $this->reply(self::PROFILE);
+        $client = $this->makeDeepLClient();
+        $glossary = new GlossaryInfo('g1', 'n', true, 'en', 'de', new DateTime(), 1);
+        $multilingual = new MultilingualGlossaryInfo('g2', 'n', new DateTime(), []);
+        $styleRule = new StyleRuleInfo('s1', 'n', new DateTime(), new DateTime(), 'de', 1);
+        $memory = new TranslationMemoryInfo('t1', 'n', 'en', ['de'], 0);
+
+        $client->createStyleProfile('n', [
+            CreateStyleProfileOptions::GLOSSARY_IDS => [$glossary, 'g0', $multilingual],
+            CreateStyleProfileOptions::STYLE_RULE_IDS => [$styleRule, 's2'],
+            CreateStyleProfileOptions::TRANSLATION_MEMORY_IDS => [$memory],
+        ]);
+        $client->updateStyleProfile('pid', [
+            UpdateStyleProfileOptions::GLOSSARY_IDS => [$multilingual],
+            UpdateStyleProfileOptions::STYLE_RULE_IDS => [$styleRule],
+            UpdateStyleProfileOptions::TRANSLATION_MEMORY_IDS => ['t2', $memory],
+        ]);
+
+        $this->assertSame([
+            'name' => 'n',
+            'glossary_ids' => ['g1', 'g0', 'g2'],
+            'style_rule_ids' => ['s1', 's2'],
+            'translation_memory_ids' => ['t1'],
+        ], $this->jsonBody());
+        $this->assertSame([
+            'glossary_ids' => ['g2'],
+            'style_rule_ids' => ['s1'],
+            'translation_memory_ids' => ['t2', 't1'],
+        ], $this->jsonBody(1));
+    }
+
+    public function testExtraBodyParametersAreAddedLastAndReplaceFields(): void
+    {
+        $this->reply(self::PROFILE, 201);
+        $this->reply(self::PROFILE);
+        $client = $this->makeDeepLClient();
+
+        $client->createStyleProfile('n', [
+            CreateStyleProfileOptions::INDUSTRY => 'Legal',
+            CreateStyleProfileOptions::EXTRA_BODY_PARAMETERS => ['name' => 'Override', 'flag' => true],
+        ]);
+        $client->updateStyleProfile('pid', [
+            UpdateStyleProfileOptions::NAME => 'New',
+            UpdateStyleProfileOptions::EXTRA_BODY_PARAMETERS => ['industry' => null, 'name' => 'Override'],
+        ]);
+
+        $this->assertSame('{"name":"Override","industry":"Legal","flag":true}', (string)$this->request()->getBody());
+        $this->assertSame('{"name":"Override","industry":null}', (string)$this->request(1)->getBody());
     }
 
     public function testGetUpdateDeleteAcceptAnIdOrAStyleProfileAndEscapeTheId(): void
@@ -116,7 +175,7 @@ class StyleProfilesTest extends OfflineTestCase
 
         $profile = $client->getStyleProfile($id);
         $client->getStyleProfile('a/b c');
-        $client->updateStyleProfile($profile, [StyleProfileOptions::INDUSTRY => 'Legal']);
+        $client->updateStyleProfile($profile, [UpdateStyleProfileOptions::INDUSTRY => 'Legal']);
         $client->deleteStyleProfile($profile);
         $client->deleteStyleProfile('a/b c');
 
@@ -130,7 +189,7 @@ class StyleProfilesTest extends OfflineTestCase
     public function testRejectsAnEmptyIdAndUnknownOptionsBeforeSending(): void
     {
         $client = $this->makeDeepLClient();
-        $empty = new StyleProfile('', 'n', null, null, [], [], [], false, null, null);
+        $empty = new StyleProfile('', 'n', null, null, [], [], [], false, new DateTime(), new DateTime());
 
         foreach ([
             function () use ($client) {
@@ -150,6 +209,16 @@ class StyleProfilesTest extends OfflineTestCase
             },
             function () use ($client) {
                 $client->updateStyleProfile('pid', ['style_rules' => []]);
+            },
+            function () use ($client) {
+                $client->createStyleProfile('n', [UpdateStyleProfileOptions::NAME => 'other']);
+            },
+            function () use ($client) {
+                $client->createStyleProfile('n', [CreateStyleProfileOptions::GLOSSARY_IDS => [new \stdClass()]]);
+            },
+            function () use ($client) {
+                $style = new StyleRuleInfo('s1', 'n', new DateTime(), new DateTime(), 'de', 1);
+                $client->updateStyleProfile('pid', [UpdateStyleProfileOptions::TRANSLATION_MEMORY_IDS => [$style]]);
             },
         ] as $call) {
             try {
@@ -190,7 +259,7 @@ class StyleProfilesTest extends OfflineTestCase
             'example_document_ids' => ['d1'],
             'spoken_terms_ids' => ['x1'],
             'creation_time' => '2026-10-26T16:27:10.2982869Z',
-            'updated_time' => 'not a timestamp',
+            'updated_time' => '2026-10-26T16:27:10Z',
         ]);
 
         $profile = $this->makeDeepLClient()->getStyleProfile('pid');
@@ -203,7 +272,6 @@ class StyleProfilesTest extends OfflineTestCase
         $this->assertSame([], $profile->translationMemoryIds);
         $this->assertFalse($profile->glossaryPriorityOrderEnabled);
         $this->assertSame('2026-10-26T16:27:10.298286', $profile->creationTime->format('Y-m-d\TH:i:s.u'));
-        $this->assertNull($profile->updatedTime);
         $this->assertFalse(property_exists($profile, 'exampleDocumentIds'));
     }
 

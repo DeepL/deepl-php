@@ -6,8 +6,9 @@
 
 namespace DeepL\RealApi;
 
+use DeepL\CreateStyleProfileOptions;
 use DeepL\NotFoundException;
-use DeepL\StyleProfileOptions;
+use DeepL\UpdateStyleProfileOptions;
 
 class StyleProfilesTest extends RealApiTestCase
 {
@@ -19,8 +20,8 @@ class StyleProfilesTest extends RealApiTestCase
         $profile = null;
         try {
             $profile = $client->createStyleProfile($name, [
-                StyleProfileOptions::DESCRIPTION => 'Created by an SDK test',
-                StyleProfileOptions::STYLE_RULE_IDS => [$styleRule->styleId],
+                CreateStyleProfileOptions::DESCRIPTION => 'Created by an SDK test',
+                CreateStyleProfileOptions::STYLE_RULE_IDS => [$styleRule],
             ]);
             $this->assertSame($name, $profile->name);
             $this->assertSame('Created by an SDK test', $profile->description);
@@ -48,10 +49,10 @@ class StyleProfilesTest extends RealApiTestCase
             $this->assertTrue($listed, 'the new style profile was not in the list');
 
             $updated = $client->updateStyleProfile($profile, [
-                StyleProfileOptions::NAME => "$name-renamed",
-                StyleProfileOptions::INDUSTRY => 'Legal',
-                StyleProfileOptions::DESCRIPTION => '',
-                StyleProfileOptions::STYLE_RULE_IDS => [],
+                UpdateStyleProfileOptions::NAME => "$name-renamed",
+                UpdateStyleProfileOptions::INDUSTRY => 'Legal',
+                UpdateStyleProfileOptions::DESCRIPTION => '',
+                UpdateStyleProfileOptions::STYLE_RULE_IDS => [],
             ]);
             $this->assertSame("$name-renamed", $updated->name);
             $this->assertSame('Legal', $updated->industry);

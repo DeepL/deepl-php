@@ -955,22 +955,21 @@ class DeepLClient extends Translator
     /**
      * Creates a style profile.
      * @param string $name Name of the style profile.
-     * @param array $options Optional fields, see \DeepL\StyleProfileOptions. Options that are null
-     *  are not sent. If any of the linked component IDs cannot be used, no style profile is created.
+     * @param array $options Optional fields, see \DeepL\CreateStyleProfileOptions. Options that are
+     *  null are not sent. If any of the linked component IDs cannot be used, no style profile is created.
      * @return StyleProfile Details about the created style profile.
      * @throws DeepLException
      */
     public function createStyleProfile(string $name, array $options = []): StyleProfile
     {
-        if (array_key_exists(StyleProfileOptions::NAME, $options)) {
-            throw new DeepLException('pass the name as the $name argument, not as an option');
-        }
-        $params = self::buildStyleProfileBody($options);
-        $params = (object)array_merge(['name' => $name], (array)$params);
+        $params = self::buildStyleProfileBody(['name' => $name], $options, [
+            CreateStyleProfileOptions::DESCRIPTION,
+            CreateStyleProfileOptions::INDUSTRY,
+        ]);
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/style_profiles',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => $params]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -999,24 +998,25 @@ class DeepLClient extends Translator
     /**
      * Updates a style profile. Options that are not set, or null, are not changed. An empty string
      * clears the description or industry; an ID list replaces the linked list in full, and an empty
-     * array unlinks all components of that kind.
+     * array unlinks all components of that kind. Without options, an empty update ({}) is sent.
      * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
-     * @param array $options Fields to change, see \DeepL\StyleProfileOptions, including NAME.
+     * @param array $options Fields to change, see \DeepL\UpdateStyleProfileOptions.
      * @return StyleProfile Details about the updated style profile.
      * @throws DeepLException
      * @throws NotFoundException If the style profile is not found.
      */
-    public function updateStyleProfile($styleProfile, array $options): StyleProfile
+    public function updateStyleProfile($styleProfile, array $options = []): StyleProfile
     {
         $styleProfileId = StyleProfile::getStyleProfileId($styleProfile);
-        $params = self::buildStyleProfileBody($options);
-        if (isset($options[StyleProfileOptions::NAME])) {
-            $params = (object)array_merge(['name' => (string)$options[StyleProfileOptions::NAME]], (array)$params);
-        }
+        $params = self::buildStyleProfileBody([], $options, [
+            UpdateStyleProfileOptions::NAME,
+            UpdateStyleProfileOptions::DESCRIPTION,
+            UpdateStyleProfileOptions::INDUSTRY,
+        ]);
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
             '/v3/style_profiles/' . rawurlencode($styleProfileId),
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => $params]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1040,40 +1040,72 @@ class DeepLClient extends Translator
     }
 
     /**
-     * Builds the JSON body of a style profile request from its options, except the name. A stdClass,
-     * so that a body without fields encodes as {}.
-     * @throws DeepLException If an option key is unknown.
+     * Encodes the JSON body of a style profile request: $params, then the options that are set, then
+     * the extra body parameters. An empty body encodes as {}.
+     * @param string[] $stringKeys The string option keys the method accepts.
+     * @throws DeepLException If an option key is unknown to the method, or an ID list entry is neither
+     *  an ID nor an object of the expected resource class.
      */
-    private static function buildStyleProfileBody(array $options): \stdClass
+    private static function buildStyleProfileBody(array $params, array $options, array $stringKeys): string
     {
-        $stringKeys = [StyleProfileOptions::DESCRIPTION, StyleProfileOptions::INDUSTRY];
-        $listKeys = [
-            StyleProfileOptions::GLOSSARY_IDS,
-            StyleProfileOptions::STYLE_RULE_IDS,
-            StyleProfileOptions::TRANSLATION_MEMORY_IDS,
+        $idListClasses = [
+            CreateStyleProfileOptions::GLOSSARY_IDS => [GlossaryInfo::class, MultilingualGlossaryInfo::class],
+            CreateStyleProfileOptions::STYLE_RULE_IDS => [StyleRuleInfo::class],
+            CreateStyleProfileOptions::TRANSLATION_MEMORY_IDS => [TranslationMemoryInfo::class],
         ];
-        $boolKeys = [StyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED];
-        $known = array_merge([StyleProfileOptions::NAME], $stringKeys, $listKeys, $boolKeys);
+        $boolKey = CreateStyleProfileOptions::GLOSSARY_PRIORITY_ORDER_ENABLED;
+        $extraKey = CreateStyleProfileOptions::EXTRA_BODY_PARAMETERS;
 
-        $body = new \stdClass();
         foreach ($options as $key => $value) {
-            if (!in_array($key, $known, true)) {
+            $isIdList = isset($idListClasses[$key]);
+            if (!$isIdList && !in_array($key, array_merge($stringKeys, [$boolKey, $extraKey]), true)) {
                 throw new DeepLException("Unknown style profile option: $key");
             }
-            if (!isset($value) || $key === StyleProfileOptions::NAME) {
+            if (!isset($value) || $key === $extraKey) {
                 continue;
             }
-            if (in_array($key, $listKeys, true)) {
-                $body->$key = array_values(array_map('strval', (array)$value));
-            } elseif (in_array($key, $boolKeys, true)) {
-                $body->$key = (bool)$value;
+            if ($isIdList) {
+                $params[$key] = array_values(array_map(function ($ref) use ($key, $idListClasses) {
+                    return self::styleProfileComponentId($ref, $key, $idListClasses[$key]);
+                }, (array)$value));
+            } elseif ($key === $boolKey) {
+                $params[$key] = (bool)$value;
             } else {
-                $body->$key = (string)$value;
+                $params[$key] = (string)$value;
             }
         }
-        return $body;
+        foreach ($options[$extraKey] ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
+        return json_encode((object)$params);
     }
 
+    /**
+     * @param mixed $ref An ID, or an object of one of $classes.
+     * @param string[] $classes Resource classes accepted for the option.
+     * @throws DeepLException If $ref is an object of another class.
+     */
+    private static function styleProfileComponentId($ref, string $option, array $classes): string
+    {
+        if (!is_object($ref)) {
+            return (string)$ref;
+        }
+        $idProperties = [
+            GlossaryInfo::class => 'glossaryId',
+            MultilingualGlossaryInfo::class => 'glossaryId',
+            StyleRuleInfo::class => 'styleId',
+            TranslationMemoryInfo::class => 'translationMemoryId',
+        ];
+        foreach ($classes as $class) {
+            if ($ref instanceof $class) {
+                return $ref->{$idProperties[$class]};
+            }
+        }
+        $names = array_map(function (string $class): string {
+            return substr($class, strlen(__NAMESPACE__) + 1);
+        }, $classes);
+        throw new DeepLException("$option entries must be IDs or " . implode(' or ', $names) . ' objects');
+    }
 
     /**
      * Queries languages supported by the DeepL API for the given resource. Returns each

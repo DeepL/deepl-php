@@ -87,7 +87,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the style profile management API (`/v3/style_profiles`) in
   the `DeepLClient` class: `listStyleProfiles()`, `createStyleProfile()`,
   `getStyleProfile()`, `updateStyleProfile()` and `deleteStyleProfile()`, with
-  the new classes `StyleProfile` and `StyleProfileOptions`.
+  the new classes `StyleProfile`, `CreateStyleProfileOptions` and
+  `UpdateStyleProfileOptions` (which adds `NAME`). The options of
+  `updateStyleProfile()` are optional; without them an empty update is sent.
+  The glossary, style rule and translation memory ID lists take IDs or
+  `GlossaryInfo` / `MultilingualGlossaryInfo`, `StyleRuleInfo` and
+  `TranslationMemoryInfo` objects. Both options classes accept
+  `EXTRA_BODY_PARAMETERS`.
 
 ### Changed
 - The `max_retries` option now counts retries after the first attempt, as
