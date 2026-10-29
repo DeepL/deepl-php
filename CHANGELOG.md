@@ -239,6 +239,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fewer improvements than texts returned a short array, and an improvement
   without `text` returned an empty text. These now throw an
   `InvalidContentException`.
+- Fixed `ResourceFeature::$needsSourceSupport` and `$needsTargetSupport`
+  (from `getLanguageResources()`) being `null` when the API omits the flag;
+  they are now `false`, as the API defines.
 - Fixed the `LanguageCode::ENGLISH` and `LanguageCode::PORTUGUESE` doc comments,
   which said these codes may only be used as source languages.
 

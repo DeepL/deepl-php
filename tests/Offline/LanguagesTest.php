@@ -185,8 +185,7 @@ class LanguagesTest extends OfflineTestCase
         $this->assertTrue($resources[0]->supports(LanguageFeature::FEATURE_GLOSSARY));
         $this->assertFalse($resources[0]->supports(LanguageFeature::FEATURE_TONE));
         $this->assertTrue($resources[0]->features['glossary']->needsSourceSupport);
-        // a flag that is absent stays null instead of defaulting to false
-        $this->assertNull($resources[0]->features['formality']->needsSourceSupport);
+        $this->assertFalse($resources[0]->features['formality']->needsSourceSupport);
         $this->assertTrue($resources[0]->features['formality']->needsTargetSupport);
         $this->assertSame([], $resources[1]->features);
     }
