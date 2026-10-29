@@ -6,9 +6,11 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\DocumentHandle;
 use DeepL\DocumentNotReadyException;
+use DeepL\DocumentStatus;
 use DeepL\DocumentStatusCode;
 use DeepL\DocumentTranslationException;
 use DeepL\Fixtures;
@@ -419,5 +421,73 @@ class TranslateDocumentTest extends OfflineTestCase
             $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
         }
         $this->assertRequestCount(0);
+    }
+
+    public function testTranslateDocumentCallsOverriddenUploadDocument(): void
+    {
+        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
+            public $calls = 0;
+
+            public function uploadDocument(
+                string $inputFile,
+                ?string $sourceLang,
+                string $targetLang,
+                array $options = []
+            ): DocumentHandle {
+                $this->calls++;
+                return parent::uploadDocument($inputFile, $sourceLang, $targetLang, $options);
+            }
+        };
+
+        $this->translateDocumentWith($client);
+
+        $this->assertSame(1, $client->calls);
+    }
+
+    public function testTranslateDocumentCallsOverriddenGetDocumentStatus(): void
+    {
+        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
+            public $calls = 0;
+
+            public function getDocumentStatus(DocumentHandle $handle): DocumentStatus
+            {
+                $this->calls++;
+                return parent::getDocumentStatus($handle);
+            }
+        };
+
+        $this->translateDocumentWith($client);
+
+        $this->assertSame(1, $client->calls);
+    }
+
+    public function testTranslateDocumentCallsOverriddenDownloadDocument(): void
+    {
+        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
+            public $calls = 0;
+
+            public function downloadDocument(DocumentHandle $handle, string $outputFile): void
+            {
+                $this->calls++;
+                parent::downloadDocument($handle, $outputFile);
+            }
+        };
+
+        $this->translateDocumentWith($client);
+
+        $this->assertSame(1, $client->calls);
+    }
+
+    private function translateDocumentWith(DeepLClient $client): void
+    {
+        $output = Fixtures::tempDir() . '/output.txt';
+        $this->reply(self::UPLOAD_REPLY);
+        $this->reply(['document_id' => 'doc1', 'status' => 'done', 'billed_characters' => 5]);
+        $this->mock->append(new Response(200, [], 'Hallo'));
+
+        $client->translateDocument(Fixtures::tempFile('input.txt', 'Hello'), $output, 'en', 'de');
+
+        $this->assertRequestCount(3);
+        $this->assertSame('Hallo', file_get_contents($output));
     }
 }

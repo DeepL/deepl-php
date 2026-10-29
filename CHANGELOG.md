@@ -210,6 +210,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process.
 
 ### Fixed
+- `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
+  `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
+  a subclass overrides them.
 - Fixed `getUsage()` raising a raw `TypeError` for a malformed response. A
   response body that is not a JSON object now raises
   `InvalidContentException`, and a usage type whose `*_count` or `*_limit` is

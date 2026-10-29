@@ -49,6 +49,12 @@ class Translator
     private static $deprecationsTriggered = [];
 
     /**
+     * Whether a class overrides a deprecated document method, by class and method name.
+     * @var array<string, array<string, bool>>
+     */
+    private static $documentMethodOverrides = [];
+
+    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -284,12 +290,21 @@ class Translator
                 $minifier->minifyDocument($inputFile, true);
                 $fileToUpload = $minifier->getMinifiedDocFile($inputFile);
             }
-            $handle = $this->translateDocumentUpload($fileToUpload, $sourceLang, $targetLang, $options);
-            $status = $this->translateDocumentWaitUntilDone(
-                $handle,
-                [TranslateDocumentOptions::TIMEOUT => $options[TranslateDocumentOptions::TIMEOUT] ?? null]
-            );
-            $this->translateDocumentDownload($handle, $outputFile);
+            // Subclasses overriding the deprecated step methods keep having them called.
+            $handle = $this->overridesDocumentMethod('uploadDocument')
+                ? $this->uploadDocument($fileToUpload, $sourceLang, $targetLang, $options)
+                : $this->translateDocumentUpload($fileToUpload, $sourceLang, $targetLang, $options);
+            $status = $this->overridesDocumentMethod('waitUntilDocumentTranslationComplete')
+                ? $this->waitUntilDocumentTranslationComplete($handle)
+                : $this->translateDocumentWaitUntilDone(
+                    $handle,
+                    [TranslateDocumentOptions::TIMEOUT => $options[TranslateDocumentOptions::TIMEOUT] ?? null]
+                );
+            if ($this->overridesDocumentMethod('downloadDocument')) {
+                $this->downloadDocument($handle, $outputFile);
+            } else {
+                $this->translateDocumentDownload($handle, $outputFile);
+            }
             if ($willMinify) {
                 // Translated minified file is at `$outputFile`. Reinsert media (deminify) before returning
                 $minifier->deminifyDocument($outputFile, $outputFile, true);
@@ -497,6 +512,8 @@ class Translator
     /**
      * Returns when the given document translation completes, or throws an exception if there was an error
      * communicating with the DeepL API or the document translation failed.
+     * translateDocument() calls this method instead of translateDocumentWaitUntilDone() if a subclass overrides
+     * it; an override receives no timeout, so TranslateDocumentOptions::TIMEOUT does not apply then.
      * @param DocumentHandle $handle Handle to the document translation.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
@@ -532,7 +549,8 @@ class Translator
             throw new DeepLException('timeout must be a non-negative number of seconds');
         }
         $startTime = microtime(true);
-        $status = $this->translateDocumentGetStatus($handle);
+        $pollWithDeprecated = $this->overridesDocumentMethod('getDocumentStatus');
+        $status = $pollWithDeprecated ? $this->getDocumentStatus($handle) : $this->translateDocumentGetStatus($handle);
         while (!$status->done() && $status->ok()) {
             if ($timeout !== null && microtime(true) - $startTime >= $timeout) {
                 throw new DeepLException("Timeout of {$timeout}s exceeded while waiting for document translation");
@@ -541,7 +559,9 @@ class Translator
             $secs = 5.0;
             usleep($secs * 1000000);
             $this->client->logInfo("Rechecking document translation status after sleeping for $secs seconds.");
-            $status = $this->translateDocumentGetStatus($handle);
+            $status = $pollWithDeprecated
+                ? $this->getDocumentStatus($handle)
+                : $this->translateDocumentGetStatus($handle);
         }
         if (!$status->ok()) {
             throw new DeepLException($status->errorMessage ?? 'unknown error');
@@ -969,6 +989,19 @@ class Translator
             }
             $params['translation_memory_threshold'] = $threshold;
         }
+    }
+
+    /**
+     * Returns whether the class of this object overrides the given deprecated document method of Translator.
+     */
+    private function overridesDocumentMethod(string $method): bool
+    {
+        $class = get_class($this);
+        if (!isset(self::$documentMethodOverrides[$class][$method])) {
+            self::$documentMethodOverrides[$class][$method] =
+                (new \ReflectionMethod($this, $method))->getDeclaringClass()->getName() !== Translator::class;
+        }
+        return self::$documentMethodOverrides[$class][$method];
     }
 
     private static function triggerDeprecation(string $key, string $message): void
