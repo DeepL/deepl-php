@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\CorrectTextOptions;
 use DeepL\DeepLException;
 use DeepL\InvalidContentException;
 use DeepL\RephraseTextResult;
@@ -57,6 +58,17 @@ class CorrectTextTest extends OfflineTestCase
         $this->expectExceptionMessage('text must not be empty');
 
         $this->makeDeepLClient()->correctText('');
+    }
+
+    public function testAddsExtraBodyParametersLastReplacingFields(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->correctText('Helo', 'en-US', [
+            CorrectTextOptions::EXTRA_BODY_PARAMETERS => ['target_lang' => 'de', 'beta' => 1],
+        ]);
+
+        $this->assertSame(['target_lang' => 'de', 'text' => ['Helo'], 'beta' => 1], $this->jsonBody());
     }
 
     public function malformedResponses(): array

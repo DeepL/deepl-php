@@ -19,6 +19,8 @@ class RephraseTextOptions extends TranslateTextOptions
      * - 'prefer_casual': Use casual style if available, otherwise default
      * - 'prefer_simple': Use simple style if available, otherwise default
      * - 'simple': Simple writing style
+     * Other strings are also accepted.
+     * @see WritingStyle
      */
     public const WRITING_STYLE = 'writing_style';
 
@@ -33,6 +35,14 @@ class RephraseTextOptions extends TranslateTextOptions
      * - 'prefer_diplomatic': Use diplomatic tone if available, otherwise default
      * - 'prefer_enthusiastic': Use enthusiastic tone if available, otherwise default
      * - 'prefer_friendly': Use friendly tone if available, otherwise default
+     * Other strings are also accepted.
+     * @see WritingTone
      */
     public const TONE = 'tone';
+
+    /**
+     * Associative array of additional parameters added to the JSON request body of rephraseText(), after
+     * the fields set by the library; a key that is already set is replaced. Values are sent as given.
+     */
+    public const EXTRA_BODY_PARAMETERS = 'extra_body_parameters';
 }

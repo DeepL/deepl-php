@@ -275,14 +275,14 @@ echo $results[1]->text; // Second rephrased text
 $result = $deeplClient->rephraseText(
     'The meeting went well.',
     'en-US',
-    ['writing_style' => 'business']
+    [RephraseTextOptions::WRITING_STYLE => WritingStyle::BUSINESS]
 );
 
 // Rephrase with specific tone:
 $result = $deeplClient->rephraseText(
     'We need to discuss this matter.',
     'en-US',
-    ['tone' => 'diplomatic']
+    [RephraseTextOptions::TONE => WritingTone::DIPLOMATIC]
 );
 ```
 
@@ -313,12 +313,21 @@ Provide options to the `rephraseText` function as an associative array, using th
   - `'prefer_enthusiastic'`: Use enthusiastic tone if available, otherwise default
   - `'prefer_friendly'`: Use friendly tone if available, otherwise default
 
+- `extra_body_parameters`: associative array of additional parameters added
+  to the JSON request body, after the fields set by the library; a key that is
+  already set is replaced. Values are sent as given.
+
 Note: Currently, you can only specify either a style OR a tone, not both at the same time.
 
-The `DeepLClientOptions` class defines constants for these options:
+The `RephraseTextOptions` class defines constants for these options:
 
 - `RephraseTextOptions::WRITING_STYLE`
 - `RephraseTextOptions::TONE`
+- `RephraseTextOptions::EXTRA_BODY_PARAMETERS`
+
+The `WritingStyle` and `WritingTone` classes define constants for the values
+above, for example `WritingStyle::PREFER_BUSINESS` is `'prefer_business'` and
+`WritingTone::DIPLOMATIC` is `'diplomatic'`. Other strings are also accepted.
 
 `rephraseText()` and `correctText()` throw an `InvalidContentException` if the
 response does not contain one improvement with a text per input text.
@@ -328,6 +337,11 @@ response does not contain one improvement with a text per input text.
 To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string is rejected with a `DeepLException`.
 
 The second argument is the target language code, which is optional. If not provided, the text is corrected in its original language.
+
+The last argument is optional: an associative array of options. Its only key is
+`extra_body_parameters` (`CorrectTextOptions::EXTRA_BODY_PARAMETERS`), an
+associative array of additional parameters added to the JSON request body,
+after the fields set by the library; a key that is already set is replaced.
 
 `correctText()` returns a `RephraseTextResult`, or an array of `RephraseTextResult`s corresponding to your input text(s).
 

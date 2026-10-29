@@ -20,11 +20,12 @@ class DeepLClient extends Translator
      * Rephrases the given text using DeepL's API.
      * @param string|string[] $texts A single string or array of strings to rephrase
      * @param string|null $targetLang Optional target language code
-     * @param array $options Rephrase options to apply. See \DeepL\DeepLClientOptions.
+     * @param array $options Rephrase options to apply, see \DeepL\RephraseTextOptions: WRITING_STYLE, TONE
+     *  and EXTRA_BODY_PARAMETERS.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing rephrased texts
      * @throws DeepLException
-     * @see \DeepL\DeepLClientOptions
+     * @see \DeepL\RephraseTextOptions
      */
     public function rephraseText($texts, ?string $targetLang = null, array $options = [])
     {
@@ -34,18 +35,24 @@ class DeepLClient extends Translator
             $options[RephraseTextOptions::TONE] ?? null
         );
         $this->validateAndAppendTexts($params, $texts);
-        return $this->sendWriteRequest('/v2/write/rephrase', $params, $texts);
+        return $this->sendWriteRequest(
+            '/v2/write/rephrase',
+            $params,
+            $texts,
+            $options[RephraseTextOptions::EXTRA_BODY_PARAMETERS] ?? null
+        );
     }
 
     /**
      * Corrects spelling and grammar in the given text using DeepL's API.
      * @param string|string[] $texts A single string or array of strings to correct
      * @param string|null $targetLang Optional target language code
+     * @param array $options Correct options to apply, see \DeepL\CorrectTextOptions: only EXTRA_BODY_PARAMETERS.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing corrected texts
      * @throws DeepLException If a single text is empty or the request fails
      */
-    public function correctText($texts, ?string $targetLang = null)
+    public function correctText($texts, ?string $targetLang = null, array $options = [])
     {
         if ($texts === '') {
             throw new DeepLException('text must not be empty');
@@ -55,17 +62,26 @@ class DeepLClient extends Translator
             $params['target_lang'] = LanguageCode::standardizeLanguageCode($targetLang);
         }
         $this->validateAndAppendTexts($params, $texts);
-        return $this->sendWriteRequest('/v2/write/correct', $params, $texts);
+        return $this->sendWriteRequest(
+            '/v2/write/correct',
+            $params,
+            $texts,
+            $options[CorrectTextOptions::EXTRA_BODY_PARAMETERS] ?? null
+        );
     }
 
     /**
-     * Sends a rephrase or correct request and parses one RephraseTextResult per input text.
+     * Sends a rephrase or correct request, with the extra body parameters added last, and parses one
+     * RephraseTextResult per input text.
      * @param string|string[] $texts
      * @return RephraseTextResult|RephraseTextResult[]
      * @throws DeepLException
      */
-    private function sendWriteRequest(string $path, array $params, $texts)
+    private function sendWriteRequest(string $path, array $params, $texts, ?array $extraBodyParameters)
     {
+        foreach ($extraBodyParameters ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             $path,

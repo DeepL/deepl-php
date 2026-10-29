@@ -69,7 +69,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `es-ES`, `fr-CA` and `fr-FR` to `LanguageCode`.
 - Added support for the `/v2/write/correct` endpoint in the `DeepLClient` class:
   `correctText()`. This applies a minimal-change spelling and grammar
-  correction pass without rewriting the text for style or tone.
+  correction pass without rewriting the text for style or tone. It takes an
+  optional options array; `CorrectTextOptions::EXTRA_BODY_PARAMETERS` adds
+  parameters last to the request body, replacing fields with the same key.
+- Added the `extra_body_parameters` option
+  (`RephraseTextOptions::EXTRA_BODY_PARAMETERS`) to `rephraseText()`, added
+  last to the request body and replacing fields with the same key. It was
+  previously ignored.
+- Added the `WritingStyle` and `WritingTone` constants classes for the values
+  of the `writing_style` and `tone` rephrase options. Other strings are still
+  accepted.
 - Added the `TranslateDocumentOptions::OUTPUT_FORMAT` option to request the
   file format of the translated document, for example `docx`. When it differs
   from the input file's format, `ENABLE_DOCUMENT_MINIFICATION` is ignored.

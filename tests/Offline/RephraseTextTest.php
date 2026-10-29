@@ -9,6 +9,8 @@ namespace DeepL\Offline;
 use DeepL\InvalidContentException;
 use DeepL\RephraseTextOptions;
 use DeepL\RephraseTextResult;
+use DeepL\WritingStyle;
+use DeepL\WritingTone;
 
 class RephraseTextTest extends OfflineTestCase
 {
@@ -75,6 +77,36 @@ class RephraseTextTest extends OfflineTestCase
         $result = $this->makeDeepLClient()->rephraseText('Hello', 'en-GB');
 
         $this->assertInstanceOf(RephraseTextResult::class, $result);
+    }
+
+    public function testSendsWritingStyleAndToneConstants(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->rephraseText('Hello', null, [
+            RephraseTextOptions::WRITING_STYLE => WritingStyle::PREFER_CASUAL,
+            RephraseTextOptions::TONE => WritingTone::PREFER_DIPLOMATIC,
+        ]);
+
+        $this->assertSame(
+            ['writing_style' => 'prefer_casual', 'tone' => 'prefer_diplomatic', 'text' => ['Hello']],
+            $this->jsonBody()
+        );
+    }
+
+    public function testAddsExtraBodyParametersLastReplacingFields(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->rephraseText('Hello', 'en-GB', [
+            RephraseTextOptions::TONE => 'friendly',
+            RephraseTextOptions::EXTRA_BODY_PARAMETERS => ['tone' => 'confident', 'beta' => true],
+        ]);
+
+        $this->assertSame(
+            ['target_lang' => 'en-GB', 'tone' => 'confident', 'text' => ['Hello'], 'beta' => true],
+            $this->jsonBody()
+        );
     }
 
     public function malformedResponses(): array
