@@ -148,6 +148,19 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertSame('Hallo', file_get_contents($output));
     }
 
+    public function testEncodesTheDocumentIdInStatusAndDownloadPaths(): void
+    {
+        $handle = new DocumentHandle('a/b c?', 'k');
+        $this->reply(['status' => 'done']);
+        $this->mock->append(new Response(200, [], 'Hallo'));
+
+        $this->makeTranslator()->translateDocumentGetStatus($handle);
+        $this->makeTranslator()->translateDocumentDownload($handle, Fixtures::tempDir() . '/output.txt');
+
+        $this->assertRequest('POST', '/v2/document/a%2Fb%20c%3F', 0);
+        $this->assertRequest('POST', '/v2/document/a%2Fb%20c%3F/result', 1);
+    }
+
     public function testSendsTheFilenameOption(): void
     {
         $this->reply(self::UPLOAD_REPLY);

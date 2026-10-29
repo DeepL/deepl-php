@@ -436,9 +436,10 @@ class Translator
      */
     public function translateDocumentGetStatus(DocumentHandle $handle): DocumentStatus
     {
+        $documentId = rawurlencode($handle->documentId);
         $response = $this->client->sendRequestWithBackoff(
             'POST',
-            "/v2/document/$handle->documentId",
+            "/v2/document/$documentId",
             [HttpClientWrapper::OPTION_PARAMS => ['document_key' => $handle->documentKey]]
         );
         $this->checkStatusCode($response);
@@ -475,9 +476,10 @@ class Translator
             throw new DeepLException("File already exists at output file path $outputFile");
         }
         try {
+            $documentId = rawurlencode($handle->documentId);
             $response = $this->client->sendRequestWithBackoff(
                 'POST',
-                "/v2/document/$handle->documentId/result",
+                "/v2/document/$documentId/result",
                 [
                     HttpClientWrapper::OPTION_PARAMS => ['document_key' => $handle->documentKey],
                     HttpClientWrapper::OPTION_OUTFILE => $outputFile,

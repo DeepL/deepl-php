@@ -158,6 +158,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `translateDocumentUpload()` (and the deprecated `uploadDocument()`)
   accepting a non-string `document_id` or `document_key` in the response, for
   example a number; it now raises `InvalidContentException`.
+- Fixed the document ID not being URL-encoded in the request paths of
+  `translateDocumentGetStatus()` and `translateDocumentDownload()` (and the
+  deprecated `getDocumentStatus()` and `downloadDocument()`).
 - Fixed `translateText()` raising `InvalidContentException` when a translation
   has no `billed_characters`; `TextResult::$billedCharacters` is now `null` in
   that case.
