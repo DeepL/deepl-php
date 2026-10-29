@@ -404,6 +404,9 @@ class Translator
         $json = ParsingUtils::decodeJson($content);
 
         return ParsingUtils::guard(function () use ($json): DocumentHandle {
+            if (!is_string($json['document_id'] ?? null) || !is_string($json['document_key'] ?? null)) {
+                throw ParsingUtils::invalidContent('Expected document_id and document_key strings in the response');
+            }
             return new DocumentHandle($json['document_id'], $json['document_key']);
         });
     }

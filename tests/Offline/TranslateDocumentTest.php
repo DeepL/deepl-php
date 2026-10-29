@@ -13,6 +13,7 @@ use DeepL\DocumentStatusCode;
 use DeepL\DocumentTranslationException;
 use DeepL\Fixtures;
 use DeepL\GlossaryInfo;
+use DeepL\InvalidContentException;
 use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
 use DeepL\TextResult;
@@ -159,6 +160,15 @@ class TranslateDocumentTest extends OfflineTestCase
         );
 
         $this->assertMultipart(['target_lang' => 'de'], 'report.html');
+    }
+
+    public function testThrowsInvalidContentWhenTheUploadResponseHasNoStringIds(): void
+    {
+        $this->reply(['document_id' => 123, 'document_key' => 'k']);
+
+        $this->expectException(InvalidContentException::class);
+
+        $this->makeTranslator()->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
     }
 
     public function testWaitThrowsWhenTheTimeoutExpires(): void

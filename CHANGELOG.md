@@ -155,6 +155,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of `GlossaryUtils`.
 
 ### Fixed
+- Fixed `translateDocumentUpload()` (and the deprecated `uploadDocument()`)
+  accepting a non-string `document_id` or `document_key` in the response, for
+  example a number; it now raises `InvalidContentException`.
 - Fixed `translateText()` raising `InvalidContentException` when a translation
   has no `billed_characters`; `TextResult::$billedCharacters` is now `null` in
   that case.
