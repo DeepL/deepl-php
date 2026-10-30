@@ -1345,11 +1345,15 @@ $deeplClient->uploadTranslationMemoryFile($created, $fileContent);
 $job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, 300);
 ```
 
-Note that the job keeps reporting `'awaiting_input'` for a while after the file
-has been uploaded, because the API detects the upload asynchronously.
-`waitUntilTranslationMemoryJobDone()` polls through that status like any other
-non-terminal one. A job whose file is never uploaded does not finish on its own,
-so pass a timeout in seconds as the second argument when that is a possibility.
+`waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
+status is `completed`, and throws a `DeepLException` with the API's error message
+if it is `failed` or `expired`. Any other status, including one this library
+does not know, is polled through; the known values are the
+`TranslationMemoryJobStatus` constants. Note that the job keeps reporting
+`'awaiting_input'` for a while after the file has been uploaded, because the API
+detects the upload asynchronously. A job whose file is never uploaded does not
+finish on its own, so pass a timeout in seconds as the second argument when that
+is a possibility; the wait never runs past it.
 
 #### Exporting a translation memory
 

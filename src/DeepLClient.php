@@ -1560,36 +1560,45 @@ class DeepLClient extends Translator
     }
 
     /**
-     * Returns when the given translation memory job finishes, or throws an exception if there was
-     * an error communicating with the DeepL API or the job failed.
+     * Returns when the given translation memory job completes, or throws an exception if there was
+     * an error communicating with the DeepL API, the job failed or expired, or the timeout expired.
      *
-     * Note that an import job keeps reporting 'awaiting_input' for a while after its file has been
-     * uploaded, because the API detects the upload asynchronously. That status is therefore polled
-     * through like any other non-terminal one. A job whose file is never uploaded does not finish
-     * on its own, so pass $timeout when that is a possibility.
+     * The job is polled every 5 seconds until its status is 'completed', 'failed' or 'expired'; any
+     * other status, including one this library does not know, is polled through. Note that an
+     * import job keeps reporting 'awaiting_input' for a while after its file has been uploaded,
+     * because the API detects the upload asynchronously. A job whose file is never uploaded does
+     * not finish on its own, so pass $timeout when that is a possibility.
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
      * @param float|null $timeout Optional maximum time in seconds to wait before throwing an
-     *  exception. Note that this is not accurate to the second, as the job is only polled every
-     *  5 seconds.
-     * @return TranslationMemoryJob The job once it has finished.
+     *  exception. The last sleep between polls is shortened so the wait does not run past it.
+     * @return TranslationMemoryJob The completed job.
      * @throws DeepLException
      */
     public function waitUntilTranslationMemoryJobDone($job, ?float $timeout = null): TranslationMemoryJob
     {
         $jobId = TranslationMemoryJob::getJobId($job);
+        $deadline = $timeout === null ? null : microtime(true) + $timeout;
         $status = $this->getTranslationMemoryJob($jobId);
-        $startTime = microtime(true);
-        while (!$status->done()) {
-            if ($timeout !== null && microtime(true) - $startTime > $timeout) {
-                throw new DeepLException("Manual timeout of {$timeout}s exceeded for translation memory job");
-            }
+        $terminal = [
+            TranslationMemoryJobStatus::COMPLETED,
+            TranslationMemoryJobStatus::FAILED,
+            TranslationMemoryJobStatus::EXPIRED,
+        ];
+        while (!in_array($status->status(), $terminal, true)) {
             // The job duration is not reported by the API, so just poll equidistantly
             $secs = 5.0;
-            usleep($secs * 1000000);
+            if ($deadline !== null) {
+                $remaining = $deadline - microtime(true);
+                if ($remaining <= 0) {
+                    throw new DeepLException("Manual timeout of {$timeout}s exceeded for translation memory job");
+                }
+                $secs = min($secs, $remaining);
+            }
+            usleep((int)round($secs * 1000000));
             $this->client->logInfo("Rechecking translation memory job status after sleeping for $secs seconds.");
             $status = $this->getTranslationMemoryJob($jobId);
         }
-        if (!$status->ok()) {
+        if ($status->status() !== TranslationMemoryJobStatus::COMPLETED) {
             $result = $status->result();
             throw new DeepLException(($result === null ? null : $result->errorMessage) ?? 'unknown error');
         }
@@ -1653,7 +1662,6 @@ class DeepLClient extends Translator
      * @param string|null $displayName Optional name for the resulting translation memory, defaults
      *  to the file name.
      * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
-     *  Note that this is not accurate to the second, as the job is only polled every 5 seconds.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
      * @throws DeepLException
@@ -1688,7 +1696,6 @@ class DeepLClient extends Translator
      *  TranslationMemoryInfo of the translation memory to export.
      * @param string $outputFile String containing file path to create the exported TMX file.
      * @param float|null $timeout Optional maximum time in seconds to wait for the export to finish.
-     *  Note that this is not accurate to the second, as the job is only polled every 5 seconds.
      * @return TranslationMemoryJob The completed export job.
      * @throws DeepLException
      */

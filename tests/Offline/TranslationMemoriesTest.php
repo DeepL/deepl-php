@@ -385,6 +385,36 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1', 7.0);
     }
 
+    public function testCutsTheLastSleepToTheTimeout(): void
+    {
+        $this->useFakeClock();
+        foreach ([1, 2, 3] as $_) {
+            $this->reply(self::job('processing'));
+        }
+        $start = \DeepL\microtime(true);
+
+        try {
+            $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1', 7.0);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Manual timeout of 7s exceeded', $exception->getMessage());
+        }
+        $this->assertEqualsWithDelta(7.0, \DeepL\microtime(true) - $start, 0.01);
+    }
+
+    public function testKeepsPollingThroughAnUnknownStatusUntilTheJobCompletes(): void
+    {
+        $this->useFakeClock();
+        $this->reply(self::job('downloaded'));
+        $this->reply(self::job('some_future_status'));
+        $this->reply(self::job('completed', ['translation_memory_id' => 'tm1']));
+
+        $job = $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1');
+
+        $this->assertRequestCount(3);
+        $this->assertSame('completed', $job->status());
+    }
+
     public function testThrowsTheErrorMessageWhenTheJobFails(): void
     {
         $this->reply(self::job('failed', ['error' => ['message' => 'invalid TMX']]));
