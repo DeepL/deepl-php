@@ -503,7 +503,16 @@ class Translator
                     HttpClientWrapper::OPTION_OUTFILE => $outputFile,
                 ]
             );
-            $this->checkStatusCode($response, true);
+            // The cURL transport streams the body to the file and returns true instead of the content, so
+            // on failure the API's error message is in the file.
+            list($statusCode, $content) = $response;
+            if (($statusCode < 200 || $statusCode >= 300) && file_exists($outputFile)) {
+                $errorBody = @file_get_contents($outputFile);
+                if ($errorBody !== false) {
+                    $content = $errorBody;
+                }
+            }
+            $this->checkStatusCode([$statusCode, $content], true);
         } catch (DeepLException $error) {
             if (file_exists($outputFile)) {
                 unlink($outputFile);

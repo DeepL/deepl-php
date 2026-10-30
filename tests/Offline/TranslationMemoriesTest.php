@@ -463,6 +463,22 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertFileDoesNotExist($output);
     }
 
+    public function testThrowsWhenTheExportCannotBeWritten(): void
+    {
+        FullDiskStream::register();
+        $this->mock->append(new Response(200, [], '<tmx/>'));
+        $job = TranslationMemoryJob::fromJson(self::job('completed', ['download_url' => self::STORAGE_URL]));
+
+        try {
+            $this->makeDeepLClient()->downloadTranslationMemoryExport($job, FullDiskStream::PROTOCOL . '://e.tmx');
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Failed to write the response', $exception->getMessage());
+        } finally {
+            FullDiskStream::unregister();
+        }
+    }
+
     public function testThrowsWithoutRequestWhenTheExportCannotBeDownloaded(): void
     {
         $client = $this->makeDeepLClient();

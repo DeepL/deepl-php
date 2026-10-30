@@ -189,6 +189,28 @@ class CurlTransportTest extends OfflineTestCase
         $this->assertArrayNotHasKey(CURLOPT_RETURNTRANSFER, $options);
     }
 
+    public function testThrowsWithTheApiMessageWhenTheStreamedDownloadFails(): void
+    {
+        $output = Fixtures::tempDir() . '/output.txt';
+        $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->once())
+            ->willReturnCallback(function ($handle, array $options) {
+                fwrite($options[CURLOPT_FILE], '{"message":"Invalid document key"}');
+                return true;
+            });
+        // With CURLOPT_FILE, curl_exec() returns true instead of the body.
+        $this->getFunctionMock('DeepL', 'curl_exec')->expects($this->once())->willReturn(true);
+        $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->once())->willReturn(400);
+
+        try {
+            (new DeepLClient('k'))->translateDocumentDownload(new DocumentHandle('doc1', 'k'), $output);
+            $this->fail('expected a DeepLException');
+        } catch (\DeepL\DeepLException $exception) {
+            $this->assertSame('Bad request, message: Invalid document key', $exception->getMessage());
+            $this->assertSame(400, $exception->httpStatusCode);
+        }
+        $this->assertFileDoesNotExist($output);
+    }
+
     public function testSendsACustomHeaderInAnotherCaseInsteadOfTheDefault(): void
     {
         $options = $this->captureCurlOptions(function (DeepLClient $client) {

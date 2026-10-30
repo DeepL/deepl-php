@@ -233,6 +233,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query string values encode a space as `%20` instead of `+`, for example the
   `lang` of `getSpokenTermsEntries()` and the `group_by` of
   `getUsageAnalytics()`.
+- `translateDocumentDownload()` throws the API's error message on a failed
+  download with the built-in cURL transport, instead of `content: 1`.
+- `translateDocumentDownload()` and `downloadTranslationMemoryExport()` throw a
+  `DeepLException` with a custom HTTP client when the output file cannot be
+  fully written, instead of leaving a truncated file and returning.
 - `MultilingualGlossaryDictionaryEntries` trims and validates its entries when
   they are sent, so a dictionary whose `entries` were changed after
   construction, or one returned by the API, is no longer sent untrimmed,

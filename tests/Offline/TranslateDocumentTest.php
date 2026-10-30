@@ -456,6 +456,24 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
+    public function testThrowsAndKeepsNoFileWhenTheDownloadCannotBeWritten(): void
+    {
+        FullDiskStream::register();
+        $this->mock->append(new Response(200, [], 'Hallo'));
+
+        try {
+            $this->makeTranslator()->translateDocumentDownload(
+                new DocumentHandle('doc1', 'k'),
+                FullDiskStream::PROTOCOL . '://output.txt'
+            );
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Failed to write the response', $exception->getMessage());
+        } finally {
+            FullDiskStream::unregister();
+        }
+    }
+
     public function testTranslateDocumentCallsOverriddenUploadDocument(): void
     {
         $client = new class ('k', $this->clientOptions([])) extends DeepLClient {

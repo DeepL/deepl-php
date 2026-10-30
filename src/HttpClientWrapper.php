@@ -142,10 +142,10 @@ class HttpClientWrapper
                 );
             } catch (ConnectionException $e) {
                 $exception = $e;
-            }
-
-            if ($outFile) {
-                fclose($outFile);
+            } finally {
+                if ($outFile) {
+                    fclose($outFile);
+                }
             }
 
             $retry = $this->shouldRetry($response, $exception, $onlyUnprocessed);
@@ -304,7 +304,10 @@ class HttpClientWrapper
             $response = $this->customHttpClient->sendRequest($request);
             $response_data = (string) $response->getBody();
             if ($outFile) {
-                fwrite($outFile, $response_data);
+                $written = @fwrite($outFile, $response_data);
+                if ($written !== strlen($response_data)) {
+                    throw new DeepLException('Failed to write the response to the output file');
+                }
             }
             return [$response->getStatusCode(), $response_data];
         } catch (RequestExceptionInterface $e) {
