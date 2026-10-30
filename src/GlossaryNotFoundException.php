@@ -8,6 +8,7 @@ namespace DeepL;
 
 /**
  * Exception thrown when the specified glossary could not be found.
+ * @deprecated Catch NotFoundException instead; this subclass is removed in the next major version.
  */
 class GlossaryNotFoundException extends NotFoundException
 {

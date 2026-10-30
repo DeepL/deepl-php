@@ -8,7 +8,8 @@ namespace DeepL;
 
 /**
  * Wrapper for the DeepL API for language translation.
- * Create an instance of Translator to use the DeepL API.
+ * @deprecated Use DeepLClient instead, which extends this class and supports all API features. The methods of
+ * Translator move into DeepLClient in the next major version.
  */
 class Translator
 {

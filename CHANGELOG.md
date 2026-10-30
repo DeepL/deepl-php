@@ -160,6 +160,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signatures or return types.
 
 ### Deprecated
+- Deprecated `Translator`; construct a `DeepLClient` instead, which extends
+  it. The methods of `Translator` move into `DeepLClient` in the next major
+  version.
+- Deprecated `GlossaryNotFoundException`; catch its parent
+  `NotFoundException` instead. Glossary requests still throw it until the next
+  major version.
 - Deprecated `Translator::uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()`; use
   `translateDocumentUpload()`, `translateDocumentGetStatus()`,

@@ -59,6 +59,10 @@ echo $result->text; // Bonjour, le monde!
 [Configuration](#configuration) for more information. Whitespace around the
 key is removed; an empty key throws a `DeepLException`.
 
+`DeepLClient` extends `Translator`, which is deprecated: construct a
+`DeepLClient` instead. The methods of `Translator` move into `DeepLClient` in
+the next major version.
+
 `DeepLClient::isFreeAccountAuthKey($authKey)` returns `true` if the key belongs
 to a DeepL API Free account (it ends with `:fx`). Without a `server_url` option,
 such a key is sent to `https://api-free.deepl.com`. It replaces the deprecated
@@ -71,8 +75,9 @@ subclasses tell the cause apart:
 
 - `AuthorizationException`: HTTP 401 or 403, the authentication key is invalid
   or not authorized.
-- `NotFoundException`: HTTP 404 (`GlossaryNotFoundException` on glossary
-  requests).
+- `NotFoundException`: HTTP 404. On glossary requests the deprecated subclass
+  `GlossaryNotFoundException` is thrown until the next major version; catch
+  `NotFoundException` instead.
 - `QuotaExceededException`: HTTP 456, the quota is exceeded.
 - `TooManyRequestsException`: HTTP 429 after all retries.
 - `DocumentNotReadyException`: HTTP 503 when downloading a document.
@@ -568,8 +573,8 @@ editing functionality plus support for multilingual glossaries. New methods and
 objects have been created to support interacting with these new glossaries.
 Due to this new functionality, users are recommended to utilize these
 multilingual glossary methods. However, to continue using the `v2` glossary API
-endpoints, please continue to use the existing endpoints in the `Translator.php`
-(e.g. `createGlossary()`, `getGlossary()`, etc).
+endpoints, please continue to use the existing methods `DeepLClient` inherits
+from `Translator` (e.g. `createGlossary()`, `getGlossary()`, etc).
 
 To migrate to use the new multilingual glossary methods from the current
 monolingual glossary methods, please refer to
@@ -680,7 +685,8 @@ To list the entries of a dictionary in a stored glossary, use
 `getMultilingualGlossaryDictionaryEntries()` with either the
 `MultilingualGlossaryInfo` object or glossary ID, and the source and target
 language of the dictionary. It returns a `MultilingualGlossaryDictionaryEntries`
-object, or throws a `GlossaryNotFoundException` (a `NotFoundException`) if the
+object, or throws a `NotFoundException` (currently its deprecated subclass
+`GlossaryNotFoundException`) if the
 glossary has no such dictionary:
 
 ```php
