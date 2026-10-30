@@ -81,6 +81,8 @@ class TranslatorOptions
 
     /**
      * The PSR-18 compatible HTTP client used to make HTTP requests, or null to use the default client.
+     * The custom client owns timeouts and proxy: TIMEOUT and PROXY are ignored with it, so the per-attempt timeout
+     * and its extension up to the next retry are not applied. Retries and MAX_RETRIES still apply.
      */
     public const HTTP_CLIENT = 'http_client';
 

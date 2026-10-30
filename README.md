@@ -1623,6 +1623,10 @@ $deeplClient = new \DeepL\DeepLClient('YOUR_AUTH_KEY', [DeepLClientOptions::HTTP
 $deeplClient->getUsage(); // Or a translate call, etc
 ```
 
+A custom HTTP client owns its timeouts and proxy: the `timeout` and `proxy`
+options are ignored with it, so the per-attempt timeout and its extension up to
+the next retry are not applied. Retries and `max_retries` still apply.
+
 ### Request retries
 
 Requests to the DeepL API that fail due to transient conditions will be
