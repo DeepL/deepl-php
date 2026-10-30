@@ -21,6 +21,7 @@ use DeepL\StyleRuleInfo;
 use DeepL\TextResult;
 use DeepL\TranslateDocumentOptions;
 use DeepL\TranslationMemoryInfo;
+use DeepL\Translator;
 use DeepL\TranslatorOptions;
 use GuzzleHttp\Psr7\Response;
 
@@ -454,6 +455,110 @@ class TranslateDocumentTest extends OfflineTestCase
             $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
         }
         $this->assertRequestCount(0);
+    }
+
+    public function testThrowsInvalidArgumentWithoutRequestWhenTheInputFileDoesNotExist(): void
+    {
+        $input = Fixtures::tempDir() . '/missing.txt';
+        $output = Fixtures::tempDir() . '/output.txt';
+        // The PSR-18 client and the built-in cURL transport, whose curl_exec() must not be called.
+        foreach ([$this->makeTranslator(), new Translator('k')] as $translator) {
+            try {
+                $translator->translateDocument($input, $output, 'en', 'de');
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertStringContainsString('File does not exist at input file path', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testWrapsAnUnreadableInputFileInDocumentTranslationException(): void
+    {
+        $input = Fixtures::tempFile('input.txt', 'Hello');
+        chmod($input, 0);
+        if (is_readable($input)) {
+            $this->markTestSkipped('file permissions do not apply to this user');
+        }
+
+        try {
+            $this->makeTranslator()->translateDocument($input, Fixtures::tempDir() . '/output.txt', 'en', 'de');
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertStringContainsString('Failed to read input file', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testWrapsANonDeepLExceptionInDocumentTranslationException(): void
+    {
+        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
+            public function uploadDocument(
+                string $inputFile,
+                ?string $sourceLang,
+                string $targetLang,
+                array $options = []
+            ): DocumentHandle {
+                throw new \RuntimeException('disk gone');
+            }
+        };
+
+        try {
+            $client->translateDocument(Fixtures::tempFile('in.txt', 'Hello'), Fixtures::tempDir() . '/o', 'en', 'de');
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertStringContainsString('disk gone', $exception->getMessage());
+            $this->assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
+        }
+    }
+
+    /**
+     * @dataProvider provideStatusOfTheCause
+     */
+    public function testCopiesTheHttpStatusAndRetryabilityOfTheCause(int $status, bool $shouldRetry): void
+    {
+        $this->reply(['message' => 'failed'], $status);
+
+        try {
+            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 0])->translateDocument(
+                Fixtures::tempFile('input.txt', 'Hello'),
+                Fixtures::tempDir() . '/output.txt',
+                'en',
+                'de'
+            );
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertSame($status, $exception->httpStatusCode);
+            $this->assertSame($shouldRetry, $exception->shouldRetry);
+        }
+    }
+
+    public function provideStatusOfTheCause(): array
+    {
+        return ['quota exceeded' => [456, false], 'service unavailable' => [503, true]];
+    }
+
+    public function testCutsTheLastSleepOfTheWaitToTheTimeout(): void
+    {
+        $this->useFakeClock();
+        $this->reply(['document_id' => 'doc1', 'status' => 'queued']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+        $logger = new TestLogger();
+        $start = \DeepL\microtime(true);
+
+        try {
+            $this->makeTranslator([TranslatorOptions::LOGGER => $logger])->translateDocumentWaitUntilDone(
+                new DocumentHandle('doc1', 'k'),
+                [TranslateDocumentOptions::TIMEOUT => 7]
+            );
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Timeout of 7s exceeded', $exception->getMessage());
+        }
+        $this->assertRequestCount(3);
+        $this->assertStringContainsString('after sleeping for 2 seconds', $logger->content);
+        $this->assertEquals(7, \DeepL\microtime(true) - $start);
     }
 
     public function testThrowsAndKeepsNoFileWhenTheDownloadCannotBeWritten(): void

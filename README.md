@@ -398,6 +398,12 @@ try {
 }
 ```
 
+If no file exists at the input file path, `translateDocument()` throws an
+`InvalidArgumentException` before sending any request. Every other failure,
+including an unreadable input file, throws a `DocumentTranslationException`. Its
+`httpStatusCode` and `shouldRetry` are those of the `DeepLException` that caused
+it, which `getPrevious()` returns.
+
 `translateDocument()` wraps multiple API calls: uploading, polling status until
 the translation is complete, and downloading. If your application needs to
 execute these steps individually, you can instead use the following functions
@@ -417,9 +423,9 @@ echo "Billed characters: {$status->billedCharacters}";
 ```
 
 `translateDocumentWaitUntilDone()` accepts an optional `timeout` (in seconds,
-`TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. As the
-status is polled every 5 seconds, the wait can exceed the timeout by up to that
-interval.
+`TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. The
+status is polled every 5 seconds; the last sleep is cut short to the deadline, so
+the wait does not run past the timeout.
 
 `translateDocumentGetStatus()` returns a `DocumentStatus` with the `documentId`,
 `status`, `secondsRemaining`, `billedCharacters` and `errorMessage` of the

@@ -278,7 +278,11 @@ class HttpClientWrapper
         $body = null;
         if ($filePath !== null) {
             $builder = new MultipartStreamBuilder($this->streamClient);
-            $builder->addResource('file', fopen($filePath, 'r'), ['filename' => $fileName ?? basename($filePath)]);
+            $fileHandle = @fopen($filePath, 'r');
+            if ($fileHandle === false) {
+                throw new DeepLException("Failed to open input file $filePath for reading");
+            }
+            $builder->addResource('file', $fileHandle, ['filename' => $fileName ?? basename($filePath)]);
             foreach ($params as $param_name => $value) {
                 $builder->addResource($param_name, $value);
             }

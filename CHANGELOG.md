@@ -136,6 +136,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are now retried like other transient network failures. Proxy failures,
   such as a proxy that cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`), are
   not retried.
+- `translateDocument()` throws an `InvalidArgumentException` before sending any
+  request if no file exists at the input file path.
+- `translateDocumentWaitUntilDone()` and `translateDocument()` cut the last
+  sleep of the wait to the `timeout`, so the wait no longer runs past it.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a
   source language; the API detects the source language. Document translation
   still requires `sourceLang` with a glossary.
@@ -233,6 +237,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query string values encode a space as `%20` instead of `+`, for example the
   `lang` of `getSpokenTermsEntries()` and the `group_by` of
   `getUsageAnalytics()`.
+- `translateDocument()` wraps every failure in a `DocumentTranslationException`,
+  including an unreadable input file and exceptions that are not a
+  `DeepLException`, and copies `httpStatusCode` and `shouldRetry` from a
+  `DeepLException` cause.
 - `translateDocumentDownload()` throws the API's error message on a failed
   download with the built-in cURL transport, instead of `content: 1`.
 - `translateDocumentDownload()` and `downloadTranslationMemoryExport()` throw a

@@ -251,10 +251,12 @@ class Translator
      * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
+     * @throws \InvalidArgumentException If no file exists at the input file path; no request is sent then.
      * @throws DocumentTranslationException If a file already exists at the output file path, or if any error occurs
      * during document upload, translation or download. The `handle` property of the exception, if not null,
      * may be used to recover the document ID and key of an in-progress translation. This includes the expiry of the
-     * TranslateDocumentOptions::TIMEOUT option.
+     * TranslateDocumentOptions::TIMEOUT option. The exception carries the httpStatusCode and shouldRetry of the
+     * DeepLException that caused it, which is also available via getPrevious().
      * @see \DeepL\TranslateDocumentOptions
      */
     public function translateDocument(
@@ -265,10 +267,16 @@ class Translator
         array $options = []
     ): DocumentStatus {
         $handle = null;
+        if (!file_exists($inputFile)) {
+            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
+        }
         if (file_exists($outputFile)) {
             throw new DocumentTranslationException("File already exists at output file path $outputFile");
         }
         try {
+            if (!is_readable($inputFile)) {
+                throw new DeepLException("Failed to read input file $inputFile");
+            }
             $minifier = null;
             // The media removed by minification can only be reinserted into a file of the input's format.
             $outputFormat = $options[TranslateDocumentOptions::OUTPUT_FORMAT] ?? null;
@@ -312,12 +320,17 @@ class Translator
                 $minifier->deminifyDocument($outputFile, $outputFile, true);
             }
             return $status;
-        } catch (DeepLException $error) {
+        } catch (\Throwable $error) {
             if (file_exists($outputFile)) {
                 unlink($outputFile);
             }
-            $message = 'Error occurred while translating document: ' . ($error->getMessage() ?? 'unknown error');
-            throw new DocumentTranslationException($message, $error->getCode(), $error, $handle);
+            $message = 'Error occurred while translating document: ' . ($error->getMessage() ?: 'unknown error');
+            $exception = new DocumentTranslationException($message, $error->getCode(), $error, $handle);
+            if ($error instanceof DeepLException) {
+                $exception->httpStatusCode = $error->httpStatusCode;
+                $exception->shouldRetry = $error->shouldRetry;
+            }
+            throw $exception;
         }
     }
 
@@ -548,8 +561,8 @@ class Translator
      * communicating with the DeepL API, the document translation failed, or the timeout expired.
      * @param DocumentHandle $handle Handle to the document translation.
      * @param array $options Wait options: TranslateDocumentOptions::TIMEOUT, the maximum time to wait in seconds
-     *     (float). Unset or null waits without limit. The status is polled every 5 seconds, so the wait may exceed
-     *     the timeout by up to that interval.
+     *     (float). Unset or null waits without limit. The status is polled every 5 seconds; the last sleep is cut
+     *     short to the deadline, so the wait does not run past the timeout.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
      * @throws DeepLException
@@ -569,6 +582,9 @@ class Translator
             }
             // secondsRemaining is currently unreliable, so just poll equidistantly
             $secs = 5.0;
+            if ($timeout !== null) {
+                $secs = min($secs, $timeout - (microtime(true) - $startTime));
+            }
             usleep($secs * 1000000);
             $this->client->logInfo("Rechecking document translation status after sleeping for $secs seconds.");
             $status = $pollWithDeprecated
