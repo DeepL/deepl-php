@@ -1491,7 +1491,8 @@ are `null` when the API response does not include them.
 
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
 request was not processed: after HTTP 429, or when the connection failed before
-the request was sent (DNS resolution failure or refused connection). With a
+the request was sent (DNS resolution failure, refused connection, or a timeout
+before the connection was established). With a
 custom HTTP client, only HTTP 429 is retried. The other functions are retried
 like all other requests.
 

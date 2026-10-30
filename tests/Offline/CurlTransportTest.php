@@ -294,8 +294,12 @@ class CurlTransportTest extends OfflineTestCase
      * Lets curl_exec fail with the given cURL error codes in turn, then succeed, and collects the
      * options of each attempt.
      */
-    private function failCurlWith(array $errorCodes, ?array &$attempts, string $body = '{}'): void
-    {
+    private function failCurlWith(
+        array $errorCodes,
+        ?array &$attempts,
+        string $body = '{}',
+        float $connectTime = 0.1
+    ): void {
         $attempts = [];
         $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->any())
             ->willReturnCallback(function ($handle, array $options) use (&$attempts) {
@@ -307,7 +311,10 @@ class CurlTransportTest extends OfflineTestCase
         $this->getFunctionMock('DeepL', 'curl_errno')->expects($this->any())
             ->willReturnOnConsecutiveCalls(...$errorCodes);
         $this->getFunctionMock('DeepL', 'curl_error')->expects($this->any())->willReturn('failed');
-        $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->any())->willReturn(200);
+        $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->any())
+            ->willReturnCallback(function ($handle, int $option) use ($connectTime) {
+                return $option === CURLINFO_CONNECT_TIME ? $connectTime : 200;
+            });
     }
 
     private function makeCurlAdminClient(): DeepLAdminClient
@@ -327,6 +334,17 @@ class CurlTransportTest extends OfflineTestCase
         foreach ($attempts as $options) {
             $this->assertTrue($options[CURLOPT_FRESH_CONNECT]);
         }
+    }
+
+    public function testRetriesKeyCreationAfterATimeoutBeforeConnecting(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([CURLE_OPERATION_TIMEDOUT], $attempts, '{"key_id": "id"}', 0.0);
+
+        $key = $this->makeCurlAdminClient()->createDeveloperKey();
+
+        $this->assertSame('id', $key->keyId);
+        $this->assertCount(2, $attempts);
     }
 
     /**
@@ -349,7 +367,7 @@ class CurlTransportTest extends OfflineTestCase
     public static function providePossiblySentErrors(): array
     {
         return [
-            'timeout' => [CURLE_OPERATION_TIMEDOUT],
+            'timeout after connecting' => [CURLE_OPERATION_TIMEDOUT],
             'empty reply' => [CURLE_GOT_NOTHING],
             'connection reset' => [CURLE_RECV_ERROR],
             'broken pipe' => [CURLE_SEND_ERROR],

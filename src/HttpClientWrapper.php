@@ -42,6 +42,12 @@ class HttpClientWrapper
      */
     private $curlHandle;
 
+    /**
+     * @var bool True if the last cURL request failed before it was sent: a refused connection, a DNS
+     * failure, or a timeout before the connection was established.
+     */
+    private $lastCurlErrorUnsent = false;
+
     public const OPTION_FILE = 'file';
     /** File name sent for the OPTION_FILE part; defaults to the base name of the file path. */
     public const OPTION_FILENAME = 'filename';
@@ -51,8 +57,8 @@ class HttpClientWrapper
     public const OPTION_JSON = 'json';
     public const OPTION_RAW_BODY = 'raw_body';
     /**
-     * Retry only failures that show the request was not processed: HTTP 429, refused connections and DNS
-     * failures. For requests that are unsafe to repeat.
+     * Retry only failures that show the request was not processed: HTTP 429, refused connections, DNS
+     * failures and timeouts before the connection was established. For requests that are unsafe to repeat.
      */
     public const OPTION_RETRY_ONLY_UNPROCESSED = 'retry_only_unprocessed';
 
@@ -415,6 +421,7 @@ class HttpClientWrapper
         // https://github.com/php-mock/php-mock-phpunit#restrictions
         curl_setopt_array($this->curlHandle, $curlOptions);
 
+        $this->lastCurlErrorUnsent = false;
         $result = curl_exec($this->curlHandle);
         if ($result !== false) {
             $statusCode = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
@@ -441,6 +448,12 @@ class HttpClientWrapper
                     $shouldRetry = false;
                     break;
             }
+            $this->lastCurlErrorUnsent = in_array(
+                $errorCode,
+                [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST],
+                true
+            ) || ($errorCode === \CURLE_OPERATION_TIMEDOUT
+                && (float)curl_getinfo($this->curlHandle, CURLINFO_CONNECT_TIME) == 0.0);
             throw new ConnectionException($errorMessage, $errorCode, null, $shouldRetry);
         }
     }
@@ -466,17 +479,13 @@ class HttpClientWrapper
     }
 
     /**
-     * Returns true if the connection error happened before the request was sent: a refused connection or
-     * a DNS failure. Only the cURL error codes tell this; errors of a custom HTTP client are treated as
-     * possibly sent.
+     * Returns true if the connection error happened before the request was sent: a refused connection,
+     * a DNS failure, or a timeout before the connection was established. Only cURL tells this; errors of
+     * a custom HTTP client are treated as possibly sent.
      */
     private function isUnsentRequestError(ConnectionException $exception): bool
     {
-        return $this->customHttpClient === null && in_array(
-            $exception->getCode(),
-            [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST],
-            true
-        );
+        return $this->customHttpClient === null && $this->lastCurlErrorUnsent;
     }
 
     public function logDebug(string $message): void
