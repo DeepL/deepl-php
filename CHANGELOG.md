@@ -239,6 +239,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process.
 
 ### Fixed
+- `exportTranslationMemoryToFilepath()` now throws a `DeepLException` before
+  creating the export job if a file already exists at the output path or its
+  directory does not exist or is not writable. Previously it failed only after
+  the export job had run.
 - Fixed a `User-Agent` header spelled in another case in the `headers` option,
   such as `user-agent`, raising an undefined-key warning on construction and
   failing translation memory uploads and export downloads. The custom

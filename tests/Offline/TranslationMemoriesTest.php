@@ -607,6 +607,36 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertSame('<tmx/>', file_get_contents($output));
     }
 
+    public function testChecksTheOutputPathBeforeCreatingTheExportJob(): void
+    {
+        $client = $this->makeDeepLClient();
+        $existing = Fixtures::tempFile('export.tmx', 'old');
+        $readOnlyDir = Fixtures::tempDir();
+        chmod($readOnlyDir, 0500);
+        $cases = [
+            [$existing, 'File already exists at output file path'],
+            [Fixtures::tempDir() . '/missing/export.tmx', 'Failed to open output file'],
+        ];
+        if (!is_writable($readOnlyDir)) {
+            $cases[] = [$readOnlyDir . '/export.tmx', 'Failed to open output file'];
+        }
+
+        try {
+            foreach ($cases as list($output, $message)) {
+                try {
+                    $client->exportTranslationMemoryToFilepath('tm1', $output);
+                    $this->fail("expected a DeepLException for $output");
+                } catch (DeepLException $exception) {
+                    $this->assertStringContainsString($message, $exception->getMessage());
+                }
+            }
+        } finally {
+            chmod($readOnlyDir, 0700);
+        }
+        $this->assertRequestCount(0);
+        $this->assertSame('old', file_get_contents($existing));
+    }
+
     public function testThrowsNotFoundWhenTheTranslationMemoryDoesNotExist(): void
     {
         $this->reply(['message' => 'not here'], 404);

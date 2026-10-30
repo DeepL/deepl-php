@@ -1708,13 +1708,23 @@ class DeepLClient extends Translator
      * @param string $outputFile String containing file path to create the exported TMX file.
      * @param float|null $timeout Optional maximum time in seconds to wait for the export to finish.
      * @return TranslationMemoryJob The completed export job.
-     * @throws DeepLException
+     * @throws DeepLException Also if a file already exists at the output file path or its directory
+     *  does not exist or is not writable; this is checked before the export job is created.
      */
     public function exportTranslationMemoryToFilepath(
         $translationMemory,
         string $outputFile,
         ?float $timeout = null
     ): TranslationMemoryJob {
+        if (file_exists($outputFile)) {
+            throw new DeepLException("File already exists at output file path $outputFile");
+        }
+        $outputDir = dirname($outputFile);
+        if (!is_dir($outputDir) || !is_writable($outputDir)) {
+            throw new DeepLException(
+                "Failed to open output file $outputFile for writing: the directory does not exist or is not writable"
+            );
+        }
         $created = $this->createTranslationMemoryExport($translationMemory);
         $job = $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
         $this->downloadTranslationMemoryExport($job, $outputFile);

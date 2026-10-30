@@ -1360,7 +1360,9 @@ is a possibility; the wait never runs past it.
 #### Exporting a translation memory
 
 `exportTranslationMemoryToFilepath()` exports a translation memory to a TMX file:
-it creates the export job, waits for it to finish, and writes the result.
+it creates the export job, waits for it to finish, and writes the result. If a
+file already exists at the output path, or its directory does not exist or is not
+writable, it throws a `DeepLException` before creating the export job.
 
 ```php
 $job = $deeplClient->exportTranslationMemoryToFilepath('YOUR_TM_ID', '/path/to/exported.tmx');
