@@ -276,6 +276,16 @@ class TranslationMemoriesTest extends OfflineTestCase
         }
     }
 
+    public function testSendsACustomUserAgentInAnyCaseToTheStorageUrl(): void
+    {
+        $this->reply('', 200);
+
+        $this->makeDeepLClient(['headers' => ['user-agent' => 'my-client']])
+            ->uploadTranslationMemoryFile(self::STORAGE_URL, '<tmx/>');
+
+        $this->assertSame(['my-client'], $this->request()->getHeader('User-Agent'));
+    }
+
     public function testThrowsWithTheStatusAndContentWhenTheUploadFails(): void
     {
         $this->reply('<Error>denied</Error>', 403);

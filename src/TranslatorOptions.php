@@ -50,8 +50,9 @@ class TranslatorOptions
     public const SERVER_URL = 'server_url';
 
     /**
-     * HTTP headers attached to every HTTP request. By default, no extra headers are used. Note that during client
-     * initialization headers for Authorization and User-Agent are added, unless they are overridden in this option.
+     * HTTP headers attached to every HTTP request. By default, no extra headers are used. During client
+     * initialization headers for Authorization and User-Agent are added. A User-Agent header in this option replaces
+     * the default one; an Authorization header is ignored. Header names are compared case-insensitively.
      */
     public const HEADERS = 'headers';
 

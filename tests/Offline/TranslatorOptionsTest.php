@@ -83,6 +83,23 @@ class TranslatorOptionsTest extends OfflineTestCase
     }
 
     /**
+     * @dataProvider provideAuthorizationHeaderNames
+     */
+    public function testDoesNotLetACustomAuthorizationHeaderReplaceTheAuthKey(string $name): void
+    {
+        $this->reply(self::USAGE);
+
+        $this->makeTranslator([TranslatorOptions::HEADERS => [$name => 'Bearer other']], 'my-key')->getUsage();
+
+        $this->assertSame(['DeepL-Auth-Key my-key'], $this->request()->getHeader('Authorization'));
+    }
+
+    public static function provideAuthorizationHeaderNames(): array
+    {
+        return [['Authorization'], ['authorization'], ['AUTHORIZATION']];
+    }
+
+    /**
      * @dataProvider provideEmptyAuthKeys
      */
     public function testThrowsWhenTheAuthKeyIsEmpty(string $authKey): void

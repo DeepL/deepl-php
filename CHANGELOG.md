@@ -130,6 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GlossaryNotFoundException` if the glossary has no such dictionary.
 
 ### Changed
+- An `Authorization` header in the `headers` option (in any casing) is now
+  ignored, so it can no longer replace the `DeepL-Auth-Key` authorization.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a
   source language; the API detects the source language. Document translation
   still requires `sourceLang` with a glossary.
@@ -219,6 +221,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process.
 
 ### Fixed
+- Fixed a `User-Agent` header spelled in another case in the `headers` option,
+  such as `user-agent`, raising an undefined-key warning on construction and
+  failing translation memory uploads and export downloads. The custom
+  User-Agent is now sent to the storage URLs as well.
 - `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
   a subclass overrides them.

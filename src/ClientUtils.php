@@ -29,11 +29,19 @@ class ClientUtils
     }
 
     /**
-     * Returns the Authorization and User-Agent headers, overridden by any custom headers in the options.
-     * Header names are compared case-insensitively, so a custom header replaces the default of the same name.
+     * Returns the Authorization and User-Agent headers, merged with any custom headers in the options.
+     * Header names are compared case-insensitively. A custom User-Agent replaces the default; a custom
+     * Authorization header is dropped, so the auth key is always sent.
      */
     public static function buildHeaders(string $authKey, array $options): array
     {
+        $customHeaders = array_filter(
+            $options[TranslatorOptions::HEADERS] ?? [],
+            function ($name): bool {
+                return strcasecmp((string)$name, 'Authorization') !== 0;
+            },
+            \ARRAY_FILTER_USE_KEY
+        );
         return self::mergeHeaders(
             [
                 'Authorization' => "DeepL-Auth-Key $authKey",
@@ -42,8 +50,21 @@ class ClientUtils
                     $options[TranslatorOptions::APP_INFO] ?? null
                 ),
             ],
-            $options[TranslatorOptions::HEADERS] ?? []
+            $customHeaders
         );
+    }
+
+    /**
+     * Returns the value of the header with the given name, compared case-insensitively, or null if absent.
+     */
+    public static function findHeader(array $headers, string $name): ?string
+    {
+        foreach ($headers as $key => $value) {
+            if (strcasecmp((string)$key, $name) === 0) {
+                return $value;
+            }
+        }
+        return null;
     }
 
     /**

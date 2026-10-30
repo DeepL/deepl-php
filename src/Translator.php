@@ -87,7 +87,7 @@ class Translator
         // the User-Agent is carried over; per-request headers such as Content-Type still apply.
         $this->storageClient = ClientUtils::createHttpClient(
             $serverUrl,
-            ['User-Agent' => $headers['User-Agent']],
+            ['User-Agent' => ClientUtils::findHeader($headers, 'User-Agent')],
             $options
         );
     }
