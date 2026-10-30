@@ -172,6 +172,17 @@ class AdminClientTest extends OfflineTestCase
         $this->assertEquals(new DateTime('2026-05-04', new DateTimeZone('UTC')), $report->usage[0]->usageDate);
     }
 
+    public function testReturnsNullForOmittedCustomTagSpeechToSpeechMinutes(): void
+    {
+        $this->reply(['custom_tag_usage_report' => [
+            'usage' => [['custom_tag' => 'example-custom-tag', 'breakdown' => ['speech_to_text_minutes' => 12.5]]],
+        ]]);
+
+        $report = $this->makeAdminClient()->getCustomTagUsageAnalytics('2026-05-03', '2026-05-15');
+
+        $this->assertNull($report->usage[0]->breakdown->speechToSpeechMinutes);
+    }
+
     /**
      * @dataProvider provideDateInputs
      * @param DateTimeInterface|string $input

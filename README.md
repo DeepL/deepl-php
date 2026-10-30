@@ -1533,6 +1533,8 @@ usage per custom tag. Use the `aggregateBy` argument to choose between the
 whole period (`CustomTagUsageAggregateBy::PERIOD`, the default) and per-day
 usage (`CustomTagUsageAggregateBy::DAY`). The results are paginated: pass the
 `nextPage` value of a report as `page` to get the next page.
+`CustomTagUsageBreakdown::$speechToSpeechMinutes` is `null` when the API
+response does not include it.
 
 ```php
 $page = null;
