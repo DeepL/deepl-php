@@ -428,7 +428,6 @@ class HttpClientWrapper
                 case \CURLE_SEND_ERROR: // includes broken pipes
                 case \CURLE_RECV_ERROR: // includes connection resets
                 case \CURLE_COULDNT_RESOLVE_HOST:
-                case \CURLE_COULDNT_RESOLVE_PROXY:
                     $shouldRetry = true;
                     break;
                 default:
@@ -468,7 +467,7 @@ class HttpClientWrapper
     {
         return $this->customHttpClient === null && in_array(
             $exception->getCode(),
-            [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST, \CURLE_COULDNT_RESOLVE_PROXY],
+            [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST],
             true
         );
     }

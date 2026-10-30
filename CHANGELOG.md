@@ -133,7 +133,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An `Authorization` header in the `headers` option (in any casing) is now
   ignored, so it can no longer replace the `DeepL-Auth-Key` authorization.
 - Connection resets (`CURLE_RECV_ERROR`) and broken pipes (`CURLE_SEND_ERROR`)
-  are now retried like other transient network failures.
+  are now retried like other transient network failures. Proxy failures,
+  such as a proxy that cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`), are
+  not retried.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a
   source language; the API detects the source language. Document translation
   still requires `sourceLang` with a glossary.
@@ -141,9 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documented: `max_retries => 5` (the default) sends a request at most 6
   times, and `0` disables retries. Previously it counted attempts, so the
   default made only 4 retries and `max_retries => 1` made none.
-- DNS resolution failures (`CURLE_COULDNT_RESOLVE_HOST` and
-  `CURLE_COULDNT_RESOLVE_PROXY`) are now retried like other transient network
-  failures. `createDeveloperKey()` retries them too, as such a request was not
+- DNS resolution failures (`CURLE_COULDNT_RESOLVE_HOST`) are now retried like
+  other transient network failures. `createDeveloperKey()` retries them too, as such a request was not
   sent.
 - The User-Agent platform information no longer includes the cURL version, and
   has a space between the OS version and the machine type:

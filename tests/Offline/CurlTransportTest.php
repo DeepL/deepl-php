@@ -234,6 +234,21 @@ class CurlTransportTest extends OfflineTestCase
         return ['connection reset' => [CURLE_RECV_ERROR], 'broken pipe' => [CURLE_SEND_ERROR]];
     }
 
+    public function testDoesNotRetryAProxyResolutionFailure(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([CURLE_COULDNT_RESOLVE_PROXY], $attempts);
+
+        try {
+            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame(CURLE_COULDNT_RESOLVE_PROXY, $exception->getCode());
+            $this->assertFalse($exception->shouldRetry);
+            $this->assertCount(1, $attempts);
+        }
+    }
+
     /**
      * @dataProvider provideDnsErrors
      */
@@ -250,7 +265,7 @@ class CurlTransportTest extends OfflineTestCase
 
     public static function provideDnsErrors(): array
     {
-        return ['host' => [CURLE_COULDNT_RESOLVE_HOST], 'proxy' => [CURLE_COULDNT_RESOLVE_PROXY]];
+        return ['host' => [CURLE_COULDNT_RESOLVE_HOST]];
     }
 
     /**

@@ -1633,7 +1633,7 @@ the next retry are not applied. Retries and `max_retries` still apply.
 Requests to the DeepL API that fail due to transient conditions will be
 retried: HTTP 429, any 5xx status, and network failures such as DNS
 resolution errors, refused connections, timeouts, connection resets and broken
-pipes. The maximum number of
+pipes. Proxy failures are not retried. The maximum number of
 retries after the first attempt can be configured when constructing the `DeepLClient` object using the
 `max_retries` option. The timeout for each request attempt may be controlled
 using the `timeout` option. An exponential-backoff strategy is used, so
