@@ -128,7 +128,7 @@ class AdminClientTest extends OfflineTestCase
         $this->assertSame('Staging API Key', $usage->apiKeyLabel);
         $this->assertEquals(new DateTime('2025-09-29', new DateTimeZone('UTC')), $usage->usageDate);
         $this->assertSame(156, $usage->usage->textImprovementCharacters);
-        $this->assertSame(0.0, $usage->usage->speechToSpeechMinutes);
+        $this->assertNull($usage->usage->speechToSpeechMinutes);
     }
 
     public function testGetCustomTagUsageAnalytics(): void
@@ -305,6 +305,15 @@ class AdminClientTest extends OfflineTestCase
         $this->assertNull($keys[0]->label);
         $this->assertNull($keys[0]->usageLimits);
         $this->assertNull($report->keyUsages[0]->apiKeyLabel);
+    }
+
+    public function testReturnsNullForAnOmittedTotalUsage(): void
+    {
+        $this->reply(['usage_report' => ['group_by' => 'key', 'key_usages' => []]]);
+
+        $report = $this->makeAdminClient()->getUsageAnalytics('2025-09-29', '2025-10-01');
+
+        $this->assertNull($report->totalUsage);
     }
 
     public function testRetriesKeyCreationAfterTooManyRequests(): void

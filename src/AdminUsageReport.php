@@ -14,7 +14,10 @@ use DateTimeZone;
  */
 class AdminUsageReport
 {
-    /** @var AdminUsageBreakdown Usage totals over the whole date range. */
+    /**
+     * @var AdminUsageBreakdown|null Usage totals over the whole date range, or null if the response does not
+     * include them.
+     */
     public $totalUsage;
 
     /** @var DateTime|null Start of the report period. */
@@ -33,7 +36,7 @@ class AdminUsageReport
     public $keyAndDayUsages;
 
     public function __construct(
-        AdminUsageBreakdown $totalUsage,
+        ?AdminUsageBreakdown $totalUsage,
         ?DateTime $startDate,
         ?DateTime $endDate,
         ?string $groupBy = null,
@@ -51,8 +54,9 @@ class AdminUsageReport
     public static function fromJson(array $json): AdminUsageReport
     {
         $report = is_array($json['usage_report'] ?? null) ? $json['usage_report'] : [];
+        $totalUsage = ParsingUtils::objectOrNull($report['total_usage'] ?? null);
         return new AdminUsageReport(
-            AdminUsageBreakdown::fromJson(ParsingUtils::objectOrNull($report['total_usage'] ?? null)),
+            $totalUsage === null ? null : AdminUsageBreakdown::fromJson($totalUsage),
             ParsingUtils::parseOptionalTimestamp($report['start_date'] ?? null, new DateTimeZone('UTC')),
             ParsingUtils::parseOptionalTimestamp($report['end_date'] ?? null, new DateTimeZone('UTC')),
             is_string($report['group_by'] ?? null) ? $report['group_by'] : null,

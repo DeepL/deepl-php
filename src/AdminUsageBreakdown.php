@@ -26,7 +26,7 @@ class AdminUsageBreakdown
     /** @var float Number of speech-to-text minutes used. */
     public $speechToTextMinutes;
 
-    /** @var float Number of speech-to-speech minutes used. */
+    /** @var float|null Number of speech-to-speech minutes used, or null if the response does not include it. */
     public $speechToSpeechMinutes;
 
     public function __construct(
@@ -35,7 +35,7 @@ class AdminUsageBreakdown
         int $documentTranslationCharacters,
         int $textImprovementCharacters,
         float $speechToTextMinutes,
-        float $speechToSpeechMinutes = 0.0
+        ?float $speechToSpeechMinutes = null
     ) {
         $this->totalCharacters = $totalCharacters;
         $this->textTranslationCharacters = $textTranslationCharacters;
@@ -53,7 +53,9 @@ class AdminUsageBreakdown
             (int)ParsingUtils::numberOrZero($json['document_translation_characters'] ?? null),
             (int)ParsingUtils::numberOrZero($json['text_improvement_characters'] ?? null),
             (float)ParsingUtils::numberOrZero($json['speech_to_text_minutes'] ?? null),
-            (float)ParsingUtils::numberOrZero($json['speech_to_speech_minutes'] ?? null)
+            isset($json['speech_to_speech_minutes'])
+                ? (float)ParsingUtils::numberOrZero($json['speech_to_speech_minutes'])
+                : null
         );
     }
 }

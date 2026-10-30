@@ -1511,6 +1511,8 @@ Timestamps in the reports without a time zone are in UTC. Use
 the `groupBy` argument to break the usage down by key
 (`AdminUsageGroupBy::KEY`, see `keyUsages`) or by key and day
 (`AdminUsageGroupBy::KEY_AND_DAY`, see `keyAndDayUsages`).
+`AdminUsageReport::$totalUsage` and `AdminUsageBreakdown::$speechToSpeechMinutes`
+are `null` when the API response does not include them.
 
 ```php
 $report = $adminClient->getUsageAnalytics(
@@ -1518,7 +1520,9 @@ $report = $adminClient->getUsageAnalytics(
     '2026-07-01',
     \DeepL\AdminUsageGroupBy::KEY
 );
-echo "Total characters: {$report->totalUsage->totalCharacters}\n";
+if ($report->totalUsage !== null) {
+    echo "Total characters: {$report->totalUsage->totalCharacters}\n";
+}
 foreach ($report->keyUsages as $keyUsage) {
     echo "{$keyUsage->apiKeyLabel}: {$keyUsage->usage->totalCharacters}\n";
 }

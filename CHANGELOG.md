@@ -58,9 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`), added last to the JSON body.
   `setDeveloperKeyUsageLimits()` changes only the limits given with the
   `DeveloperKeyUsageLimitsOptions` keys, including speech-to-speech.
-  `DeveloperKey::$label`, `DeveloperKey::$usageLimits` and
-  `KeyUsage::$apiKeyLabel` are `null` when the response omits them.
-  `createDeveloperKey()` is retried only when the request was not
+  `DeveloperKey::$label`, `DeveloperKey::$usageLimits`,
+  `KeyUsage::$apiKeyLabel`, `AdminUsageReport::$totalUsage` and
+  `AdminUsageBreakdown::$speechToSpeechMinutes` are `null` when the response
+  omits them. `createDeveloperKey()` is retried only when the request was not
   sent: after HTTP 429, a DNS failure, a refused connection or a timeout
   before the connection was established.
   New public types: `DeveloperKey`, `DeveloperKeyUsageLimits`,
