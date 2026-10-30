@@ -29,6 +29,16 @@ class MultilingualGlossaryDictionaryEntries
      */
     public function __construct(string $sourceLang, string $targetLang, array $entries)
     {
+        $this->sourceLang = $sourceLang;
+        $this->targetLang = $targetLang;
+        $this->entries = self::trimAndValidate($entries);
+    }
+
+    /**
+     * @throws DeepLException If the entries are empty or a term is invalid.
+     */
+    private static function trimAndValidate(array $entries): array
+    {
         $trimmed = [];
         foreach ($entries as $source => $target) {
             $source = trim((string)$source);
@@ -41,9 +51,7 @@ class MultilingualGlossaryDictionaryEntries
             $trimmed[$source] = $target;
         }
         GlossaryUtils::validateEntries($trimmed);
-        $this->sourceLang = $sourceLang;
-        $this->targetLang = $targetLang;
-        $this->entries = $trimmed;
+        return $trimmed;
     }
 
     /**
@@ -103,12 +111,17 @@ class MultilingualGlossaryDictionaryEntries
         });
     }
 
+    /**
+     * Returns the dictionary as sent to the API. The entries are trimmed and validated again, as they may have
+     * been changed after construction or come from the API.
+     * @throws DeepLException If the entries are empty or a term is invalid.
+     */
     public function toObject(): array
     {
         return [
             "source_lang" => $this->sourceLang,
             "target_lang" => $this->targetLang,
-            "entries" => $this->convertToTsv(),
+            "entries" => GlossaryUtils::convertToTsv(self::trimAndValidate((array)$this->entries)),
             "entries_format" => "tsv",
         ];
     }

@@ -219,6 +219,36 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->assertSame("Hello\tHallo", $this->jsonBody()['dictionaries'][0]['entries']);
     }
 
+    public function testTrimsTermsChangedAfterConstructionBeforeSendingThem(): void
+    {
+        $this->reply(self::DICTIONARY + ['entries' => '']);
+        $dictionary = $this->dictionary();
+        $dictionary->entries = [' Hello ' => "Hallo\t"];
+
+        $this->makeDeepLClient()->replaceMultilingualGlossaryDictionary('gid', $dictionary);
+
+        $this->assertSame($this->dictionaryBody(), $this->jsonBody());
+    }
+
+    public function testValidatesChangedAndFetchedDictionariesBeforeSendingThem(): void
+    {
+        $this->reply(['dictionaries' => [array_replace($this->dictionaryBody(), ['entries' => ''])]]);
+        $client = $this->makeDeepLClient();
+        $fetched = $client->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
+        $changed = $this->dictionary();
+        $changed->entries = ['Hello' => "Hal\u{2028}lo"];
+
+        foreach ([[$fetched, 'Input contains no entries'], [$changed, 'contains invalid characters']] as $case) {
+            try {
+                $client->replaceMultilingualGlossaryDictionary('gid', $case[0]);
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertStringContainsString($case[1], $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(1);
+    }
+
     public function testThrowsWhenTheNameIsEmpty(): void
     {
         $client = $this->makeDeepLClient();

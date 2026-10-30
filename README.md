@@ -631,7 +631,10 @@ detail.
 
 `MultilingualGlossaryDictionaryEntries` trims surrounding whitespace from every
 source and target term, then rejects empty terms, terms containing control
-characters, and source terms that are duplicates after trimming.
+characters, and source terms that are duplicates after trimming. The entries
+are trimmed and checked again when they are sent, so a dictionary whose
+`entries` were changed, or one returned by the API, is sent trimmed; one without
+entries throws a `DeepLException` without sending a request.
 
 `updateMultilingualGlossaryName()`, `updateMultilingualGlossaryDictionary()`,
 `updateMultilingualGlossaryDictionaryFromCsv()` and

@@ -233,6 +233,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query string values encode a space as `%20` instead of `+`, for example the
   `lang` of `getSpokenTermsEntries()` and the `group_by` of
   `getUsageAnalytics()`.
+- `MultilingualGlossaryDictionaryEntries` trims and validates its entries when
+  they are sent, so a dictionary whose `entries` were changed after
+  construction, or one returned by the API, is no longer sent untrimmed,
+  unvalidated or empty.
 - `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
   a subclass overrides them.
