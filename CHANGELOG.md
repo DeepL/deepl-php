@@ -239,6 +239,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process.
 
 ### Fixed
+- A response body cut off mid-read (cURL errors 18, a body shorter than its
+  `Content-Length` or a chunked body that ended early, and 92, an HTTP/2
+  stream reset) now throws a `ConnectionException` with `shouldRetry` set to
+  `true` instead of `false`. It is still not retried automatically.
 - `exportTranslationMemoryToFilepath()` now throws a `DeepLException` before
   creating the export job if a file already exists at the output path or its
   directory does not exist or is not writable. Previously it failed only after

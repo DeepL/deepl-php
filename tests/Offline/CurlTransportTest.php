@@ -256,6 +256,29 @@ class CurlTransportTest extends OfflineTestCase
         return ['connection reset' => [CURLE_RECV_ERROR], 'broken pipe' => [CURLE_SEND_ERROR]];
     }
 
+    /**
+     * @dataProvider provideBodyCutOffErrors
+     */
+    public function testReportsABodyCutOffMidReadAsTransientWithoutRetrying(int $errorCode): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([$errorCode], $attempts);
+
+        try {
+            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame($errorCode, $exception->getCode());
+            $this->assertTrue($exception->shouldRetry);
+            $this->assertCount(1, $attempts);
+        }
+    }
+
+    public static function provideBodyCutOffErrors(): array
+    {
+        return ['partial body' => [CURLE_PARTIAL_FILE], 'HTTP/2 stream reset' => [92]];
+    }
+
     public function testDoesNotRetryAProxyResolutionFailure(): void
     {
         $this->useFakeClock();

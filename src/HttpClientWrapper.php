@@ -48,6 +48,14 @@ class HttpClientWrapper
      */
     private $lastCurlErrorUnsent = false;
 
+    /**
+     * @var bool True if the last cURL request failed because the response body was cut off mid-read.
+     */
+    private $lastCurlErrorBodyCutOff = false;
+
+    /** CURLE_HTTP2_STREAM, which PHP does not define: an HTTP/2 stream was reset, for example mid-body. */
+    private const CURLE_HTTP2_STREAM = 92;
+
     public const OPTION_FILE = 'file';
     /** File name sent for the OPTION_FILE part; defaults to the base name of the file path. */
     public const OPTION_FILENAME = 'filename';
@@ -422,6 +430,7 @@ class HttpClientWrapper
         curl_setopt_array($this->curlHandle, $curlOptions);
 
         $this->lastCurlErrorUnsent = false;
+        $this->lastCurlErrorBodyCutOff = false;
         $result = curl_exec($this->curlHandle);
         if ($result !== false) {
             $statusCode = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
@@ -443,6 +452,13 @@ class HttpClientWrapper
                 case \CURLE_RECV_ERROR: // includes connection resets
                 case \CURLE_COULDNT_RESOLVE_HOST:
                     $shouldRetry = true;
+                    break;
+                case \CURLE_PARTIAL_FILE: // body shorter than Content-Length, or a chunked body ended early
+                case self::CURLE_HTTP2_STREAM: // HTTP/2 stream reset, for example mid-body
+                    // Transient, but not retried automatically: the request was processed, and a streamed
+                    // body may already be partly written to the output file.
+                    $shouldRetry = true;
+                    $this->lastCurlErrorBodyCutOff = true;
                     break;
                 default:
                     $shouldRetry = false;
@@ -470,6 +486,9 @@ class HttpClientWrapper
     private function shouldRetry(?array $response, ?ConnectionException $exception, bool $onlyUnprocessed): bool
     {
         if ($exception !== null) {
+            if ($this->customHttpClient === null && $this->lastCurlErrorBodyCutOff) {
+                return false;
+            }
             return $exception->shouldRetry && (!$onlyUnprocessed || $this->isUnsentRequestError($exception));
         }
         list($statusCode, ) = $response;
