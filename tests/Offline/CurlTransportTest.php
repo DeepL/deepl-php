@@ -217,6 +217,24 @@ class CurlTransportTest extends OfflineTestCase
     }
 
     /**
+     * @dataProvider provideConnectionResetErrors
+     */
+    public function testRetriesConnectionResetsAndBrokenPipes(int $errorCode): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([$errorCode], $attempts, '{"character_count":1,"character_limit":2}');
+
+        (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+
+        $this->assertCount(2, $attempts);
+    }
+
+    public static function provideConnectionResetErrors(): array
+    {
+        return ['connection reset' => [CURLE_RECV_ERROR], 'broken pipe' => [CURLE_SEND_ERROR]];
+    }
+
+    /**
      * @dataProvider provideDnsErrors
      */
     public function testRetriesKeyCreationAfterADnsFailure(int $errorCode): void
@@ -293,7 +311,12 @@ class CurlTransportTest extends OfflineTestCase
 
     public static function providePossiblySentErrors(): array
     {
-        return ['timeout' => [CURLE_OPERATION_TIMEDOUT], 'empty reply' => [CURLE_GOT_NOTHING]];
+        return [
+            'timeout' => [CURLE_OPERATION_TIMEDOUT],
+            'empty reply' => [CURLE_GOT_NOTHING],
+            'connection reset' => [CURLE_RECV_ERROR],
+            'broken pipe' => [CURLE_SEND_ERROR],
+        ];
     }
 
     public function testReusesConnectionsForOtherRequests(): void

@@ -425,6 +425,8 @@ class HttpClientWrapper
                 case \CURLE_OPERATION_TIMEOUTED:
                 case \CURLE_COULDNT_CONNECT:
                 case \CURLE_GOT_NOTHING:
+                case \CURLE_SEND_ERROR: // includes broken pipes
+                case \CURLE_RECV_ERROR: // includes connection resets
                 case \CURLE_COULDNT_RESOLVE_HOST:
                 case \CURLE_COULDNT_RESOLVE_PROXY:
                     $shouldRetry = true;

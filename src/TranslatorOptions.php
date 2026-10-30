@@ -64,7 +64,7 @@ class TranslatorOptions
 
     /**
      * The maximum number of failed attempts that the client will retry, per request. Note: only errors due to
-     * transient conditions are retried.
+     * transient conditions are retried. Must not be negative.
      * @see DEFAULT_MAX_RETRIES
      */
     public const MAX_RETRIES = 'max_retries';

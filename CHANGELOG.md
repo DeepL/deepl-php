@@ -132,6 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - An `Authorization` header in the `headers` option (in any casing) is now
   ignored, so it can no longer replace the `DeepL-Auth-Key` authorization.
+- Connection resets (`CURLE_RECV_ERROR`) and broken pipes (`CURLE_SEND_ERROR`)
+  are now retried like other transient network failures.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a
   source language; the API detects the source language. Document translation
   still requires `sourceLang` with a glossary.
@@ -225,6 +227,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   such as `user-agent`, raising an undefined-key warning on construction and
   failing translation memory uploads and export downloads. The custom
   User-Agent is now sent to the storage URLs as well.
+- A negative `max_retries` option now throws a `DeepLException` on construction.
+  Previously no request was sent and the call failed with a `TypeError`.
 - `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
   a subclass overrides them.

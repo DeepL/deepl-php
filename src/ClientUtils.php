@@ -85,14 +85,21 @@ class ClientUtils
 
     /**
      * Creates an HttpClientWrapper using the transport settings in the options.
+     * @throws DeepLException If max_retries is negative.
      */
     public static function createHttpClient(string $serverUrl, array $headers, array $options): HttpClientWrapper
     {
+        $maxRetries = $options[TranslatorOptions::MAX_RETRIES] ?? TranslatorOptions::DEFAULT_MAX_RETRIES;
+        if ($maxRetries < 0) {
+            throw new DeepLException(
+                'If specified, ' . TranslatorOptions::MAX_RETRIES . ' option must not be negative.'
+            );
+        }
         return new HttpClientWrapper(
             $serverUrl,
             $headers,
             $options[TranslatorOptions::TIMEOUT] ?? TranslatorOptions::DEFAULT_TIMEOUT,
-            $options[TranslatorOptions::MAX_RETRIES] ?? TranslatorOptions::DEFAULT_MAX_RETRIES,
+            $maxRetries,
             $options[TranslatorOptions::LOGGER] ?? null,
             $options[TranslatorOptions::PROXY] ?? null,
             $options[TranslatorOptions::HTTP_CLIENT] ?? null
