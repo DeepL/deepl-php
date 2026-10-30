@@ -14,25 +14,29 @@ use DateTime;
 class TranslationMemoryJobResult
 {
     /** The job is waiting for the caller, for example to upload the TMX file of an import. */
-    public const STATUS_AWAITING_INPUT = 'awaiting_input';
+    public const STATUS_AWAITING_INPUT = TranslationMemoryJobStatus::AWAITING_INPUT;
 
     /** The job is being processed. */
-    public const STATUS_PROCESSING = 'processing';
+    public const STATUS_PROCESSING = TranslationMemoryJobStatus::PROCESSING;
 
     /** The job completed successfully. */
-    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_COMPLETED = TranslationMemoryJobStatus::COMPLETED;
 
-    /** The exported TMX file of the job was downloaded. */
+    /**
+     * The exported TMX file of the job was downloaded. Not a status the API reports, so it has no
+     * TranslationMemoryJobStatus counterpart.
+     */
     public const STATUS_DOWNLOADED = 'downloaded';
 
     /** The job failed. */
-    public const STATUS_FAILED = 'failed';
+    public const STATUS_FAILED = TranslationMemoryJobStatus::FAILED;
 
     /** The job expired before it was completed. */
-    public const STATUS_EXPIRED = 'expired';
+    public const STATUS_EXPIRED = TranslationMemoryJobStatus::EXPIRED;
 
     /**
-     * @var string The job status, one of the STATUS_* constants of this class.
+     * @var string The job status, one of the TranslationMemoryJobStatus constants. A value the API
+     * adds later is kept as a plain string.
      */
     public $status;
 

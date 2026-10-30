@@ -128,6 +128,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `getMultilingualGlossaryDictionaryEntries()`, returning the
   `MultilingualGlossaryDictionaryEntries` of one dictionary, or throwing
   `GlossaryNotFoundException` if the glossary has no such dictionary.
+- Added the `TranslationMemoryJobStatus` constants class for the values of
+  `TranslationMemoryJobResult::$status`; the `TranslationMemoryJobResult::STATUS_*`
+  constants refer to it.
 
 ### Changed
 - An `Authorization` header in the `headers` option (in any casing) is now
