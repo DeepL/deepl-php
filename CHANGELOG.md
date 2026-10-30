@@ -229,6 +229,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   User-Agent is now sent to the storage URLs as well.
 - A negative `max_retries` option now throws a `DeepLException` on construction.
   Previously no request was sent and the call failed with a `TypeError`.
+- Query string values encode a space as `%20` instead of `+`, for example the
+  `lang` of `getSpokenTermsEntries()` and the `group_by` of
+  `getUsageAnalytics()`.
 - `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
   a subclass overrides them.

@@ -143,4 +143,54 @@ class HttpClientTest extends OfflineTestCase
 
         $this->makeTranslator([TranslatorOptions::MAX_RETRIES => -1]);
     }
+
+    /**
+     * @dataProvider provideRequestsWithASpaceInTheQuery
+     */
+    public function testEncodesASpaceInQueryValuesAsPercent20(callable $call, string $path, string $query): void
+    {
+        $this->reply('[]');
+
+        try {
+            $call($this);
+        } catch (DeepLException $exception) {
+            // The reply is not a valid response for every call; only the request is asserted
+        }
+
+        $this->assertRequest('GET', $path, 0, $query);
+    }
+
+    public static function provideRequestsWithASpaceInTheQuery(): array
+    {
+        return [
+            'spoken terms entries' => [
+                function (self $test) {
+                    $test->makeDeepLClient()->getSpokenTermsEntries('st', 'a b');
+                },
+                '/v3/spoken-terms/st/entries',
+                'lang=a%20b',
+            ],
+            'glossary dictionary entries' => [
+                function (self $test) {
+                    $test->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('g', 'a b', 'de');
+                },
+                '/v3/glossaries/g/entries',
+                'source_lang=a%20b&target_lang=de',
+            ],
+            'languages include' => [
+                function (self $test) {
+                    $test->makeDeepLClient()->getLanguagesForResource('a b', ['c d']);
+                },
+                '/v3/languages',
+                'resource=a%20b&include=c%20d',
+            ],
+            'admin usage analytics' => [
+                function (self $test) {
+                    $test->makeAdminClient()->getUsageAnalytics('2026-01-01', '2026-01-02', 'a b');
+                },
+                '/v2/admin/analytics',
+                'start_date=2026-01-01&end_date=2026-01-02&group_by=a%20b',
+            ],
+        ];
+    }
 }

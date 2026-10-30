@@ -63,7 +63,7 @@ class DeepLAdminClient
         if ($groupBy !== null) {
             $params['group_by'] = $groupBy;
         }
-        $content = $this->sendRequest('GET', '/v2/admin/analytics?' . http_build_query($params));
+        $content = $this->sendRequest('GET', '/v2/admin/analytics?' . ClientUtils::buildQuery($params));
         return self::parse($content, function (array $json): AdminUsageReport {
             self::requireObject($json, 'Usage report');
             return AdminUsageReport::fromJson($json);
@@ -98,7 +98,7 @@ class DeepLAdminClient
         if ($page !== null) {
             $params['page'] = (string)$page;
         }
-        $content = $this->sendRequest('GET', '/v2/admin/analytics/custom-tags?' . http_build_query($params));
+        $content = $this->sendRequest('GET', '/v2/admin/analytics/custom-tags?' . ClientUtils::buildQuery($params));
         return self::parse($content, function (array $json): CustomTagUsageReport {
             self::requireObject($json, 'Custom tag usage report');
             return CustomTagUsageReport::fromJson($json);

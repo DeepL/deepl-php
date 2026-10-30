@@ -55,6 +55,15 @@ class ClientUtils
     }
 
     /**
+     * Returns the URL-encoded query string of the parameters, with a space encoded as %20 (RFC 3986):
+     * http_build_query() by default writes "+", which is meant for form bodies.
+     */
+    public static function buildQuery(array $params): string
+    {
+        return http_build_query($params, '', '&', \PHP_QUERY_RFC3986);
+    }
+
+    /**
      * Returns the value of the header with the given name, compared case-insensitively, or null if absent.
      */
     public static function findHeader(array $headers, string $name): ?string

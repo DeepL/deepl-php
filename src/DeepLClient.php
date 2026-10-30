@@ -422,7 +422,7 @@ class DeepLClient extends Translator
      */
     private function requestMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
     {
-        $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
+        $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
         $url = self::multilingualGlossaryPath($glossary) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
         $this->checkStatusCode($response, false, true);
@@ -468,7 +468,7 @@ class DeepLClient extends Translator
             $targetLang = $dictionary->targetLang;
         }
 
-        $query = http_build_query(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
+        $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
         $url = self::multilingualGlossaryPath($glossary) . "/dictionaries?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
         $this->checkStatusCode($response, false, true);
@@ -624,7 +624,7 @@ class DeepLClient extends Translator
      */
     public function getSpokenTermsEntries($spokenTerms, string $lang): SpokenTermsEntries
     {
-        $query = http_build_query(['lang' => $lang]);
+        $query = ClientUtils::buildQuery(['lang' => $lang]);
         $url = self::spokenTermsPath($spokenTerms) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
         $this->checkStatusCode($response);
@@ -677,7 +677,7 @@ class DeepLClient extends Translator
      */
     public function deleteSpokenTermsList($spokenTerms, string $lang): void
     {
-        $query = http_build_query(['lang' => $lang]);
+        $query = ClientUtils::buildQuery(['lang' => $lang]);
         $url = self::spokenTermsPath($spokenTerms) . "/term-lists?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
         $this->checkStatusCode($response);
@@ -801,7 +801,7 @@ class DeepLClient extends Translator
 
         $queryString = '';
         if (!empty($params)) {
-            $queryString = '?' . http_build_query($params);
+            $queryString = '?' . ClientUtils::buildQuery($params);
         }
 
         $response = $this->client->sendRequestWithBackoff('GET', "/v3/style_rules$queryString");
@@ -1103,7 +1103,7 @@ class DeepLClient extends Translator
         if ($pageSize !== null) {
             $params['page_size'] = (string)$pageSize;
         }
-        $queryString = empty($params) ? '' : '?' . http_build_query($params);
+        $queryString = empty($params) ? '' : '?' . ClientUtils::buildQuery($params);
 
         $response = $this->client->sendRequestWithBackoff('GET', "/v3/style_profiles$queryString");
         $this->checkStatusCode($response);
@@ -1290,11 +1290,11 @@ class DeepLClient extends Translator
             }
         }
 
-        $queryString = '?' . http_build_query(['resource' => $resource]);
+        $queryString = '?' . ClientUtils::buildQuery(['resource' => $resource]);
         if ($include !== null) {
-            // include is repeated as include=<value>; http_build_query would index it as include[0]=
+            // include is repeated as include=<value>; buildQuery() would index it as include[0]=
             foreach ($include as $value) {
-                $queryString .= '&include=' . urlencode($value);
+                $queryString .= '&include=' . rawurlencode($value);
             }
         }
 
@@ -1337,7 +1337,7 @@ class DeepLClient extends Translator
         if ($pageSize !== null) {
             $queryParams['page_size'] = $pageSize;
         }
-        $queryString = empty($queryParams) ? '' : '?' . http_build_query($queryParams);
+        $queryString = empty($queryParams) ? '' : '?' . ClientUtils::buildQuery($queryParams);
 
         $response = $this->client->sendRequestWithBackoff('GET', "/v3/translation_memories$queryString");
         $this->checkStatusCode($response);
@@ -1398,12 +1398,9 @@ class DeepLClient extends Translator
             $queryParams['filter_case_sensitive'] =
                 $options[TranslationMemorySegmentsOptions::FILTER_CASE_SENSITIVE] ? 'true' : 'false';
         }
-        // PHP_QUERY_RFC3986 percent-encodes spaces in filter_text as %20. The default,
-        // PHP_QUERY_RFC1738, encodes them as "+" — correct for a form body, but not for
-        // a URI query string.
         $queryString = empty($queryParams)
             ? ''
-            : '?' . http_build_query($queryParams, '', '&', \PHP_QUERY_RFC3986);
+            : '?' . ClientUtils::buildQuery($queryParams);
 
         $response = $this->client->sendRequestWithBackoff(
             'GET',

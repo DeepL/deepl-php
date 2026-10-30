@@ -140,7 +140,7 @@ class Translator
     {
         $response = $this->client->sendRequestWithBackoff(
             'GET',
-            '/v3/languages?' . http_build_query(['resource' => LanguageResourceName::GLOSSARY])
+            '/v3/languages?' . ClientUtils::buildQuery(['resource' => LanguageResourceName::GLOSSARY])
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -718,7 +718,7 @@ class Translator
     {
         $response = $this->client->sendRequestWithBackoff(
             'GET',
-            '/v3/languages?' . http_build_query(['resource' => LanguageResourceName::TRANSLATE_TEXT])
+            '/v3/languages?' . ClientUtils::buildQuery(['resource' => LanguageResourceName::TRANSLATE_TEXT])
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
