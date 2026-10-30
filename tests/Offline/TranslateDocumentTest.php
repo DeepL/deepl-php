@@ -561,6 +561,40 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertEquals(7, \DeepL\microtime(true) - $start);
     }
 
+    public function testThrowsTheTimeoutErrorWhenTheDeadlinePassesWhileComputingTheSleep(): void
+    {
+        // The wait helper's own clock reads: start, then just before the deadline, then past it.
+        // Reading the clock twice per loop made the sleep negative (ValueError from usleep() in PHP 8);
+        // usleep() is mocked, so the test asserts the exact int it receives instead.
+        $times = [1000.0, 1000.9, 1001.1];
+        $this->getFunctionMock('DeepL', 'microtime')->expects($this->any())
+            ->willReturnCallback(function () use (&$times) {
+                foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $frame) {
+                    if (($frame['class'] ?? '') === Translator::class) {
+                        if ($frame['function'] !== 'translateDocumentWaitUntilDone') {
+                            break;
+                        }
+                        return count($times) > 1 ? array_shift($times) : $times[0];
+                    }
+                }
+                return 1000.0;
+            });
+        $this->getFunctionMock('DeepL', 'usleep')->expects($this->once())->with($this->identicalTo(100000));
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+
+        try {
+            $this->makeTranslator()->translateDocumentWaitUntilDone(
+                new DocumentHandle('doc1', 'k'),
+                [TranslateDocumentOptions::TIMEOUT => 1]
+            );
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Timeout of 1s exceeded', $exception->getMessage());
+        }
+        $this->assertRequestCount(2);
+    }
+
     public function testThrowsAndKeepsNoFileWhenTheDownloadCannotBeWritten(): void
     {
         FullDiskStream::register();

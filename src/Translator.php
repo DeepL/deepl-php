@@ -577,15 +577,16 @@ class Translator
         $pollWithDeprecated = $this->overridesDocumentMethod('getDocumentStatus');
         $status = $pollWithDeprecated ? $this->getDocumentStatus($handle) : $this->translateDocumentGetStatus($handle);
         while (!$status->done() && $status->ok()) {
-            if ($timeout !== null && microtime(true) - $startTime >= $timeout) {
+            $elapsed = microtime(true) - $startTime;
+            if ($timeout !== null && $elapsed >= $timeout) {
                 throw new DeepLException("Timeout of {$timeout}s exceeded while waiting for document translation");
             }
             // secondsRemaining is currently unreliable, so just poll equidistantly
             $secs = 5.0;
             if ($timeout !== null) {
-                $secs = min($secs, $timeout - (microtime(true) - $startTime));
+                $secs = max(0.0, min($secs, $timeout - $elapsed));
             }
-            usleep($secs * 1000000);
+            usleep((int)round($secs * 1000000));
             $this->client->logInfo("Rechecking document translation status after sleeping for $secs seconds.");
             $status = $pollWithDeprecated
                 ? $this->getDocumentStatus($handle)
