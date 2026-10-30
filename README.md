@@ -1317,6 +1317,8 @@ memory: it creates the import job, uploads the file, and waits for processing to
 finish. The returned `TranslationMemoryJob` carries the ID of the new translation
 memory. An import usually takes under a minute; the optional third argument is a
 maximum time in seconds to wait for it.
+If no file exists at the input file path, it throws an
+`InvalidArgumentException` before sending any request.
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', 'Legal TM', 300);

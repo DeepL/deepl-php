@@ -141,6 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not retried.
 - `translateDocument()` throws an `InvalidArgumentException` before sending any
   request if no file exists at the input file path.
+- `importTranslationMemoryFromFilepath()` throws an `InvalidArgumentException`
+  instead of a `DeepLException` before sending any request if no file exists
+  at the input file path.
 - `translateDocumentWaitUntilDone()` and `translateDocument()` cut the last
   sleep of the wait to the `timeout`, so the wait no longer runs past it.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a
