@@ -1664,7 +1664,8 @@ class DeepLClient extends Translator
      * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
-     * @throws DeepLException
+     * @throws DeepLException Also if the input file does not exist or cannot be read, before any
+     *  request is sent; the read error, if any, is the previous exception.
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
@@ -1674,9 +1675,18 @@ class DeepLClient extends Translator
         if (!file_exists($inputFile)) {
             throw new DeepLException("File does not exist at input file path $inputFile");
         }
-        $fileContent = file_get_contents($inputFile);
+        if (is_dir($inputFile) || !is_readable($inputFile)) {
+            throw new DeepLException("Failed reading input file $inputFile: the file is not readable");
+        }
+        error_clear_last();
+        // Suppressed so error handlers that turn warnings into exceptions see the DeepLException
+        $fileContent = @file_get_contents($inputFile);
         if ($fileContent === false) {
-            throw new DeepLException("Failed reading input file $inputFile");
+            $error = error_get_last();
+            $cause = $error === null
+                ? null
+                : new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            throw new DeepLException("Failed reading input file $inputFile", 0, $cause);
         }
 
         $created = $this->createTranslationMemoryImport(

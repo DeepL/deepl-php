@@ -562,6 +562,33 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->makeDeepLClient()->importTranslationMemoryFromFilepath(Fixtures::tempDir() . '/missing.tmx');
     }
 
+    public function testThrowsDeepLExceptionWithoutRequestWhenTheImportFileIsUnreadable(): void
+    {
+        $file = Fixtures::tempFile('example.tmx', '<tmx/>');
+        chmod($file, 0);
+        if (is_readable($file)) {
+            $this->markTestSkipped('file permissions are not enforced for this user');
+        }
+        // As Laravel and Symfony do: turn reported warnings into exceptions
+        set_error_handler(function (int $errno, string $errstr): bool {
+            if ((error_reporting() & $errno) === 0) {
+                return false;
+            }
+            throw new \ErrorException($errstr, 0, $errno);
+        });
+
+        try {
+            $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Failed reading input file', $exception->getMessage());
+        } finally {
+            restore_error_handler();
+            chmod($file, 0600);
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testExportsToAFileByCreatingWaitingAndDownloading(): void
     {
         $output = Fixtures::tempDir() . '/export.tmx';

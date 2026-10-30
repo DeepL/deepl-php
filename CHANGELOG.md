@@ -260,6 +260,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   status is `completed`, `failed` or `expired`.
 - Fixed `waitUntilTranslationMemoryJobDone()` running up to 5 seconds past its
   timeout; the last sleep is now shortened to the deadline.
+- Fixed `importTranslationMemoryFromFilepath()` emitting a PHP warning for an
+  input file that exists but cannot be read, which error handlers that turn
+  warnings into exceptions (Laravel, Symfony) raised as `ErrorException`. It
+  now raises only a `DeepLException`, before any request.
 - `translateDocument()` calls `uploadDocument()`, `getDocumentStatus()`,
   `waitUntilDocumentTranslationComplete()` and `downloadDocument()` again when
   a subclass overrides them.
