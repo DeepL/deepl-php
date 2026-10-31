@@ -455,9 +455,9 @@ class HttpClientWrapper
                     break;
                 case \CURLE_PARTIAL_FILE: // body shorter than Content-Length, or a chunked body ended early
                 case self::CURLE_HTTP2_STREAM: // HTTP/2 stream reset, for example mid-body
-                    // Transient, but not retried automatically: the request was processed, and a streamed
-                    // body may already be partly written to the output file.
-                    $shouldRetry = true;
+                    // Not retried and reported with shouldRetry false until the next major: the request was
+                    // processed, and a streamed body may already be partly written to the output file.
+                    $shouldRetry = false;
                     $this->lastCurlErrorBodyCutOff = true;
                     break;
                 default:

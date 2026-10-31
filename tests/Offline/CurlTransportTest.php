@@ -278,7 +278,7 @@ class CurlTransportTest extends OfflineTestCase
     /**
      * @dataProvider provideBodyCutOffErrors
      */
-    public function testReportsABodyCutOffMidReadAsTransientWithoutRetrying(int $errorCode): void
+    public function testReportsABodyCutOffMidReadAsNotRetryableWithoutRetrying(int $errorCode): void
     {
         $this->useFakeClock();
         $this->failCurlWith([$errorCode], $attempts);
@@ -288,7 +288,7 @@ class CurlTransportTest extends OfflineTestCase
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
             $this->assertSame($errorCode, $exception->getCode());
-            $this->assertTrue($exception->shouldRetry);
+            $this->assertFalse($exception->shouldRetry);
             $this->assertCount(1, $attempts);
         }
     }
