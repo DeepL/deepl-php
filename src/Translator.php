@@ -251,8 +251,8 @@ class Translator
      * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
-     * @throws \InvalidArgumentException If no file exists at the input file path; no request is sent then.
-     * @throws DocumentTranslationException If a file already exists at the output file path, or if any error occurs
+     * @throws DocumentTranslationException If no file exists at the input file path or a file already exists at the
+     * output file path, both checked before any request is sent with a null `handle`, or if any error occurs
      * during document upload, translation or download. The `handle` property of the exception, if not null,
      * may be used to recover the document ID and key of an in-progress translation. This includes the expiry of the
      * TranslateDocumentOptions::TIMEOUT option. The exception carries the httpStatusCode and shouldRetry of the
@@ -268,7 +268,7 @@ class Translator
     ): DocumentStatus {
         $handle = null;
         if (!file_exists($inputFile)) {
-            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
+            throw new DocumentTranslationException("File does not exist at input file path $inputFile");
         }
         if (file_exists($outputFile)) {
             throw new DocumentTranslationException("File already exists at output file path $outputFile");

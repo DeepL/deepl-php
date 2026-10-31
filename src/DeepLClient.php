@@ -1664,9 +1664,8 @@ class DeepLClient extends Translator
      * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
-     * @throws \InvalidArgumentException If no file exists at the input file path; no request is sent then.
-     * @throws DeepLException Also if the input file cannot be read, before any request is sent; the
-     *  read error, if any, is the previous exception.
+     * @throws DeepLException If no file exists at the input file path or it cannot be read, before any
+     *  request is sent; the read error, if any, is the previous exception.
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
@@ -1674,7 +1673,7 @@ class DeepLClient extends Translator
         ?float $timeout = null
     ): TranslationMemoryJob {
         if (!file_exists($inputFile)) {
-            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
+            throw new DeepLException("File does not exist at input file path $inputFile");
         }
         if (is_dir($inputFile) || !is_readable($inputFile)) {
             throw new DeepLException("Failed reading input file $inputFile: the file is not readable");

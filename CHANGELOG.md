@@ -145,11 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are now retried like other transient network failures. Proxy failures,
   such as a proxy that cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`), are
   not retried.
-- `translateDocument()` throws an `InvalidArgumentException` before sending any
-  request if no file exists at the input file path.
-- `importTranslationMemoryFromFilepath()` throws an `InvalidArgumentException`
-  instead of a `DeepLException` before sending any request if no file exists
-  at the input file path.
+- `translateDocument()` now checks that the input file exists before sending
+  any request and throws a `DocumentTranslationException` if it does not;
+  previously the upload request failed.
 - `translateDocumentWaitUntilDone()` and `translateDocument()` cut the last
   sleep of the wait to the `timeout`, so the wait no longer runs past it.
 - `translateText()` accepts the `glossary` and `glossary_ids` options without a

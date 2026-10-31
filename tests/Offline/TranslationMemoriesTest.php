@@ -554,13 +554,15 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertSame('tm1', $job->result()->translationMemoryId);
     }
 
-    public function testThrowsInvalidArgumentExceptionWithoutRequestWhenTheImportFileDoesNotExist(): void
+    public function testThrowsDeepLExceptionWithoutRequestWhenTheImportFileDoesNotExist(): void
     {
+        $file = Fixtures::tempDir() . '/missing.tmx';
         try {
-            $this->makeDeepLClient()->importTranslationMemoryFromFilepath(Fixtures::tempDir() . '/missing.tmx');
-            $this->fail('expected an InvalidArgumentException');
-        } catch (\InvalidArgumentException $exception) {
-            $this->assertStringContainsString('File does not exist at input file path', $exception->getMessage());
+            $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertSame(DeepLException::class, get_class($exception));
+            $this->assertSame("File does not exist at input file path $file", $exception->getMessage());
         }
         $this->assertRequestCount(0);
     }

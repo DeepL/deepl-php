@@ -457,7 +457,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
-    public function testThrowsInvalidArgumentWithoutRequestWhenTheInputFileDoesNotExist(): void
+    public function testThrowsDocumentTranslationExceptionWithoutRequestWhenTheInputFileDoesNotExist(): void
     {
         $input = Fixtures::tempDir() . '/missing.txt';
         $output = Fixtures::tempDir() . '/output.txt';
@@ -465,9 +465,10 @@ class TranslateDocumentTest extends OfflineTestCase
         foreach ([$this->makeTranslator(), new Translator('k')] as $translator) {
             try {
                 $translator->translateDocument($input, $output, 'en', 'de');
-                $this->fail('expected an InvalidArgumentException');
-            } catch (\InvalidArgumentException $exception) {
-                $this->assertStringContainsString('File does not exist at input file path', $exception->getMessage());
+                $this->fail('expected a DocumentTranslationException');
+            } catch (DocumentTranslationException $exception) {
+                $this->assertSame("File does not exist at input file path $input", $exception->getMessage());
+                $this->assertNull($exception->handle);
             }
         }
         $this->assertRequestCount(0);
