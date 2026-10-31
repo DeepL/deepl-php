@@ -12,30 +12,34 @@ namespace DeepL;
 class UsageProduct
 {
     /**
-     * @var string The type of product, for example 'translate', 'write', 'speechToText' or 'speechToSpeech'.
+     * @var string|null The type of product, for example 'translate', 'write', 'speechToText' or
+     * 'speechToSpeech'; null if the response does not contain it.
      */
     public $productType;
 
     /**
-     * @var string The billing unit for this product, for example 'characters' or 'minutes'.
+     * @var string|null The billing unit for this product, for example 'characters' or 'minutes'; null if the
+     * response does not contain it.
      */
     public $billingUnit;
 
     /**
-     * @var int Units used for this product by this API key in the current billing period.
+     * @var int|null Units used for this product by this API key in the current billing period; null if the
+     * response does not contain it.
      */
     public $apiKeyUnitCount;
 
     /**
-     * @var int Units used for this product by the whole account in the current billing period.
+     * @var int|null Units used for this product by the whole account in the current billing period; null if
+     * the response does not contain it.
      */
     public $accountUnitCount;
 
     public function __construct(
-        string $productType,
-        string $billingUnit,
-        int $apiKeyUnitCount,
-        int $accountUnitCount
+        ?string $productType,
+        ?string $billingUnit,
+        ?int $apiKeyUnitCount,
+        ?int $accountUnitCount
     ) {
         $this->productType = $productType;
         $this->billingUnit = $billingUnit;
@@ -49,10 +53,10 @@ class UsageProduct
     public static function fromJson(array $json): UsageProduct
     {
         return new UsageProduct(
-            (string)($json['product_type'] ?? ''),
-            (string)($json['billing_unit'] ?? ''),
-            (int)($json['api_key_unit_count'] ?? 0),
-            (int)($json['account_unit_count'] ?? 0)
+            isset($json['product_type']) ? (string)$json['product_type'] : null,
+            isset($json['billing_unit']) ? (string)$json['billing_unit'] : null,
+            isset($json['api_key_unit_count']) ? (int)$json['api_key_unit_count'] : null,
+            isset($json['account_unit_count']) ? (int)$json['account_unit_count'] : null
         );
     }
 }

@@ -902,7 +902,7 @@ other accounts they are `null`:
 - `products`: an array of `UsageProduct` objects, one per product, with
   `productType` (for example `'translate'`, `'write'` or `'speechToText'`),
   `billingUnit` (`'characters'` or `'minutes'`), `apiKeyUnitCount` and
-  `accountUnitCount`.
+  `accountUnitCount`. Each of these is `null` when the API omits it.
 
 ```php
 $usage = $deeplClient->getUsage();

@@ -91,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the API Pro fields of `getUsage()` to `Usage`: `apiKeyCharacter`,
   `speechToTextMinutes`, `speechToSpeechMinutes`, `startTime`, `endTime` and
   `products` (an array of the new `UsageProduct` class). They are `null` when
-  the response does not include them, for example for API Free accounts.
+  the response does not include them, for example for API Free accounts. The
+  same holds for the fields of each `UsageProduct`.
 - Added support for the Spoken Terms API (`/v3/spoken-terms`) in the
   `DeepLClient` class: `createSpokenTerms()`, `listSpokenTerms()`,
   `getSpokenTerms()`, `updateSpokenTerms()`, `getSpokenTermsEntries()`,

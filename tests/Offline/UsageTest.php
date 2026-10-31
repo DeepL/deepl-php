@@ -126,18 +126,24 @@ class UsageTest extends OfflineTestCase
             'character_limit' => 500000,
             'start_time' => 'not a timestamp',
             'end_time' => '',
-            'products' => [['product_type' => 'translate'], 'not an object'],
+            'products' => [['product_type' => 'translate'], [], 'not an object'],
         ]);
 
         $usage = $this->makeTranslator()->getUsage();
 
         $this->assertSame(20, $usage->character->count);
+        $this->assertSame(500000, $usage->character->limit);
         $this->assertNull($usage->startTime);
         $this->assertNull($usage->endTime);
-        $this->assertCount(1, $usage->products);
+        $this->assertCount(2, $usage->products);
         $this->assertSame('translate', $usage->products[0]->productType);
-        $this->assertSame('', $usage->products[0]->billingUnit);
-        $this->assertSame(0, $usage->products[0]->apiKeyUnitCount);
+        $this->assertNull($usage->products[0]->billingUnit);
+        $this->assertNull($usage->products[0]->apiKeyUnitCount);
+        $this->assertNull($usage->products[0]->accountUnitCount);
+        $this->assertNull($usage->products[1]->productType);
+        $this->assertNull($usage->products[1]->billingUnit);
+        $this->assertNull($usage->products[1]->apiKeyUnitCount);
+        $this->assertNull($usage->products[1]->accountUnitCount);
     }
 
     public function testReportsNoLimitReachedBelowTheLimits(): void
