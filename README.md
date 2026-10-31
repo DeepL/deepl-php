@@ -400,9 +400,9 @@ try {
 
 Every failure throws a `DocumentTranslationException`. If no file exists at the
 input file path, or a file already exists at the output file path, it is thrown
-before any request is sent, with a `null` handle. Its `httpStatusCode` and
-`shouldRetry` are those of the `DeepLException` that caused it, which
-`getPrevious()` returns.
+before any request is sent, with a `null` handle. For a failure during upload,
+translation or download, its `httpStatusCode` and `shouldRetry` are those of the
+`DeepLException` that caused it, which `getPrevious()` returns.
 
 `translateDocument()` wraps multiple API calls: uploading, polling status until
 the translation is complete, and downloading. If your application needs to
