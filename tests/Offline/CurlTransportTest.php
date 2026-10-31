@@ -216,13 +216,31 @@ class CurlTransportTest extends OfflineTestCase
         $options = $this->captureCurlOptions(function (DeepLClient $client) {
             $client->getUsage();
         }, '{"character_count":1,"character_limit":2}', [
-            TranslatorOptions::HEADERS => ['user-agent' => 'my-client', 'x-custom' => 'value'],
+            TranslatorOptions::HEADERS => [
+                'authorization' => 'Bearer other',
+                'user-agent' => 'my-client',
+                'x-custom' => 'value',
+            ],
         ]);
 
         $this->assertSame(
-            ['Authorization: DeepL-Auth-Key k', 'user-agent: my-client', 'x-custom: value'],
+            ['authorization: Bearer other', 'user-agent: my-client', 'x-custom: value'],
             $this->headers($options)
         );
+    }
+
+    public function testDropsTechnicalHeadersOfTheCaller(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->translateText('Hello', null, 'de');
+        }, '{"translations":[{"text":"Hallo","detected_source_language":"EN","billed_characters":5}]}', [
+            TranslatorOptions::HEADERS => ['content-type' => 'text/plain', 'Host' => 'example.com'],
+        ]);
+
+        $headers = $this->headers($options);
+        $this->assertNotContains('content-type: text/plain', $headers);
+        $this->assertNotContains('Host: example.com', $headers);
+        $this->assertContains('Content-Type: application/json', $headers);
     }
 
     /**

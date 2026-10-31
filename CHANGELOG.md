@@ -138,8 +138,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constants refer to it.
 
 ### Changed
-- An `Authorization` header in the `headers` option (in any casing) is now
-  ignored, so it can no longer replace the `DeepL-Auth-Key` authorization.
+- `Content-Type`, `Content-Length`, `Transfer-Encoding`, `Host` and `Accept`
+  in the `headers` option are now ignored; previously they were sent and could
+  break the request.
 - Connection resets (`CURLE_RECV_ERROR`) and broken pipes (`CURLE_SEND_ERROR`)
   are now retried like other transient network failures. Proxy failures,
   such as a proxy that cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`), are

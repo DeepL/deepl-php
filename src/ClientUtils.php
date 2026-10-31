@@ -29,16 +29,23 @@ class ClientUtils
     }
 
     /**
+     * Header names describing the request the library builds or the response it parses; custom headers with
+     * these names are dropped so the library's values are always used.
+     */
+    private const TECHNICAL_HEADERS = ['content-type', 'content-length', 'transfer-encoding', 'host', 'accept'];
+
+    /**
      * Returns the Authorization and User-Agent headers, merged with any custom headers in the options.
-     * Header names are compared case-insensitively. A custom User-Agent replaces the default; a custom
-     * Authorization header is dropped, so the auth key is always sent.
+     * Header names are compared case-insensitively. A custom header replaces the default one of the same name,
+     * including Authorization and User-Agent. Custom Content-Type, Content-Length, Transfer-Encoding, Host and
+     * Accept headers are dropped.
      */
     public static function buildHeaders(string $authKey, array $options): array
     {
         $customHeaders = array_filter(
             $options[TranslatorOptions::HEADERS] ?? [],
             function ($name): bool {
-                return strcasecmp((string)$name, 'Authorization') !== 0;
+                return !in_array(strtolower((string)$name), self::TECHNICAL_HEADERS, true);
             },
             \ARRAY_FILTER_USE_KEY
         );

@@ -1587,11 +1587,11 @@ Provide the options as an associative array with the following keys:
     for example for testing purposes. By default, the URL is selected based on
     the user account type (free or paid).
 - `headers`: extra HTTP headers attached to every HTTP request. By default, no
-    extra headers are used. Authorization and User-Agent headers are added
-    automatically. A `User-Agent` header in this option replaces the default one;
-    an `Authorization` header is ignored, so the authentication key is always
-    sent. Header names are compared case-insensitively, so `user-agent` replaces
-    the default `User-Agent`.
+    extra headers are used. Note that Authorization and User-Agent headers are
+    added automatically but may be overridden by this option. Header names are
+    compared case-insensitively, so `user-agent` replaces the default
+    `User-Agent`. `Content-Type`, `Content-Length`, `Transfer-Encoding`, `Host`
+    and `Accept` are ignored.
 - `proxy`: specify a proxy server URL.
 - `logger`: specify a [`PSR-3` compatible logger][PSR-3-logger] that the library
     should log messages to.
