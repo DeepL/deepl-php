@@ -425,7 +425,8 @@ echo "Billed characters: {$status->billedCharacters}";
 `translateDocumentWaitUntilDone()` accepts an optional `timeout` (in seconds,
 `TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. The
 status is polled every 5 seconds; the last sleep is cut short to the deadline, so
-the wait does not run past the timeout.
+the wait does not run past the timeout. A status this library does not know keeps
+polling, so pass `timeout` to bound the wait.
 
 `translateDocumentGetStatus()` returns a `DocumentStatus` with the `documentId`,
 `status`, `secondsRemaining`, `billedCharacters` and `errorMessage` of the
@@ -1348,14 +1349,14 @@ $job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, 300);
 ```
 
 `waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
-status is `completed`, and throws a `DeepLException` with the API's error message
-if it is `failed` or `expired`. Any other status, including one this library
-does not know, is polled through; the known values are the
-`TranslationMemoryJobStatus` constants. Note that the job keeps reporting
-`'awaiting_input'` for a while after the file has been uploaded, because the API
-detects the upload asynchronously. A job whose file is never uploaded does not
-finish on its own, so pass a timeout in seconds as the second argument when that
-is a possibility; the wait never runs past it.
+status is `completed` or `downloaded`, and throws a `DeepLException` with the
+API's error message if it is `failed` or `expired`. Any other status, including
+one this library does not know, keeps polling, so pass a timeout in seconds as
+the second argument to bound the wait; the wait never runs past it. The known
+values are the `TranslationMemoryJobStatus` constants. Note that the job keeps
+reporting `'awaiting_input'` for a while after the file has been uploaded,
+because the API detects the upload asynchronously, and a job whose file is never
+uploaded does not finish on its own.
 
 #### Exporting a translation memory
 
