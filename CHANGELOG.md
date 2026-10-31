@@ -79,8 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parameters last to the request body, replacing fields with the same key.
 - Added the `extra_body_parameters` option
   (`RephraseTextOptions::EXTRA_BODY_PARAMETERS`) to `rephraseText()`, added
-  last to the request body and replacing fields with the same key. It was
-  previously ignored.
+  last to the request body and replacing fields with the same key.
 - Added the `WritingStyle` and `WritingTone` constants classes for the values
   of the `writing_style` and `tone` rephrase options. Other strings are still
   accepted.
@@ -141,6 +140,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Content-Type`, `Content-Length`, `Transfer-Encoding`, `Host` and `Accept`
   in the `headers` option are now ignored; previously they were sent and could
   break the request.
+- HTTP 401 now raises `AuthorizationException`, like 403; previously a generic
+  `DeepLException`.
+- 3xx responses now raise a `DeepLException`; previously they were parsed as
+  successful results.
+- The authentication key is now trimmed, and a key that is empty after trimming
+  throws a `DeepLException`; previously surrounding whitespace was sent and hid
+  the `:fx` suffix of free keys.
+- Deprecated methods, options and option values now raise a silenced
+  `E_USER_DEPRECATED` notice once per process (see Deprecated); previously
+  none. Error handlers that report silenced deprecations now see them.
+- `rephraseText()` now sends the `extra_body_parameters` option; previously it
+  was ignored.
+- `MultilingualGlossaryDictionaryEntries` terms are now trimmed, then
+  validated, when sent, and a source term that is a duplicate after trimming
+  is rejected; previously they were sent untrimmed.
+- Malformed API responses (a required field missing or of the wrong type) now
+  raise `InvalidContentException`; previously some calls returned `null`,
+  empty or partial results or raised PHP warnings. The affected methods are
+  listed under Fixed.
+- `ResourceFeature::$needsSourceSupport` and `$needsTargetSupport` are now
+  `false` when the API omits them, as the API spec defines; previously `null`.
+- Removed the internal `TranslationMemoryUtils` class (marked `@private`); code
+  using it must stop.
 - Connection resets (`CURLE_RECV_ERROR`) and broken pipes (`CURLE_SEND_ERROR`)
   are now retried like other transient network failures. Proxy failures,
   such as a proxy that cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`), are
@@ -264,10 +286,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateDocumentDownload()` and `downloadTranslationMemoryExport()` throw a
   `DeepLException` with a custom HTTP client when the output file cannot be
   fully written, instead of leaving a truncated file and returning.
-- `MultilingualGlossaryDictionaryEntries` trims and validates its entries when
-  they are sent, so a dictionary whose `entries` were changed after
-  construction, or one returned by the API, is no longer sent untrimmed,
-  unvalidated or empty.
 - Fixed `waitUntilTranslationMemoryJobDone()` running up to 5 seconds past its
   timeout; the last sleep is now shortened to the deadline.
 - Fixed `importTranslationMemoryFromFilepath()` emitting a PHP warning for an
@@ -290,14 +308,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `translateText()` raising `InvalidContentException` when a translation
   has no `billed_characters`; `TextResult::$billedCharacters` is now `null` in
   that case.
-- Fixed HTTP 401 raising a generic `DeepLException`; it now raises
-  `AuthorizationException`, like 403.
-- Fixed 3xx responses being parsed as successful results; only 2xx statuses
-  are successful, other statuses raise a `DeepLException`.
-- Fixed the authentication key not being trimmed: surrounding whitespace was
-  sent in the Authorization header and hid the `:fx` suffix of free keys, and
-  a whitespace-only key was accepted. The key is now trimmed, and an empty key
-  after trimming throws a `DeepLException`.
 - Fixed custom `headers` with a different letter case (for example
   `user-agent`) being sent in addition to the default header instead of
   replacing it.
@@ -323,9 +333,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fewer improvements than texts returned a short array, and an improvement
   without `text` returned an empty text. These now throw an
   `InvalidContentException`.
-- Fixed `ResourceFeature::$needsSourceSupport` and `$needsTargetSupport`
-  (from `getLanguageResources()`) being `null` when the API omits the flag;
-  they are now `false`, as the API defines.
 - Fixed malformed responses of `getSourceLanguages()`, `getTargetLanguages()`,
   `getGlossaryLanguages()`, `getLanguagesForResource()` and
   `getLanguageResources()` raising PHP warnings or a `TypeError` (for example a
@@ -340,10 +347,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `deleteMultilingualGlossaryDictionary()`.
 - Fixed `updateMultilingualGlossary()` sending `[]` instead of `{}` as the
   request body when neither a name nor dictionaries are given.
-- Fixed `MultilingualGlossaryDictionaryEntries` validating terms after trimming
-  them but storing and sending them untrimmed, so a leading or trailing tab or
-  newline corrupted the entries sent to the API. Terms are now trimmed, then
-  validated, and a source term that is a duplicate after trimming is rejected.
 - Fixed `getMultilingualGlossaryEntries()` failing on a dictionary without
   entries, and on returned terms that do not pass the validation applied to
   entries sent to the API. Returned entries are now read as they are.
