@@ -405,14 +405,23 @@ class TranslationMemoriesTest extends OfflineTestCase
     public function testKeepsPollingThroughAnUnknownStatusUntilTheJobCompletes(): void
     {
         $this->useFakeClock();
-        $this->reply(self::job('downloaded'));
         $this->reply(self::job('some_future_status'));
         $this->reply(self::job('completed', ['translation_memory_id' => 'tm1']));
 
         $job = $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1');
 
-        $this->assertRequestCount(3);
+        $this->assertRequestCount(2);
         $this->assertSame('completed', $job->status());
+    }
+
+    public function testReturnsAJobWhoseStatusIsDownloaded(): void
+    {
+        $this->reply(self::job('downloaded'));
+
+        $job = $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1');
+
+        $this->assertRequestCount(1);
+        $this->assertSame('downloaded', $job->status());
     }
 
     public function testThrowsTheErrorMessageWhenTheJobFails(): void

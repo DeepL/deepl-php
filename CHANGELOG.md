@@ -268,11 +268,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   they are sent, so a dictionary whose `entries` were changed after
   construction, or one returned by the API, is no longer sent untrimmed,
   unvalidated or empty.
-- Fixed `waitUntilTranslationMemoryJobDone()` (and so
-  `importTranslationMemoryFromFilepath()` and
-  `exportTranslationMemoryToFilepath()`) returning a job whose status is
-  `downloaded` or a status this library does not know; it now polls until the
-  status is `completed`, `failed` or `expired`.
 - Fixed `waitUntilTranslationMemoryJobDone()` running up to 5 seconds past its
   timeout; the last sleep is now shortened to the deadline.
 - Fixed `importTranslationMemoryFromFilepath()` emitting a PHP warning for an

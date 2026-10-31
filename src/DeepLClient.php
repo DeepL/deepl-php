@@ -1563,15 +1563,16 @@ class DeepLClient extends Translator
      * Returns when the given translation memory job completes, or throws an exception if there was
      * an error communicating with the DeepL API, the job failed or expired, or the timeout expired.
      *
-     * The job is polled every 5 seconds until its status is 'completed', 'failed' or 'expired'; any
-     * other status, including one this library does not know, is polled through. Note that an
+     * The job is polled every 5 seconds until its status is 'completed' or 'downloaded', which return
+     * the job, or 'failed' or 'expired', which throw a DeepLException with the API's error message.
+     * Any other status, including one this library does not know, keeps polling. Note that an
      * import job keeps reporting 'awaiting_input' for a while after its file has been uploaded,
      * because the API detects the upload asynchronously. A job whose file is never uploaded does
      * not finish on its own, so pass $timeout when that is a possibility.
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
      * @param float|null $timeout Optional maximum time in seconds to wait before throwing an
      *  exception. The last sleep between polls is shortened so the wait does not run past it.
-     * @return TranslationMemoryJob The completed job.
+     * @return TranslationMemoryJob The completed or downloaded job.
      * @throws DeepLException
      */
     public function waitUntilTranslationMemoryJobDone($job, ?float $timeout = null): TranslationMemoryJob
@@ -1579,12 +1580,7 @@ class DeepLClient extends Translator
         $jobId = TranslationMemoryJob::getJobId($job);
         $deadline = $timeout === null ? null : microtime(true) + $timeout;
         $status = $this->getTranslationMemoryJob($jobId);
-        $terminal = [
-            TranslationMemoryJobStatus::COMPLETED,
-            TranslationMemoryJobStatus::FAILED,
-            TranslationMemoryJobStatus::EXPIRED,
-        ];
-        while (!in_array($status->status(), $terminal, true)) {
+        while (!$status->done()) {
             // The job duration is not reported by the API, so just poll equidistantly
             $secs = 5.0;
             if ($deadline !== null) {
@@ -1598,7 +1594,7 @@ class DeepLClient extends Translator
             $this->client->logInfo("Rechecking translation memory job status after sleeping for $secs seconds.");
             $status = $this->getTranslationMemoryJob($jobId);
         }
-        if ($status->status() !== TranslationMemoryJobStatus::COMPLETED) {
+        if (!$status->ok()) {
             $result = $status->result();
             throw new DeepLException(($result === null ? null : $result->errorMessage) ?? 'unknown error');
         }
