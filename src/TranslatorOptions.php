@@ -53,7 +53,7 @@ class TranslatorOptions
      * HTTP headers attached to every HTTP request. By default, no extra headers are used. During client
      * initialization headers for Authorization and User-Agent are added; a header of the same name in this option
      * replaces the default one. Header names are compared case-insensitively. Content-Type, Content-Length,
-     * Transfer-Encoding, Host and Accept headers in this option are ignored.
+     * Transfer-Encoding and Host headers in this option are ignored.
      */
     public const HEADERS = 'headers';
 

@@ -220,11 +220,12 @@ class CurlTransportTest extends OfflineTestCase
                 'authorization' => 'Bearer other',
                 'user-agent' => 'my-client',
                 'x-custom' => 'value',
+                'Accept' => 'application/json',
             ],
         ]);
 
         $this->assertSame(
-            ['authorization: Bearer other', 'user-agent: my-client', 'x-custom: value'],
+            ['authorization: Bearer other', 'user-agent: my-client', 'x-custom: value', 'Accept: application/json'],
             $this->headers($options)
         );
     }

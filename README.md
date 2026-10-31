@@ -1591,8 +1591,8 @@ Provide the options as an associative array with the following keys:
     extra headers are used. Note that Authorization and User-Agent headers are
     added automatically but may be overridden by this option. Header names are
     compared case-insensitively, so `user-agent` replaces the default
-    `User-Agent`. `Content-Type`, `Content-Length`, `Transfer-Encoding`, `Host`
-    and `Accept` are ignored.
+    `User-Agent`. `Content-Type`, `Content-Length`, `Transfer-Encoding` and
+    `Host` are ignored.
 - `proxy`: specify a proxy server URL.
 - `logger`: specify a [`PSR-3` compatible logger][PSR-3-logger] that the library
     should log messages to.

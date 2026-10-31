@@ -137,9 +137,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constants refer to it.
 
 ### Changed
-- `Content-Type`, `Content-Length`, `Transfer-Encoding`, `Host` and `Accept`
-  in the `headers` option are now ignored; previously they were sent and could
-  break the request.
+- `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host` in the
+  `headers` option are now ignored; previously they were sent and could break
+  the request.
 - HTTP 401 now raises `AuthorizationException`, like 403; previously a generic
   `DeepLException`.
 - 3xx responses now raise a `DeepLException`; previously they were parsed as
