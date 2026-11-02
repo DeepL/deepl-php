@@ -595,13 +595,12 @@ using the new functionality:
 You can create a glossary with your desired terms and name using
 `createMultilingualGlossary()`. ach glossary contains a list of dictionaries, where each dictionary applies to a single source-target language pair. Note: Glossaries are only supported for some language pairs, see
 [Listing available glossary languages](#listing-available-glossary-languages)
-for more information. The entries should be specified as a `GlossaryEntries`
-object; you can create one using `GlossaryEntries::fromEntries` using an
+for more information. The entries should be specified as a plain
 associative array with the source terms as keys and the target terms as values.
 
 Then use `createMultilingualGlossary()` with the glossary name, and its list of
 dictionaries. Each dictionary should have source and target language codes and 
-the `GlossaryEntries`. If successful, the glossary is created and stored with 
+the entries array. If successful, the glossary is created and stored with 
 your DeepL account, and a `MultilingualGlossaryInfo` object is returned
 including the ID, name, languages and entry count.
 
