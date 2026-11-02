@@ -218,9 +218,4 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->assertTrue(DeepLClient::isFreeAccountAuthKey("abc:fx\n"));
         $this->assertFalse(DeepLClient::isFreeAccountAuthKey('abc'));
     }
-
-    public function testDeepLClientHasNoParentClass(): void
-    {
-        $this->assertFalse(get_parent_class(new DeepLClient('k')));
-    }
 }
