@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- An HTTP 404 response on the v2 and v3 glossary endpoints throws
+  `NotFoundException` with the message `Not found, ...` instead of
+  `GlossaryNotFoundException` with `Glossary not found, ...`. So does
+  `getMultilingualGlossaryDictionaryEntries()` when the glossary has no
+  dictionary for the language pair. Code that catches `NotFoundException` or
+  `DeepLException` is unaffected.
+- The `split_sentences` values `'on'`, `'default'` and `'off'` are no longer
+  translated to `'1'` and `'0'`; they are sent as given, and the API rejects
+  `'on'` and `'default'`. Use `SentenceSplittingMode::ALL` (`'1'`) or
+  `SentenceSplittingMode::OFF` (`'0'`).
+- `DeepLClient::buildRephraseBodyParams()` is private. It was an internal
+  request builder; call `rephraseText()`.
+- `GlossaryUtils` is marked `@internal` and is not part of the public API. Use
+  `GlossaryEntries::fromTsv()`, `GlossaryEntries::fromEntries()` and
+  `GlossaryEntries::convertToTsv()`.
+- The protected `Translator::checkStatusCode()` no longer has the third
+  parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
+  receive `$usingGlossary`; the SDK calls it with two arguments.
+
 ### Removed
 - Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
   `getMultilingualGlossaryDictionaryEntries()` with the same arguments; it
@@ -41,25 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getTargetLanguages()` to list the supported languages.
   `LanguageCode::standardizeLanguageCode()` and `removeRegionalVariant()`
   remain.
-
-### Changed
-- An HTTP 404 response on the v2 and v3 glossary endpoints throws
-  `NotFoundException` with the message `Not found, ...` instead of
-  `GlossaryNotFoundException` with `Glossary not found, ...`. So does
-  `getMultilingualGlossaryDictionaryEntries()` when the glossary has no
-  dictionary for the language pair. Code that catches `NotFoundException` or
-  `DeepLException` is unaffected.
-- The `split_sentences` values `'on'`, `'default'` and `'off'` are no longer
-  translated to `'1'` and `'0'`; they are sent as given, and the API rejects
-  `'on'` and `'default'`. Use `SentenceSplittingMode::ALL` (`'1'`) or
-  `SentenceSplittingMode::OFF` (`'0'`).
-- `DeepLClient::buildRephraseBodyParams()` is private. It was an internal
-  request builder; call `rephraseText()`.
-- `GlossaryUtils` is marked `@internal` and is not part of the public API. Use
-  `GlossaryEntries::fromTsv()`, `GlossaryEntries::fromEntries()` and
-  `GlossaryEntries::convertToTsv()`.
-- The protected `Translator::checkStatusCode()` no longer has the third
-  parameter `$usingGlossary`. A third argument is ignored.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
