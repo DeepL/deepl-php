@@ -92,15 +92,6 @@ class HttpClientWrapper
         $this->curlHandle = $customHttpClient === null ? \curl_init() : null;
     }
 
-    public function __destruct()
-    {
-        if ($this->customHttpClient === null) {
-            if (PHP_VERSION_ID < 80000) {
-                \curl_close($this->curlHandle);
-            }
-        }
-    }
-
     /**
      * Makes API request retrying if necessary, and returns (as Promise) response.
      * @param string $method HTTP method, for example 'GET'.

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- PHP 8.0 or later is required; support for PHP 7.3 and 7.4 is dropped.
+  Users on PHP 7 must upgrade PHP before updating, or stay on the 1.x
+  releases.
 - An HTTP 404 response on the v2 and v3 glossary endpoints throws
   `NotFoundException` with the message `Not found, ...` instead of
   `GlossaryNotFoundException` with `Glossary not found, ...`. So does

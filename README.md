@@ -33,12 +33,11 @@ composer require deeplcom/deepl-php
 
 ### Requirements
 
-The library officially supports PHP 7.3 and later.
+The library officially supports PHP 8.0 and later.
 
 Starting in 2024, we will drop support for older PHP versions that have reached
 official end-of-life. You can find the PHP versions and support timelines 
 [here][php-version-list].
-To continue using this library, you should update to PHP 8.1+.
 
 ## Usage
 

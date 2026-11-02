@@ -62,8 +62,6 @@ build image:
       - PHP_VERSION: "8.2-alpine"
       - PHP_VERSION: "8.1-alpine"
       - PHP_VERSION: "8.0-alpine"
-      - PHP_VERSION: "7.4-alpine"
-      - PHP_VERSION: "7.3-alpine"
 
 # stage: check ----------------------
 
@@ -134,8 +132,6 @@ semgrep-sast:
       - PHP_VERSION: "8.2-alpine"
       - PHP_VERSION: "8.1-alpine"
       - PHP_VERSION: "8.0-alpine"
-      - PHP_VERSION: "7.4-alpine"
-      - PHP_VERSION: "7.3-alpine"
   image: ${DOCKER_IMAGE_PREFIX}_${PHP_VERSION}
   script:
     - echo $CI_PIPELINE_ID
