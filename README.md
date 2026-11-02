@@ -607,13 +607,13 @@ including the ID, name, languages and entry count.
 
 ```php
 // Create an English to German glossary with two terms:
-$entries = GlossaryEntries::fromEntries(['artist' => 'Maler', 'prize' => 'Gewinn']);
+$entries = ['artist' => 'Maler', 'prize' => 'Gewinn'];
 $myGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', $entries);
 $myGlossary = $deeplClient->createMultilingualGlossary('My glossary', [$myGlossaryDict]);
 echo "Created '$myGlossary->name' ($myGlossary->glossaryId) " .
-    "with a dictionary from $myGlossary->dictionaries[0]->sourceLang to " .
-    "$myGlossary->dictionaries[0]->targetLang containing " .
-    "$myGlossary->dictionaries[0]->entryCount entries";
+    "with a dictionary from {$myGlossary->dictionaries[0]->sourceLang} to " .
+    "{$myGlossary->dictionaries[0]->targetLang} containing " .
+    "{$myGlossary->dictionaries[0]->entryCount} entries";
 // Example: Created 'My glossary' (559192ed-8e23-...) with a dictionary from en to de containing 2 entries
 ```
 
@@ -1046,9 +1046,9 @@ echo "Created: {$styleRule->name} ({$styleRule->styleId})\n";
 
 // Create with configured rules and custom instructions
 $styleRule = $deeplClient->createStyleRule(
-    'Formal English',
+    'Calendar eras',
     'en',
-    ['style_and_tone' => ['formal_informal' => 'formal']],
+    ['dates_and_times' => ['calendar_era' => 'use_bc_and_ad']],
     [['label' => 'Formality', 'prompt' => 'Always use formal language']]
 );
 ```
@@ -1098,8 +1098,7 @@ $updated = $deeplClient->updateStyleRuleName($styleRule, 'New Name');
 
 // Replace configured rules
 $updated = $deeplClient->updateStyleRuleConfiguredRules($styleRule, [
-    'style_and_tone' => ['formal_informal' => 'informal'],
-    'punctuation' => ['oxford_comma' => 'always'],
+    'dates_and_times' => ['calendar_era' => 'use_bc_and_ad'],
 ]);
 ```
 
