@@ -8,7 +8,7 @@ namespace DeepL;
 
 /**
  * Exception thrown if an error occurs during document translation.
- * @see Translator::translateDocument()
+ * @see DeepLClient::translateDocument()
  */
 class DocumentTranslationException extends DeepLException
 {

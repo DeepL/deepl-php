@@ -31,7 +31,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->makeTranslator()->translateText('Hello', null, 'de');
+        $this->makeDeepLClient()->translateText('Hello', null, 'de');
 
         $this->assertRequest('POST', '/v2/translate');
         $this->assertSame(
@@ -47,7 +47,7 @@ class TranslateTextTest extends OfflineTestCase
             ['text' => 'Welt', 'detected_source_language' => 'EN', 'billed_characters' => 5],
         ]]);
 
-        $results = $this->makeTranslator()->translateText(['Hello', 'World'], 'en', 'de');
+        $results = $this->makeDeepLClient()->translateText(['Hello', 'World'], 'en', 'de');
 
         $this->assertSame(
             ['target_lang' => 'de', 'source_lang' => 'en', 'show_billed_characters' => true,
@@ -60,7 +60,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->makeTranslator()->translateText('Hello', null, 'de', [
+        $this->makeDeepLClient()->translateText('Hello', null, 'de', [
             TranslateTextOptions::STYLE_PROFILE => 'spid',
         ]);
 
@@ -82,7 +82,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->makeTranslator()->translateText('Hello', null, 'de', $options);
+        $this->makeDeepLClient()->translateText('Hello', null, 'de', $options);
 
         $this->assertSame(
             ['target_lang' => 'de'] + $expectedFields + ['show_billed_characters' => true, 'text' => ['Hello']],
@@ -105,7 +105,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->makeTranslator()->translateText('Hello', 'en', 'de', $options);
+        $this->makeDeepLClient()->translateText('Hello', 'en', 'de', $options);
 
         $this->assertRequest('POST', '/v2/translate');
         $this->assertSame($expectedBody, $this->jsonBody());
@@ -254,7 +254,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->makeTranslator()->translateText('Hello', $source, $target);
+        $this->makeDeepLClient()->translateText('Hello', $source, $target);
 
         $this->assertSame($expected + ['show_billed_characters' => true, 'text' => ['Hello']], $this->jsonBody());
     }
@@ -280,7 +280,7 @@ class TranslateTextTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage($message);
 
-        $this->makeTranslator()->translateText($texts, $source, 'de', $options);
+        $this->makeDeepLClient()->translateText($texts, $source, 'de', $options);
     }
 
     public static function provideRejectedArguments(): array
@@ -337,7 +337,7 @@ class TranslateTextTest extends OfflineTestCase
             'model_type_used' => 'quality_optimized',
         ]]]);
 
-        $result = $this->makeTranslator()->translateText('Hello', null, 'de');
+        $result = $this->makeDeepLClient()->translateText('Hello', null, 'de');
 
         $this->assertInstanceOf(TextResult::class, $result);
         $this->assertSame('en-GB', $result->detectedSourceLang);
@@ -349,7 +349,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(['translations' => [['text' => 'Hallo', 'detected_source_language' => 'EN']]]);
 
-        $result = $this->makeTranslator()->translateText('Hello', null, 'de');
+        $result = $this->makeDeepLClient()->translateText('Hello', null, 'de');
 
         $this->assertNull($result->billedCharacters);
         $this->assertSame('Hallo', $result->text);
@@ -364,7 +364,7 @@ class TranslateTextTest extends OfflineTestCase
             'tag_handling_version' => 'v2',
         ]]]);
 
-        $result = $this->makeTranslator()->translateText('Hello', null, 'de');
+        $result = $this->makeDeepLClient()->translateText('Hello', null, 'de');
 
         $this->assertSame(TagHandlingVersion::V2, $result->tagHandlingVersion);
     }
@@ -378,10 +378,10 @@ class TranslateTextTest extends OfflineTestCase
             'billed_characters' => 5,
             'tag_handling_version' => ['v2'],
         ]]]);
-        $translator = $this->makeTranslator();
+        $deeplClient = $this->makeDeepLClient();
 
-        $this->assertNull($translator->translateText('Hello', null, 'de')->tagHandlingVersion);
-        $malformed = $translator->translateText('Hello', null, 'de');
+        $this->assertNull($deeplClient->translateText('Hello', null, 'de')->tagHandlingVersion);
+        $malformed = $deeplClient->translateText('Hello', null, 'de');
         $this->assertNull($malformed->tagHandlingVersion);
         $this->assertSame('Hallo', $malformed->text);
         $this->assertSame(5, $malformed->billedCharacters);
@@ -391,7 +391,7 @@ class TranslateTextTest extends OfflineTestCase
     {
         $this->reply(self::REPLY);
 
-        $this->assertNull($this->makeTranslator()->translateText('Hello', null, 'de')->modelTypeUsed);
+        $this->assertNull($this->makeDeepLClient()->translateText('Hello', null, 'de')->modelTypeUsed);
     }
 
     public function testParsesInvalidUtf8AsReplacementCharacter(): void
@@ -399,7 +399,7 @@ class TranslateTextTest extends OfflineTestCase
         $this->reply("{\"translations\":[{\"text\":\"a\xFFb\",\"detected_source_language\":\"EN\"," .
             "\"billed_characters\":1}]}");
 
-        $result = $this->makeTranslator()->translateText('ab', null, 'fr');
+        $result = $this->makeDeepLClient()->translateText('ab', null, 'fr');
 
         $this->assertSame("a\u{FFFD}b", $result->text);
     }
@@ -411,7 +411,7 @@ class TranslateTextTest extends OfflineTestCase
         try {
             $this->reply(self::REPLY);
 
-            $this->makeTranslator()->translateText('Hello', null, 'de');
+            $this->makeDeepLClient()->translateText('Hello', null, 'de');
 
             $this->assertSame(0x3F, mb_substitute_character());
         } finally {
@@ -428,7 +428,7 @@ class TranslateTextTest extends OfflineTestCase
 
         $this->expectException(InvalidContentException::class);
 
-        $this->makeTranslator()->translateText($texts, null, 'de');
+        $this->makeDeepLClient()->translateText($texts, null, 'de');
     }
 
     public static function provideMalformedReplies(): array
@@ -453,6 +453,6 @@ class TranslateTextTest extends OfflineTestCase
 
         $this->expectException(InvalidContentException::class);
 
-        $this->makeTranslator()->translateText('Hello', null, 'de');
+        $this->makeDeepLClient()->translateText('Hello', null, 'de');
     }
 }

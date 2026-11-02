@@ -9,10 +9,10 @@ namespace DeepL;
 use Psr\Log\LoggerInterface;
 
 /**
- * Options that can be specified when constructing a Translator, DeepLClient or DeepLAdminClient.
+ * Options that can be specified when constructing a DeepLClient or DeepLAdminClient.
  * Please note that using any options from TranslatorOptions::IGNORED_OPTIONS_WITH_CUSTOM_HTTP_CLIENT,
  * such as proxy or timeout, are ignored when using a custom HTTP client.
- * @see Translator::__construct
+ * @see DeepLClient::__construct
  * @see DeepLAdminClient::__construct
  */
 class TranslatorOptions
@@ -111,7 +111,7 @@ class TranslatorOptions
     public const APP_INFO = 'app_info';
 
     /**
-     * Validates the options array passed to the Translator object.
+     * Validates the options array passed to the client constructor.
      */
     public static function isValid(array $options): bool
     {

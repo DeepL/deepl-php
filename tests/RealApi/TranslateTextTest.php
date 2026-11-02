@@ -13,7 +13,7 @@ class TranslateTextTest extends RealApiTestCase
 {
     public function testSendsTranslateRequestAndParsesTheResult(): void
     {
-        $result = $this->makeTranslator()->translateText(Fixtures::EXAMPLE_TEXT, null, 'de');
+        $result = $this->makeDeepLClient()->translateText(Fixtures::EXAMPLE_TEXT, null, 'de');
 
         $this->assertInstanceOf(TextResult::class, $result);
         $this->assertIsString($result->text);

@@ -10,7 +10,7 @@ class UsageTest extends RealApiTestCase
 {
     public function testSendsUsageRequestAndParsesTheUsage(): void
     {
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertStringContainsString('Usage this billing period', (string)$usage);
         $this->assertIsBool($usage->anyLimitReached());

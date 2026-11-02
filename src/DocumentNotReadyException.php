@@ -8,7 +8,7 @@ namespace DeepL;
 
 /**
  * Exception thrown when attempting to download a document that is not ready for download.
- * @see Translator::translateDocumentDownload()
+ * @see DeepLClient::translateDocumentDownload()
  */
 class DocumentNotReadyException extends DeepLException
 {

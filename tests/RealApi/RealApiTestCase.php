@@ -8,7 +8,6 @@ namespace DeepL\RealApi;
 
 use DeepL\DeepLClient;
 use DeepL\Fixtures;
-use DeepL\Translator;
 use DeepL\TranslatorOptions;
 use PHPUnit\Framework\TestCase;
 
@@ -38,11 +37,6 @@ abstract class RealApiTestCase extends TestCase
     {
         $serverUrl = getenv('DEEPL_SERVER_URL');
         return $serverUrl ? [TranslatorOptions::SERVER_URL => $serverUrl] : [];
-    }
-
-    protected function makeTranslator(): Translator
-    {
-        return new Translator(getenv('DEEPL_AUTH_KEY'), $this->clientOptions());
     }
 
     protected function makeDeepLClient(): DeepLClient

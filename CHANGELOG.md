@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GlossaryUtils` is marked `@internal` and is not part of the public API. Use
   `GlossaryEntries::fromTsv()`, `GlossaryEntries::fromEntries()` and
   `GlossaryEntries::convertToTsv()`.
-- The protected `Translator::checkStatusCode()` no longer has the third
+- The protected `DeepLClient::checkStatusCode()` no longer has the third
   parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
   receive `$usingGlossary`; the SDK calls it with two arguments.
 
@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentDeminificationException`. The DeepL API accepts larger documents;
   drop the option and upload the document unchanged.
 - Removed `GlossaryNotFoundException`. Catch `NotFoundException`.
+- Removed the `Translator` class. Its methods, the `VERSION` constant and
+  the constructor moved into `DeepLClient`, which no longer extends it.
+  Replace `new Translator(...)` with `new DeepLClient(...)` (same arguments),
+  and `Translator` type hints, `instanceof` checks, `Translator::VERSION` and
+  `Translator::isFreeAccountAuthKey()` with `DeepLClient`. Subclasses of
+  `Translator` extend `DeepLClient` instead. `TranslatorOptions` remains.
 - Removed `Translator::isAuthKeyFreeAccount()`. Use `isFreeAccountAuthKey()`,
   which also trims whitespace around the key.
 - Removed the constants `LanguageResource::RESOURCE_*` and

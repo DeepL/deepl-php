@@ -58,10 +58,6 @@ echo $result->text; // Bonjour, le monde!
 [Configuration](#configuration) for more information. Whitespace around the
 key is removed; an empty key throws a `DeepLException`.
 
-`DeepLClient` extends `Translator`, which is deprecated: construct a
-`DeepLClient` instead. The methods of `Translator` move into `DeepLClient` in
-the next major version.
-
 `DeepLClient::isFreeAccountAuthKey($authKey)` returns `true` if the key belongs
 to a DeepL API Free account (it ends with `:fx`). Without a `server_url` option,
 such a key is sent to `https://api-free.deepl.com`.
@@ -486,8 +482,8 @@ editing functionality plus support for multilingual glossaries. New methods and
 objects have been created to support interacting with these new glossaries.
 Due to this new functionality, users are recommended to utilize these
 multilingual glossary methods. However, to continue using the `v2` glossary API
-endpoints, please continue to use the existing methods `DeepLClient` inherits
-from `Translator` (e.g. `createGlossary()`, `getGlossary()`, etc).
+endpoints, please continue to use the existing `DeepLClient` methods
+`createGlossary()`, `getGlossary()`, etc.
 
 To migrate to use the new multilingual glossary methods from the current
 monolingual glossary methods, please refer to

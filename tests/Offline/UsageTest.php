@@ -19,7 +19,7 @@ class UsageTest extends OfflineTestCase
             'document_limit' => 1,
         ]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertRequest('GET', '/v2/usage');
         $this->assertTrue($usage->character->limitReached());
@@ -33,7 +33,7 @@ class UsageTest extends OfflineTestCase
     {
         $this->reply(['team_document_count' => 1, 'team_document_limit' => 1]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertNull($usage->character);
         $this->assertNull($usage->document);
@@ -75,7 +75,7 @@ class UsageTest extends OfflineTestCase
             'end_time' => '2025-06-13T09:18:42Z',
         ]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertSame(180118, $usage->character->count);
         $this->assertSame(1250000, $usage->character->limit);
@@ -104,7 +104,7 @@ class UsageTest extends OfflineTestCase
     {
         $this->reply(['character_count' => 5, 'character_limit' => 500000]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertSame(5, $usage->character->count);
         $this->assertSame(500000, $usage->character->limit);
@@ -129,7 +129,7 @@ class UsageTest extends OfflineTestCase
             'products' => [['product_type' => 'translate'], [], 'not an object'],
         ]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertSame(20, $usage->character->count);
         $this->assertSame(500000, $usage->character->limit);
@@ -150,7 +150,7 @@ class UsageTest extends OfflineTestCase
     {
         $this->reply(['character_count' => 0, 'character_limit' => 20]);
 
-        $this->assertFalse($this->makeTranslator()->getUsage()->anyLimitReached());
+        $this->assertFalse($this->makeDeepLClient()->getUsage()->anyLimitReached());
     }
 
     public function nonObjectBodies(): array
@@ -170,7 +170,7 @@ class UsageTest extends OfflineTestCase
         $this->reply($body);
 
         $this->expectException(InvalidContentException::class);
-        $this->makeTranslator()->getUsage();
+        $this->makeDeepLClient()->getUsage();
     }
 
     public function testSkipsUsageDetailsWithMissingOrNonNumericValues(): void
@@ -190,7 +190,7 @@ class UsageTest extends OfflineTestCase
             'speech_to_speech_minutes_limit' => null,
         ]);
 
-        $usage = $this->makeTranslator()->getUsage();
+        $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertNull($usage->character);
         $this->assertNull($usage->document);

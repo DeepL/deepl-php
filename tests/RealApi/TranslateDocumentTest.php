@@ -15,7 +15,7 @@ class TranslateDocumentTest extends RealApiTestCase
         $input = Fixtures::tempFile('example_document.txt', Fixtures::EXAMPLE_TEXT);
         $output = dirname($input) . '/output_document.txt';
 
-        $status = $this->makeTranslator()->translateDocument($input, $output, null, 'de');
+        $status = $this->makeDeepLClient()->translateDocument($input, $output, null, 'de');
 
         $this->assertTrue($status->ok() && $status->done());
         $this->assertGreaterThan(0, filesize($output));

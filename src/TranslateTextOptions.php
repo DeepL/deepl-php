@@ -8,7 +8,7 @@ namespace DeepL;
 
 /**
  * Options that can be specified when translating text.
- * @see Translator::translateText()
+ * @see DeepLClient::translateText()
  */
 class TranslateTextOptions
 {
@@ -72,9 +72,9 @@ class TranslateTextOptions
      *  Can also be set to a GlossaryInfo as returned by createGlossary, getGlossary or listGlossaries,
      *  or a MultilingualGlossaryInfo as returned by createMultilingualGlossary, getMultilingualGlossary or
      *  listMultilingualGlossaries.
-     *  @see \DeepL\Translator::createGlossary()
-     *  @see \DeepL\Translator::getGlossary()
-     *  @see \DeepL\Translator::listGlossaries()
+     *  @see \DeepL\DeepLClient::createGlossary()
+     *  @see \DeepL\DeepLClient::getGlossary()
+     *  @see \DeepL\DeepLClient::listGlossaries()
      *  @see \DeepL\DeepLClient::createMultilingualGlossary()
      *  @see \DeepL\DeepLClient::getMultilingualGlossary()
      *  @see \DeepL\DeepLClient::listMultilingualGlossaries()
@@ -86,9 +86,9 @@ class TranslateTextOptions
      *  getGlossary or listGlossaries, or a MultilingualGlossaryInfo as returned by
      *  createMultilingualGlossary, getMultilingualGlossary or listMultilingualGlossaries.
      *  Cannot be combined with the singular GLOSSARY option.
-     *  @see \DeepL\Translator::createGlossary()
-     *  @see \DeepL\Translator::getGlossary()
-     *  @see \DeepL\Translator::listGlossaries()
+     *  @see \DeepL\DeepLClient::createGlossary()
+     *  @see \DeepL\DeepLClient::getGlossary()
+     *  @see \DeepL\DeepLClient::listGlossaries()
      *  @see \DeepL\DeepLClient::createMultilingualGlossary()
      *  @see \DeepL\DeepLClient::getMultilingualGlossary()
      *  @see \DeepL\DeepLClient::listMultilingualGlossaries()

@@ -28,7 +28,7 @@ class HttpClientTest extends OfflineTestCase
         $this->reply(self::USAGE);
         $logger = new TestLogger();
 
-        $this->makeTranslator([TranslatorOptions::LOGGER => $logger])->getUsage();
+        $this->makeDeepLClient([TranslatorOptions::LOGGER => $logger])->getUsage();
 
         $this->assertRequestCount(2);
         $this->assertRequest('GET', '/v2/usage', 0);
@@ -52,7 +52,7 @@ class HttpClientTest extends OfflineTestCase
         $this->reply(['message' => 'no'], $status);
 
         try {
-            $this->makeTranslator()->getUsage();
+            $this->makeDeepLClient()->getUsage();
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertRequestCount(1);
@@ -74,7 +74,7 @@ class HttpClientTest extends OfflineTestCase
         $this->expectException(TooManyRequestsException::class);
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 3])->getUsage();
+            $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => 3])->getUsage();
         } finally {
             $this->assertRequestCount(4);
         }
@@ -87,7 +87,7 @@ class HttpClientTest extends OfflineTestCase
         $this->expectException(TooManyRequestsException::class);
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
+            $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
         } finally {
             $this->assertRequestCount(1);
         }
@@ -99,7 +99,7 @@ class HttpClientTest extends OfflineTestCase
         $this->mock->append(new ConnectException('connection refused', new Request('GET', 'https://api.deepl.com')));
         $this->reply(self::USAGE);
 
-        $this->makeTranslator()->getUsage();
+        $this->makeDeepLClient()->getUsage();
 
         $this->assertRequestCount(2);
     }
@@ -114,7 +114,7 @@ class HttpClientTest extends OfflineTestCase
         }
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 2])->getUsage();
+            $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => 2])->getUsage();
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
             $this->assertStringContainsString('connection refused', $exception->getMessage());
@@ -128,7 +128,7 @@ class HttpClientTest extends OfflineTestCase
         $this->mock->append(new RequestException('invalid request', new Request('GET', 'https://api.deepl.com')));
 
         try {
-            $this->makeTranslator()->getUsage();
+            $this->makeDeepLClient()->getUsage();
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
             $this->assertFalse($exception->shouldRetry);
@@ -141,7 +141,7 @@ class HttpClientTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('max_retries option must not be negative');
 
-        $this->makeTranslator([TranslatorOptions::MAX_RETRIES => -1]);
+        $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => -1]);
     }
 
     /**

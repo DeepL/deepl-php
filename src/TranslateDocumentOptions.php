@@ -8,8 +8,8 @@ namespace DeepL;
 
 /**
  * Options that can be specified when translating documents.
- * @see Translator::translateDocument()
- * @see Translator::translateDocumentUpload()
+ * @see DeepLClient::translateDocument()
+ * @see DeepLClient::translateDocumentUpload()
  */
 final class TranslateDocumentOptions
 {
@@ -40,7 +40,7 @@ final class TranslateDocumentOptions
     /** Maximum time in seconds (float) that translateDocument() waits for the translation to complete after the
      *  upload. When it expires, translateDocument() throws a DocumentTranslationException carrying the document
      *  handle, so the translation can be resumed. If unspecified, it waits without limit. Not sent to the API.
-     *  Also accepted by Translator::translateDocumentWaitUntilDone().
+     *  Also accepted by DeepLClient::translateDocumentWaitUntilDone().
      */
     public const TIMEOUT = 'timeout';
 

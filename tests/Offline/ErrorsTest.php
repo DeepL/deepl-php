@@ -27,7 +27,7 @@ class ErrorsTest extends OfflineTestCase
         $this->reply(['message' => 'the message', 'detail' => 'the detail'], $status);
 
         try {
-            $this->makeTranslator([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
+            $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => 0])->getUsage();
             $this->fail("expected a $class");
         } catch (DeepLException $exception) {
             $this->assertSame($class, get_class($exception));
@@ -56,7 +56,7 @@ class ErrorsTest extends OfflineTestCase
         $this->reply(['message' => 'too big'], 413);
 
         try {
-            $this->makeTranslator()->getUsage();
+            $this->makeDeepLClient()->getUsage();
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertSame(DeepLException::class, get_class($exception));
@@ -76,7 +76,7 @@ class ErrorsTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('Bad request, <html>Bad gateway</html>');
 
-        $this->makeTranslator()->getUsage();
+        $this->makeDeepLClient()->getUsage();
     }
 
     public function testThrowsNotFoundExceptionOnA404FromGlossaryEndpoints(): void
@@ -101,7 +101,7 @@ class ErrorsTest extends OfflineTestCase
         $this->reply(['character_count' => 1, 'character_limit' => 2], 302);
 
         try {
-            $this->makeTranslator()->getUsage();
+            $this->makeDeepLClient()->getUsage();
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertSame(DeepLException::class, get_class($exception));

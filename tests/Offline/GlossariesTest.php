@@ -26,7 +26,7 @@ class GlossariesTest extends OfflineTestCase
     {
         $this->reply(self::GLOSSARY, 201);
 
-        $this->makeTranslator()->createGlossary(
+        $this->makeDeepLClient()->createGlossary(
             'My glossary',
             'EN-us',
             'de-DE',
@@ -47,7 +47,7 @@ class GlossariesTest extends OfflineTestCase
     {
         $this->reply(self::GLOSSARY, 201);
 
-        $this->makeTranslator()->createGlossaryFromCsv('My glossary', 'en-GB', 'de', "Hello,Hallo\n");
+        $this->makeDeepLClient()->createGlossaryFromCsv('My glossary', 'en-GB', 'de', "Hello,Hallo\n");
 
         $this->assertRequest('POST', '/v2/glossaries');
         $this->assertSame([
@@ -61,15 +61,15 @@ class GlossariesTest extends OfflineTestCase
 
     public function testThrowsWhenTheNameIsEmpty(): void
     {
-        $translator = $this->makeTranslator();
+        $deeplClient = $this->makeDeepLClient();
         $entries = GlossaryEntries::fromEntries(['Hello' => 'Hallo']);
 
         foreach ([
-            function () use ($translator, $entries) {
-                $translator->createGlossary('', 'en', 'de', $entries);
+            function () use ($deeplClient, $entries) {
+                $deeplClient->createGlossary('', 'en', 'de', $entries);
             },
-            function () use ($translator) {
-                $translator->createGlossaryFromCsv('', 'en', 'de', 'Hello,Hallo');
+            function () use ($deeplClient) {
+                $deeplClient->createGlossaryFromCsv('', 'en', 'de', 'Hello,Hallo');
             },
         ] as $call) {
             try {
@@ -86,7 +86,7 @@ class GlossariesTest extends OfflineTestCase
     {
         $this->reply(self::GLOSSARY);
 
-        $info = $this->makeTranslator()->getGlossary('gid');
+        $info = $this->makeDeepLClient()->getGlossary('gid');
 
         $this->assertRequest('GET', '/v2/glossaries/gid');
         $this->assertSame(2, $info->entryCount);
@@ -97,7 +97,7 @@ class GlossariesTest extends OfflineTestCase
     {
         $this->reply(['glossaries' => [self::GLOSSARY, ['glossary_id' => 'other'] + self::GLOSSARY]]);
 
-        $glossaries = $this->makeTranslator()->listGlossaries();
+        $glossaries = $this->makeDeepLClient()->listGlossaries();
 
         $this->assertRequest('GET', '/v2/glossaries');
         $this->assertContainsOnlyInstancesOf(GlossaryInfo::class, $glossaries);
@@ -107,7 +107,7 @@ class GlossariesTest extends OfflineTestCase
     public function testParsesEntriesFromTsv(): void
     {
         $this->reply("Hello\tHallo\r\nBye\tTsch\u{FC}ss\n\n");
-        $info = $this->makeTranslator();
+        $info = $this->makeDeepLClient();
 
         $entries = $info->getGlossaryEntries('gid');
 
@@ -119,11 +119,11 @@ class GlossariesTest extends OfflineTestCase
     {
         $this->reply("Hello\tHallo");
         $this->reply('', 204);
-        $translator = $this->makeTranslator();
+        $deeplClient = $this->makeDeepLClient();
         $info = new GlossaryInfo('gid', 'n', true, 'en', 'de', new \DateTime(), 1);
 
-        $translator->getGlossaryEntries($info);
-        $translator->deleteGlossary($info);
+        $deeplClient->getGlossaryEntries($info);
+        $deeplClient->deleteGlossary($info);
 
         $this->assertRequest('GET', '/v2/glossaries/gid/entries', 0);
         $this->assertRequest('DELETE', '/v2/glossaries/gid', 1);

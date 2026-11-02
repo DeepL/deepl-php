@@ -12,7 +12,7 @@ class LanguagesTest extends RealApiTestCase
 {
     public function testSendsLanguagesRequestAndParsesSourceLanguages(): void
     {
-        $languages = $this->makeTranslator()->getSourceLanguages();
+        $languages = $this->makeDeepLClient()->getSourceLanguages();
 
         $codes = array_map(function ($language) {
             return $language->code;

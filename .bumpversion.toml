@@ -13,7 +13,7 @@ allow_dirty = false
 commit = false
 
 [[tool.bumpversion.files]]
-filename = "src/Translator.php"
+filename = "src/DeepLClient.php"
 
 [[tool.bumpversion.files]]
 filename = "VERSION"

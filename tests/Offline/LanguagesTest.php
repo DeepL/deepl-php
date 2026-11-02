@@ -47,7 +47,7 @@ class LanguagesTest extends OfflineTestCase
     {
         $this->reply(self::LANGUAGES);
 
-        $languages = $this->makeTranslator()->getSourceLanguages();
+        $languages = $this->makeDeepLClient()->getSourceLanguages();
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=translate_text');
         $this->assertSame(['DE', 'FR'], [$languages[0]->code, $languages[1]->code]);
@@ -58,7 +58,7 @@ class LanguagesTest extends OfflineTestCase
     {
         $this->reply(self::LANGUAGES);
 
-        $languages = $this->makeTranslator()->getTargetLanguages();
+        $languages = $this->makeDeepLClient()->getTargetLanguages();
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=translate_text');
         $this->assertSame(['EN-US', 'FR'], [$languages[0]->code, $languages[1]->code]);
@@ -70,7 +70,7 @@ class LanguagesTest extends OfflineTestCase
     {
         $this->reply(self::LANGUAGES);
 
-        $pairs = $this->makeTranslator()->getGlossaryLanguages();
+        $pairs = $this->makeDeepLClient()->getGlossaryLanguages();
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=glossary');
         $this->assertContainsOnlyInstancesOf(GlossaryLanguagePair::class, $pairs);
@@ -196,7 +196,7 @@ class LanguagesTest extends OfflineTestCase
         $this->reply($body);
         $this->expectException(InvalidContentException::class);
 
-        $this->makeTranslator()->getSourceLanguages();
+        $this->makeDeepLClient()->getSourceLanguages();
     }
 
     public function provideMalformedLanguages(): array

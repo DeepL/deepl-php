@@ -201,7 +201,7 @@ class ClientUtils
 
     private static function constructUserAgentString(bool $sendPlatformInfo, ?AppInfo $appInfo): string
     {
-        $libraryVersion = Translator::VERSION;
+        $libraryVersion = DeepLClient::VERSION;
         $libraryInfoStr = "deepl-php/$libraryVersion";
         try {
             if ($sendPlatformInfo) {

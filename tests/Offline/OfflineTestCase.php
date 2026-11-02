@@ -9,7 +9,6 @@ namespace DeepL\Offline;
 use DeepL\DeepLAdminClient;
 use DeepL\DeepLClient;
 use DeepL\Fixtures;
-use DeepL\Translator;
 use DeepL\TranslatorOptions;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -94,14 +93,9 @@ abstract class OfflineTestCase extends TestCase
         $this->clock->enable();
     }
 
-    protected function makeTranslator(array $options = [], string $authKey = 'k'): Translator
+    protected function makeDeepLClient(array $options = [], string $authKey = 'k'): DeepLClient
     {
-        return new Translator($authKey, $this->clientOptions($options));
-    }
-
-    protected function makeDeepLClient(array $options = []): DeepLClient
-    {
-        return new DeepLClient('k', $this->clientOptions($options));
+        return new DeepLClient($authKey, $this->clientOptions($options));
     }
 
     protected function makeAdminClient(array $options = []): DeepLAdminClient

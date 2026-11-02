@@ -8,7 +8,7 @@ namespace DeepL\Offline;
 
 use DeepL\AppInfo;
 use DeepL\DeepLException;
-use DeepL\Translator;
+use DeepL\DeepLClient;
 use DeepL\TranslatorOptions;
 
 class TranslatorOptionsTest extends OfflineTestCase
@@ -22,7 +22,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator($options)->getUsage();
+        $this->makeDeepLClient($options)->getUsage();
 
         $this->assertMatchesRegularExpression($pattern, $this->request()->getHeaderLine('User-Agent'));
     }
@@ -63,7 +63,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator()->getUsage();
+        $this->makeDeepLClient()->getUsage();
 
         $platform = php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('v') . ' ' . php_uname('m');
         $this->assertStringEndsWith(
@@ -76,7 +76,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator([TranslatorOptions::HEADERS => ['X-Custom' => 'value']], 'my-key')->getUsage();
+        $this->makeDeepLClient([TranslatorOptions::HEADERS => ['X-Custom' => 'value']], 'my-key')->getUsage();
 
         $this->assertSame('DeepL-Auth-Key my-key', $this->request()->getHeaderLine('Authorization'));
         $this->assertSame('value', $this->request()->getHeaderLine('X-Custom'));
@@ -89,7 +89,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator([TranslatorOptions::HEADERS => [$name => 'Bearer other']], 'my-key')->getUsage();
+        $this->makeDeepLClient([TranslatorOptions::HEADERS => [$name => 'Bearer other']], 'my-key')->getUsage();
 
         $this->assertSame(['Bearer other'], $this->request()->getHeader('Authorization'));
     }
@@ -107,7 +107,7 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('authKey must be a non-empty string');
 
-        $this->makeTranslator([], $authKey);
+        $this->makeDeepLClient([], $authKey);
     }
 
     public static function provideEmptyAuthKeys(): array
@@ -119,7 +119,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator([], "  my-key \n")->getUsage();
+        $this->makeDeepLClient([], "  my-key \n")->getUsage();
 
         $this->assertSame('DeepL-Auth-Key my-key', $this->request()->getHeaderLine('Authorization'));
     }
@@ -128,10 +128,10 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $translator = new Translator(" abc:fx\n", [
+        $deeplClient = new DeepLClient(" abc:fx\n", [
             TranslatorOptions::HTTP_CLIENT => $this->clientOptions([])[TranslatorOptions::HTTP_CLIENT],
         ]);
-        $translator->getUsage();
+        $deeplClient->getUsage();
 
         $this->assertSame('api-free.deepl.com', $this->request()->getUri()->getHost());
         $this->assertSame('DeepL-Auth-Key abc:fx', $this->request()->getHeaderLine('Authorization'));
@@ -144,7 +144,7 @@ class TranslatorOptionsTest extends OfflineTestCase
     {
         $this->reply(self::USAGE);
 
-        $this->makeTranslator([TranslatorOptions::SERVER_URL => $serverUrl], $authKey)->getUsage();
+        $this->makeDeepLClient([TranslatorOptions::SERVER_URL => $serverUrl], $authKey)->getUsage();
 
         $this->assertSame($expectedUrl, (string)$this->request()->getUri());
     }
@@ -167,7 +167,7 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('server_url option must be a non-empty string');
 
-        $this->makeTranslator([TranslatorOptions::SERVER_URL => $serverUrl]);
+        $this->makeDeepLClient([TranslatorOptions::SERVER_URL => $serverUrl]);
     }
 
     public static function provideInvalidServerUrls(): array
@@ -180,7 +180,7 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->reply(self::USAGE);
         $logger = new TestLogger();
 
-        $this->makeTranslator([TranslatorOptions::LOGGER => $logger])->getUsage();
+        $this->makeDeepLClient([TranslatorOptions::LOGGER => $logger])->getUsage();
 
         $this->assertStringContainsString('Request to DeepL API GET https://api.deepl.com/v2/usage', $logger->content);
         $this->assertStringContainsString(
@@ -194,7 +194,7 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->reply(self::USAGE);
         $logger = new TestLogger();
 
-        $this->makeTranslator([
+        $this->makeDeepLClient([
             TranslatorOptions::LOGGER => $logger,
             TranslatorOptions::TIMEOUT => 3.0,
             TranslatorOptions::PROXY => 'http://proxy.local',
@@ -214,8 +214,13 @@ class TranslatorOptionsTest extends OfflineTestCase
 
     public function testIsFreeAccountAuthKey(): void
     {
-        $this->assertTrue(Translator::isFreeAccountAuthKey('abc:fx'));
-        $this->assertTrue(Translator::isFreeAccountAuthKey("abc:fx\n"));
-        $this->assertFalse(Translator::isFreeAccountAuthKey('abc'));
+        $this->assertTrue(DeepLClient::isFreeAccountAuthKey('abc:fx'));
+        $this->assertTrue(DeepLClient::isFreeAccountAuthKey("abc:fx\n"));
+        $this->assertFalse(DeepLClient::isFreeAccountAuthKey('abc'));
+    }
+
+    public function testDeepLClientHasNoParentClass(): void
+    {
+        $this->assertFalse(get_parent_class(new DeepLClient('k')));
     }
 }

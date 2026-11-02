@@ -82,7 +82,7 @@ export default {
           "CHANGELOG.md",
           ".bumpversion.toml",
           "VERSION",
-          "src/Translator.php",
+          "src/DeepLClient.php",
         ],
         // The body is what .github/workflows/release.yml reads to fill the
         // GitHub release, so it must stay the changelog section.
