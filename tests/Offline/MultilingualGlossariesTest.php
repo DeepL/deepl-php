@@ -7,7 +7,6 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLException;
-use DeepL\GlossaryNotFoundException;
 use DeepL\NotFoundException;
 use DeepL\MultilingualGlossaryDictionaryEntries;
 use DeepL\MultilingualGlossaryDictionaryInfo;
@@ -349,10 +348,10 @@ class MultilingualGlossariesTest extends OfflineTestCase
             array_replace($this->dictionaryBody(), ['entries' => "Hello\tHallo\nBye\tTsch\u{FC}ss"]),
         ]]);
 
-        $dictionaries = $this->makeDeepLClient()->getMultilingualGlossaryEntries('gid', 'en', 'de');
+        $dictionary = $this->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
 
         $this->assertRequest('GET', '/v3/glossaries/gid/entries', 0, 'source_lang=en&target_lang=de');
-        $this->assertSame(['Hello' => 'Hallo', 'Bye' => "Tsch\u{FC}ss"], $dictionaries[0]->entries);
+        $this->assertSame(['Hello' => 'Hallo', 'Bye' => "Tsch\u{FC}ss"], $dictionary->entries);
     }
 
     public function testThrowsWhenTheEntriesFormatIsNotTsv(): void
@@ -362,7 +361,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('Unsupported entries_format: csv');
 
-        $this->makeDeepLClient()->getMultilingualGlossaryEntries('gid', 'en', 'de');
+        $this->makeDeepLClient()->getMultilingualGlossaryDictionaryEntries('gid', 'en', 'de');
     }
 
     public function testSendsDeleteForTheGlossaryAndForADictionaryByObjectOrLanguages(): void
@@ -387,15 +386,6 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->expectExceptionMessage('must provide dictionary or both source_lang and target_lang');
 
         $this->makeDeepLClient()->deleteMultilingualGlossaryDictionary('gid', null, 'en');
-    }
-
-    public function testThrowsGlossaryNotFoundWhenTheGlossaryDoesNotExist(): void
-    {
-        $this->reply(['message' => 'Glossary not found'], 404);
-
-        $this->expectException(GlossaryNotFoundException::class);
-
-        $this->makeDeepLClient()->getMultilingualGlossary('gone');
     }
 
     /**

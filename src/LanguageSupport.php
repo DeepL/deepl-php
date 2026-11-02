@@ -12,11 +12,6 @@ namespace DeepL;
  */
 class LanguageSupport
 {
-    /** @deprecated Use LanguageInclude::BETA instead. */
-    public const INCLUDE_BETA = LanguageInclude::BETA;
-    /** @deprecated Use LanguageInclude::EXTERNAL instead. */
-    public const INCLUDE_EXTERNAL = LanguageInclude::EXTERNAL;
-
     /** @var string BCP-47 language code, for example 'de', 'en-US', 'pt-BR', 'zh-Hans'. */
     public $code;
 

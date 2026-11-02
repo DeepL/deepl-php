@@ -21,7 +21,6 @@ class TranslateTextOptions
      *   advisable for applications where each input translation text is only one sentence.
      * - 'nonewlines' (SentenceSplittingMode::NO_NEWLINES): Input translation text will be split into
      *   sentences using only punctuation but not newlines.
-     * The aliases 'on' and 'default' (sent as '1') and 'off' (sent as '0') are deprecated.
      * @see SentenceSplittingMode
      */
     public const SPLIT_SENTENCES = 'split_sentences';
@@ -120,11 +119,6 @@ class TranslateTextOptions
      */
     public const STYLE_RULE = 'style_rule';
 
-    /** Set to string containing a style rule ID, or a StyleRuleInfo, to use the style rule for translation.
-     *  @deprecated Use STYLE_RULE instead; STYLE_ID will be removed in the next major version.
-     */
-    public const STYLE_ID = 'style_id';
-
     /** Set to string containing a style profile ID to use the style profile for translation: its
      *  glossaries, style rule lists and translation memories through one ID.
      *  Can also be set to a StyleProfile as returned by getStyleProfile or listStyleProfiles.
@@ -145,12 +139,6 @@ class TranslateTextOptions
      *  @see \DeepL\DeepLClient::listTranslationMemories()
      */
     public const TRANSLATION_MEMORY = 'translation_memory';
-
-    /** Set to string containing a translation memory ID, or a TranslationMemoryInfo, to use the translation
-     *  memory for translation.
-     *  @deprecated Use TRANSLATION_MEMORY instead; TRANSLATION_MEMORY_ID will be removed in the next major version.
-     */
-    public const TRANSLATION_MEMORY_ID = 'translation_memory_id';
 
     /** Set to an integer between 0 and 100 to control the minimum matching percentage
      *  for translation memory matches. Requires TRANSLATION_MEMORY. We recommend a minimum threshold of 75%.

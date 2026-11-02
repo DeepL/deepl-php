@@ -7,7 +7,7 @@
 namespace DeepL\RealApi;
 
 use DeepL\GlossaryEntries;
-use DeepL\GlossaryNotFoundException;
+use DeepL\NotFoundException;
 
 class GlossariesTest extends RealApiTestCase
 {
@@ -28,7 +28,7 @@ class GlossariesTest extends RealApiTestCase
 
             $fetched = $this->retryWhileMissing(function () use ($translator, $glossary) {
                 return $translator->getGlossary($glossary->glossaryId);
-            }, GlossaryNotFoundException::class);
+            }, NotFoundException::class);
             $this->assertSame($glossary->glossaryId, $fetched->glossaryId);
             $this->assertSame($name, $fetched->name);
 
@@ -45,7 +45,7 @@ class GlossariesTest extends RealApiTestCase
                 // Best effort: the original failure is more useful than a failed cleanup.
             }
         }
-        $this->expectException(GlossaryNotFoundException::class);
+        $this->expectException(NotFoundException::class);
         $translator->getGlossary($glossary->glossaryId);
     }
 }

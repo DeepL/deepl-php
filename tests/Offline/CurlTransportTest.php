@@ -111,7 +111,7 @@ class CurlTransportTest extends OfflineTestCase
     public function testSendsFormBodyAsEncodedString(): void
     {
         $options = $this->captureCurlOptions(function (DeepLClient $client) {
-            $client->getDocumentStatus(new DocumentHandle('doc1', 'key/+&='));
+            $client->translateDocumentGetStatus(new DocumentHandle('doc1', 'key/+&='));
         }, '{"status":"done"}');
 
         $this->assertTrue($options[CURLOPT_POST]);
@@ -125,7 +125,7 @@ class CurlTransportTest extends OfflineTestCase
         $file = Fixtures::tempFile('input.txt', 'Hello');
 
         $options = $this->captureCurlOptions(function (DeepLClient $client) use ($file) {
-            $client->uploadDocument($file, 'en', 'de');
+            $client->translateDocumentUpload($file, 'en', 'de');
         }, '{"document_id":"d","document_key":"k"}');
 
         $this->assertTrue($options[CURLOPT_POST]);
@@ -181,7 +181,7 @@ class CurlTransportTest extends OfflineTestCase
         $output = Fixtures::tempDir() . '/output.txt';
 
         $options = $this->captureCurlOptions(function (DeepLClient $client) use ($output) {
-            $client->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
+            $client->translateDocumentDownload(new DocumentHandle('doc1', 'k'), $output);
         }, '1', [], function (array $options) {
             $this->assertTrue(is_resource($options[CURLOPT_FILE]));
         });

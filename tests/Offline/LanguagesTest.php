@@ -12,9 +12,7 @@ use DeepL\InvalidContentException;
 use DeepL\GlossaryLanguagePair;
 use DeepL\LanguageFeature;
 use DeepL\LanguageInclude;
-use DeepL\LanguageResource;
 use DeepL\LanguageResourceName;
-use DeepL\LanguageSupport;
 
 class LanguagesTest extends OfflineTestCase
 {
@@ -84,18 +82,6 @@ class LanguagesTest extends OfflineTestCase
         );
     }
 
-    public function testSendsTheResourceAndRepeatedIncludeParameters(): void
-    {
-        $this->reply(self::LANGUAGES);
-
-        $this->makeDeepLClient()->getLanguagesForResource(
-            LanguageResource::RESOURCE_WRITE,
-            [LanguageSupport::INCLUDE_BETA, LanguageSupport::INCLUDE_EXTERNAL]
-        );
-
-        $this->assertRequest('GET', '/v3/languages', 0, 'resource=write&include=beta&include=external');
-    }
-
     public function testSendsTheLanguageResourceNameAndLanguageIncludeValues(): void
     {
         $this->reply(self::LANGUAGES);
@@ -135,7 +121,7 @@ class LanguagesTest extends OfflineTestCase
     {
         $this->reply(self::LANGUAGES);
 
-        $languages = $this->makeDeepLClient()->getLanguagesForResource(LanguageResource::RESOURCE_TRANSLATE_TEXT);
+        $languages = $this->makeDeepLClient()->getLanguagesForResource(LanguageResourceName::TRANSLATE_TEXT);
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=translate_text');
         $this->assertSame('de', $languages[0]->code);

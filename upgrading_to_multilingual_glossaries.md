@@ -21,7 +21,7 @@ use the new functions.
 | `createGlossaryFromCsv()` | `createMultilingualGlossaryFromCsv()`   | Similar functionality, but now returns a `MultilingualGlossaryInfo` object                                                                                                           |
 | `getGlossary()`           | `getMultilingualGlossary()`             | Similar functionality, but now returns `MultilingualGlossaryInfo`. Also can accept a `MultilingualGlossaryInfo` object as the glossary parameter instead of a `GlossaryInfo` object. |
 | `listGlossaries()`        | `listMultilingualGlossaries()`          | Similar functionality, but now returns an array of `MultilingualGlossaryInfo` objects.                                                                                                 |
-| `getGlossaryEntries()`    | `getMultilingualGlossaryEntries()` | Requires specifying source and target languages. Also returns a `MultilingualGlossaryDictionaryEntries[]` as the response.                                              |
+| `getGlossaryEntries()`    | `getMultilingualGlossaryDictionaryEntries()` | Requires specifying source and target languages. Returns a `MultilingualGlossaryDictionaryEntries` object.                                              |
 | `deleteGlossary()`        | `deleteMultilingualGlossary()`          | Similar functionality, but now can accept a `MultilingualGlossaryInfo` object instead of a `GlossaryInfo` object when specifying the glossary.                                       |
 
 ## 3. Model Changes
@@ -77,8 +77,8 @@ print_r($entries->getEntries()); // Array ( [artist] => Maler, [prize] => Gewinn
 
 // multilingual glossary example
 $glossaryId = '559192ed-8e23-...';
-$glossaryDicts = $deeplClient->getMultilingualGlossaryEntries($myGlossary, "en", "de");
-print_r($glossaryDicts[0]->getEntries()); // Array ( [artist] => Maler, [prize] => Gewinn)
+$glossaryDict = $deeplClient->getMultilingualGlossaryDictionaryEntries($myGlossary, "en", "de");
+print_r($glossaryDict->entries); // Array ( [artist] => Maler, [prize] => Gewinn)
 ```
 
 ### List and delete glossaries

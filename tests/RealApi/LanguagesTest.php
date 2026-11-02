@@ -6,7 +6,7 @@
 
 namespace DeepL\RealApi;
 
-use DeepL\LanguageResource;
+use DeepL\LanguageResourceName;
 
 class LanguagesTest extends RealApiTestCase
 {
@@ -36,8 +36,8 @@ class LanguagesTest extends RealApiTestCase
                 $this->assertSame($name, $feature->name);
             }
         }
-        $this->assertArrayHasKey(LanguageResource::RESOURCE_TRANSLATE_TEXT, $byName);
-        $glossary = $byName[LanguageResource::RESOURCE_TRANSLATE_TEXT]->features['glossary'];
+        $this->assertArrayHasKey(LanguageResourceName::TRANSLATE_TEXT, $byName);
+        $glossary = $byName[LanguageResourceName::TRANSLATE_TEXT]->features['glossary'];
         $this->assertTrue($glossary->needsSourceSupport);
         $this->assertTrue($glossary->needsTargetSupport);
     }

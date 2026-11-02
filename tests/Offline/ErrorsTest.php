@@ -11,7 +11,6 @@ use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\DocumentHandle;
 use DeepL\Fixtures;
-use DeepL\GlossaryNotFoundException;
 use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\QuotaExceededException;
@@ -80,23 +79,20 @@ class ErrorsTest extends OfflineTestCase
         $this->makeTranslator()->getUsage();
     }
 
-    public function testMapsGlossaryNotFoundOnlyForGlossaryRequests(): void
+    public function testThrowsNotFoundExceptionOnA404FromGlossaryEndpoints(): void
     {
         $this->reply(['message' => 'unknown'], 404);
         $this->reply(['message' => 'unknown'], 404);
-        $translator = $this->makeTranslator();
+        $client = $this->makeDeepLClient();
 
-        try {
-            $translator->getGlossary('gid');
-            $this->fail('expected a GlossaryNotFoundException');
-        } catch (DeepLException $exception) {
-            $this->assertSame(GlossaryNotFoundException::class, get_class($exception));
-        }
-        try {
-            $translator->getUsage();
-            $this->fail('expected a NotFoundException');
-        } catch (DeepLException $exception) {
-            $this->assertSame(NotFoundException::class, get_class($exception));
+        foreach (['getGlossary', 'getMultilingualGlossary'] as $method) {
+            try {
+                $client->$method('gid');
+                $this->fail('expected a NotFoundException');
+            } catch (DeepLException $exception) {
+                $this->assertSame(NotFoundException::class, get_class($exception));
+                $this->assertSame(404, $exception->httpStatusCode);
+            }
         }
     }
 
@@ -134,10 +130,10 @@ class ErrorsTest extends OfflineTestCase
         $created = '2024-01-01T00:00:00Z';
         return [
             'upload without document key' => [['document_id' => 'd'], function (DeepLClient $client) {
-                $client->uploadDocument(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
+                $client->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
             }],
             'document status without status' => [['document_id' => 'd'], function (DeepLClient $client) {
-                $client->getDocumentStatus(new DocumentHandle('d', 'k'));
+                $client->translateDocumentGetStatus(new DocumentHandle('d', 'k'));
             }],
             'glossary without creation time' => [$glossary, function (DeepLClient $client) {
                 $client->getGlossary('g');

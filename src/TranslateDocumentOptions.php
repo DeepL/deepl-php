@@ -54,22 +54,11 @@ final class TranslateDocumentOptions
      */
     public const ENABLE_WATERMARK = 'enable_watermark';
 
-    /** Set to `true` in order to use Document Minification for translation, if available.
-     *  @deprecated The DeepL API accepts larger documents, see
-     *  https://developers.deepl.com/docs/resources/usage-limits. Will be removed in the next major version.
-     */
-    public const ENABLE_DOCUMENT_MINIFICATION = 'enable_document_minification';
-
     /** Set to string containing a style rule ID to use the style rule for translation.
      *  Can also be set to a StyleRuleInfo as returned by getAllStyleRules.
      *  @see \DeepL\DeepLClient::getAllStyleRules()
      */
     public const STYLE_RULE = 'style_rule';
-
-    /** Set to string containing a style rule ID, or a StyleRuleInfo.
-     *  @deprecated Use STYLE_RULE instead; STYLE_ID will be removed in the next major version.
-     */
-    public const STYLE_ID = 'style_id';
 
     /** Set to string containing a style profile ID to use the style profile for translation: its
      *  glossaries, style rule lists and translation memories through one ID.
@@ -83,11 +72,6 @@ final class TranslateDocumentOptions
      *  @see \DeepL\DeepLClient::listTranslationMemories()
      */
     public const TRANSLATION_MEMORY = 'translation_memory';
-
-    /** Set to string containing a translation memory ID, or a TranslationMemoryInfo.
-     *  @deprecated Use TRANSLATION_MEMORY instead; TRANSLATION_MEMORY_ID will be removed in the next major version.
-     */
-    public const TRANSLATION_MEMORY_ID = 'translation_memory_id';
 
     /** Set to an integer between 0 and 100 to control the minimum matching percentage
      *  for translation memory matches. Requires TRANSLATION_MEMORY. We recommend a minimum threshold of 75%.

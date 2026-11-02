@@ -9,7 +9,6 @@ namespace DeepL\Offline;
 use DeepL\DeepLException;
 use DeepL\GlossaryEntries;
 use DeepL\GlossaryInfo;
-use DeepL\GlossaryNotFoundException;
 
 class GlossariesTest extends OfflineTestCase
 {
@@ -128,16 +127,6 @@ class GlossariesTest extends OfflineTestCase
 
         $this->assertRequest('GET', '/v2/glossaries/gid/entries', 0);
         $this->assertRequest('DELETE', '/v2/glossaries/gid', 1);
-    }
-
-    public function testThrowsGlossaryNotFoundWhenTheGlossaryDoesNotExist(): void
-    {
-        $this->reply(['message' => 'Glossary not found'], 404);
-
-        $this->expectException(GlossaryNotFoundException::class);
-        $this->expectExceptionMessage('Glossary not found, message: Glossary not found');
-
-        $this->makeTranslator()->getGlossary('gone');
     }
 
     /**

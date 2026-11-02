@@ -129,17 +129,9 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::FORMALITY => Formality::PREFER_LESS],
                 $base + ['formality' => 'prefer_less'] + $tail,
             ],
-            'split_sentences on' => [
-                [TranslateTextOptions::SPLIT_SENTENCES => 'on'],
-                $base + $tail + ['split_sentences' => '1'],
-            ],
-            'split_sentences default' => [
-                [TranslateTextOptions::SPLIT_SENTENCES => 'default'],
-                $base + $tail + ['split_sentences' => '1'],
-            ],
-            'split_sentences off' => [
+            'split_sentences former alias off sent unchanged' => [
                 [TranslateTextOptions::SPLIT_SENTENCES => 'off'],
-                $base + $tail + ['split_sentences' => '0'],
+                $base + $tail + ['split_sentences' => 'off'],
             ],
             'split_sentences nonewlines' => [
                 [TranslateTextOptions::SPLIT_SENTENCES => 'nonewlines'],
@@ -200,14 +192,6 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::STYLE_RULE => $style],
                 $base + $tail + ['style_id' => 'sid'],
             ],
-            'style id from string' => [
-                [TranslateTextOptions::STYLE_ID => 'sid'],
-                $base + $tail + ['style_id' => 'sid'],
-            ],
-            'style id from object' => [
-                [TranslateTextOptions::STYLE_ID => $style],
-                $base + $tail + ['style_id' => 'sid'],
-            ],
             'style profile id from string' => [
                 [TranslateTextOptions::STYLE_PROFILE => 'spid'],
                 $base + $tail + ['style_profile_id' => 'spid'],
@@ -216,15 +200,8 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::STYLE_PROFILE => $profile],
                 $base + $tail + ['style_profile_id' => 'spid'],
             ],
-            'translation memory from string with threshold' => [
-                [
-                    TranslateTextOptions::TRANSLATION_MEMORY_ID => 'tmid',
-                    TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD => 80,
-                ],
-                $base + $tail + ['translation_memory_id' => 'tmid', 'translation_memory_threshold' => 80],
-            ],
             'translation memory from object' => [
-                [TranslateTextOptions::TRANSLATION_MEMORY_ID => $tm],
+                [TranslateTextOptions::TRANSLATION_MEMORY => $tm],
                 $base + $tail + ['translation_memory_id' => 'tmid'],
             ],
             'translation memory option from string with threshold' => [
@@ -325,25 +302,25 @@ class TranslateTextTest extends OfflineTestCase
             'glossary_ids entry of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::GLOSSARY_IDS => [42]], 'Each glossary_ids entry',
             ],
-            'style_id of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::STYLE_ID => 5], 'style_id must be',
+            'style_rule of the wrong type' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_RULE => 5], 'style_rule must be',
             ],
             'style_profile_id of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE => 5], 'style_profile must be',
             ],
-            'translation_memory_id of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY_ID => 5], 'translation_memory_id must be',
+            'translation_memory of the wrong type' => [
+                'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY => 5], 'translation_memory must be',
             ],
             'threshold without translation memory' => [
                 'Hello',
                 'en',
                 [TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD => 80],
-                'requires translation_memory_id',
+                'requires translation_memory',
             ],
             'threshold above 100' => [
                 'Hello', 'en',
                 [
-                    TranslateTextOptions::TRANSLATION_MEMORY_ID => 'tm',
+                    TranslateTextOptions::TRANSLATION_MEMORY => 'tm',
                     TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD => 101,
                 ],
                 'between 0 and 100',

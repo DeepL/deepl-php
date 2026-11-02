@@ -5,6 +5,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Removed
+- Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
+  `getMultilingualGlossaryDictionaryEntries()` with the same arguments; it
+  returns the `MultilingualGlossaryDictionaryEntries` instead of a one-element
+  array.
+- Removed `TranslateTextOptions::STYLE_ID` and
+  `TranslateTextOptions::TRANSLATION_MEMORY_ID` (`style_id`,
+  `translation_memory_id`). Use `STYLE_RULE` and `TRANSLATION_MEMORY`, which
+  take the same values.
+- Removed `TranslateDocumentOptions::STYLE_ID` and
+  `TranslateDocumentOptions::TRANSLATION_MEMORY_ID`. Use `STYLE_RULE` and
+  `TRANSLATION_MEMORY`.
+- Removed the document translation step methods `uploadDocument()`,
+  `getDocumentStatus()`, `downloadDocument()` and
+  `waitUntilDocumentTranslationComplete()`. Use `translateDocumentUpload()`,
+  `translateDocumentGetStatus()`, `translateDocumentDownload()` and
+  `translateDocumentWaitUntilDone()`. `translateDocument()` no longer calls
+  subclass overrides of the removed methods; override the new ones instead.
+- Removed document minification: the `enable_document_minification` option
+  (`TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION`) and the classes
+  `DocumentMinifier`, `DocumentMinificationException` and
+  `DocumentDeminificationException`. The DeepL API accepts larger documents;
+  drop the option and upload the document unchanged.
+- Removed `GlossaryNotFoundException`. Catch `NotFoundException`.
+- Removed `Translator::isAuthKeyFreeAccount()`. Use `isFreeAccountAuthKey()`,
+  which also trims whitespace around the key.
+- Removed the constants `LanguageResource::RESOURCE_*` and
+  `LanguageSupport::INCLUDE_BETA` / `INCLUDE_EXTERNAL`. Use the
+  `LanguageResourceName` and `LanguageInclude` constants of the same names
+  without the prefix, for example `LanguageResourceName::TRANSLATE_TEXT`.
+- Removed the language code constants of `LanguageCode`, for example
+  `LanguageCode::GERMAN`. Pass the language code string, for example `'de'`,
+  and use `getLanguagesForResource()`, `getSourceLanguages()` or
+  `getTargetLanguages()` to list the supported languages.
+  `LanguageCode::standardizeLanguageCode()` and `removeRegionalVariant()`
+  remain.
+
+### Changed
+- An HTTP 404 response on the v2 and v3 glossary endpoints throws
+  `NotFoundException` with the message `Not found, ...` instead of
+  `GlossaryNotFoundException` with `Glossary not found, ...`. So does
+  `getMultilingualGlossaryDictionaryEntries()` when the glossary has no
+  dictionary for the language pair. Code that catches `NotFoundException` or
+  `DeepLException` is unaffected.
+- The `split_sentences` values `'on'`, `'default'` and `'off'` are no longer
+  translated to `'1'` and `'0'`; they are sent as given, and the API rejects
+  `'on'` and `'default'`. Use `SentenceSplittingMode::ALL` (`'1'`) or
+  `SentenceSplittingMode::OFF` (`'0'`).
+- `DeepLClient::buildRephraseBodyParams()` is private. It was an internal
+  request builder; call `rephraseText()`.
+- `GlossaryUtils` is marked `@internal` and is not part of the public API. Use
+  `GlossaryEntries::fromTsv()`, `GlossaryEntries::fromEntries()` and
+  `GlossaryEntries::convertToTsv()`.
+- The protected `Translator::checkStatusCode()` no longer has the third
+  parameter `$usingGlossary`. A third argument is ignored.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

@@ -33,9 +33,21 @@ class Fixtures
     public static function removeTempDirs(): void
     {
         foreach (self::$tempDirs as $dir) {
-            DocumentMinifier::recursivelyDeleteDirectory($dir);
+            self::deleteRecursively($dir);
         }
         self::$tempDirs = [];
+    }
+
+    private static function deleteRecursively(string $path): void
+    {
+        if (is_dir($path) && !is_link($path)) {
+            foreach (array_diff(scandir($path), ['.', '..']) as $entry) {
+                self::deleteRecursively("$path/$entry");
+            }
+            rmdir($path);
+        } else {
+            unlink($path);
+        }
     }
 
     /** Writes a file into a new temporary directory and returns its path. */

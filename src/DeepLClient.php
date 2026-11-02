@@ -8,9 +8,6 @@ namespace DeepL;
 
 class DeepLClient extends Translator
 {
-    /** @var bool[] Deprecation messages already triggered in this process, by key. */
-    private static $multilingualDeprecationsTriggered = [];
-
     public function __construct(string $authKey, array $options = [])
     {
         parent::__construct($authKey, $options);
@@ -176,7 +173,7 @@ class DeepLClient extends Translator
             '/v3/glossaries',
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseJson($content);
     }
@@ -279,7 +276,7 @@ class DeepLClient extends Translator
             self::multilingualGlossaryPath($glossary),
             [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseJson($content);
     }
@@ -339,7 +336,7 @@ class DeepLClient extends Translator
             self::multilingualGlossaryPath($glossary) . '/dictionaries',
             [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryDictionaryInfo::parseJson($content);
     }
@@ -354,7 +351,7 @@ class DeepLClient extends Translator
     public function getMultilingualGlossary($glossary): MultilingualGlossaryInfo
     {
         $response = $this->client->sendRequestWithBackoff('GET', self::multilingualGlossaryPath($glossary));
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseJson($content);
     }
@@ -368,7 +365,7 @@ class DeepLClient extends Translator
     public function listMultilingualGlossaries(): array
     {
         $response = $this->client->sendRequestWithBackoff('GET', '/v3/glossaries');
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryInfo::parseListJson($content);
     }
@@ -380,7 +377,7 @@ class DeepLClient extends Translator
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
      * @return MultilingualGlossaryDictionaryEntries The language pair and entries of the dictionary.
-     * @throws GlossaryNotFoundException If the glossary or the dictionary does not exist.
+     * @throws NotFoundException If the glossary or the dictionary does not exist.
      * @throws DeepLException
      */
     public function getMultilingualGlossaryDictionaryEntries(
@@ -390,29 +387,9 @@ class DeepLClient extends Translator
     ): MultilingualGlossaryDictionaryEntries {
         $dictionaries = $this->requestMultilingualGlossaryEntries($glossary, $sourceLang, $targetLang);
         if (count($dictionaries) === 0) {
-            throw new GlossaryNotFoundException('Glossary dictionary not found');
+            throw new NotFoundException('Glossary dictionary not found');
         }
         return $dictionaries[0];
-    }
-
-    /**
-     * Retrieves the dictionary entries for a given source and target language in the given glossary.
-     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
-     *  retrieve entries of.
-     * @param string $sourceLang Language code of the glossary source terms.
-     * @param string $targetLang Language code of the glossary target terms.
-     * @return MultilingualGlossaryDictionaryEntries[] The entries stored in the dictionary.
-     * @throws DeepLException
-     * @deprecated Use getMultilingualGlossaryDictionaryEntries(), which returns the dictionary itself.
-     */
-    public function getMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
-    {
-        self::triggerMultilingualDeprecation(
-            'getMultilingualGlossaryEntries',
-            'DeepLClient::getMultilingualGlossaryEntries() is deprecated, use ' .
-            'DeepLClient::getMultilingualGlossaryDictionaryEntries() instead.'
-        );
-        return $this->requestMultilingualGlossaryEntries($glossary, $sourceLang, $targetLang);
     }
 
     /**
@@ -425,7 +402,7 @@ class DeepLClient extends Translator
         $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
         $url = self::multilingualGlossaryPath($glossary) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return MultilingualGlossaryDictionaryEntries::parseJsonList($content);
     }
@@ -439,7 +416,7 @@ class DeepLClient extends Translator
     public function deleteMultilingualGlossary($glossary): void
     {
         $response = $this->client->sendRequestWithBackoff('DELETE', self::multilingualGlossaryPath($glossary));
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
     }
 
     /**
@@ -471,7 +448,7 @@ class DeepLClient extends Translator
         $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
         $url = self::multilingualGlossaryPath($glossary) . "/dictionaries?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
     }
 
     /**
@@ -526,14 +503,6 @@ class DeepLClient extends Translator
             $params[$key] = $value;
         }
         return json_encode((object)$params);
-    }
-
-    private static function triggerMultilingualDeprecation(string $key, string $message): void
-    {
-        if (!isset(self::$multilingualDeprecationsTriggered[$key])) {
-            self::$multilingualDeprecationsTriggered[$key] = true;
-            @trigger_error($message, E_USER_DEPRECATED);
-        }
     }
 
     /**
@@ -751,9 +720,8 @@ class DeepLClient extends Translator
      * @param string|null $tone Tone option, or null if not specified
      * @return array Associative array of HTTP parameters
      * @throws DeepLException
-     * @deprecated Internal; will be made private in the next major version.
      */
-    public function buildRephraseBodyParams(
+    private function buildRephraseBodyParams(
         ?string $targetLang = null,
         ?string $style = null,
         ?string $tone = null

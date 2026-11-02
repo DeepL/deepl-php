@@ -65,8 +65,7 @@ the next major version.
 
 `DeepLClient::isFreeAccountAuthKey($authKey)` returns `true` if the key belongs
 to a DeepL API Free account (it ends with `:fx`). Without a `server_url` option,
-such a key is sent to `https://api-free.deepl.com`. It replaces the deprecated
-`isAuthKeyFreeAccount()`, which keeps working.
+such a key is sent to `https://api-free.deepl.com`.
 
 #### Errors
 
@@ -75,9 +74,7 @@ subclasses tell the cause apart:
 
 - `AuthorizationException`: HTTP 401 or 403, the authentication key is invalid
   or not authorized.
-- `NotFoundException`: HTTP 404. On glossary requests the deprecated subclass
-  `GlossaryNotFoundException` is thrown until the next major version; catch
-  `NotFoundException` instead.
+- `NotFoundException`: HTTP 404, on every endpoint including glossaries.
 - `QuotaExceededException`: HTTP 456, the quota is exceeded.
 - `TooManyRequestsException`: HTTP 429 after all retries.
 - `DocumentNotReadyException`: HTTP 503 when downloading a document.
@@ -112,8 +109,8 @@ variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. A target
 language without a variant translates to its default variant, for example `'en'`
 to `'en-US'` and `'pt'` to `'pt-PT'`; specify the variant to choose it
 explicitly. The source language also accepts `null`, to enable auto-detection of
-the source language. Pass language codes as plain strings; the `LanguageCode`
-constants are deprecated and will be removed in the next major version.
+the source language. Pass language codes as plain strings; to list the
+supported languages, see [Listing available languages](#listing-available-languages).
 
 The last argument to `translateText()` is optional, and specifies extra
 translation options, see [Text translation options](#text-translation-options)
@@ -169,8 +166,6 @@ using the following keys:
         one sentence.
     -   `'nonewlines'` (`SentenceSplittingMode::NO_NEWLINES`): input text will be
         split into sentences using punctuation but not newlines.
-    -   The aliases `'on'` and `'default'` (sent as `'1'`) and `'off'` (sent as
-        `'0'`) are deprecated.
 -   `preserve_formatting`: controls automatic-formatting-correction. Set to `true`
     to prevent automatic-correction of formatting, default: `false`.
 -   `formality`: controls whether translations should lean toward informal or
@@ -207,7 +202,6 @@ using the following keys:
     combined with the singular `glossary` option.
 -   `style_rule`: specifies a style rule to use with translation, either as a string
     containing the ID of the style rule, or a `StyleRuleInfo` object.
--   `style_id`: deprecated alias of `style_rule`, removed in the next major version.
 -   `style_profile`: specifies a style profile to use with translation, either as
     a string containing the ID of the style profile, or a `StyleProfile` object. The
     profile applies its linked glossaries, style rule lists and translation memories;
@@ -217,8 +211,6 @@ using the following keys:
 -   `translation_memory`: specifies a translation memory to use with translation,
     either as a string containing the ID of the translation memory, or a
     `TranslationMemoryInfo` object.
--   `translation_memory_id`: deprecated alias of `translation_memory`, removed in
-    the next major version.
 -   `translation_memory_threshold`: an integer from 0 to 100 controlling the
     minimum matching percentage for translation memory matches. We recommend
     a minimum threshold of 75%.
@@ -434,11 +426,6 @@ translation; `done()` and `ok()` tell whether it succeeded and whether it has
 not failed. The `DocumentStatusCode` class defines constants for the `status`
 values `queued`, `translating`, `done` and `error`; the API may add others.
 
-The methods `uploadDocument()`, `getDocumentStatus()`,
-`waitUntilDocumentTranslationComplete()` and `downloadDocument()` are
-deprecated: they keep working and raise a silenced `E_USER_DEPRECATED` notice
-once per process, and will be removed in the next major version.
-
 #### Document translation options
 
 Provide options to the `translateDocument` function as an associative array,
@@ -453,8 +440,6 @@ using the following keys:
 -   `style_rule`: same as in [Text translation options](#text-translation-options).
     Specify a style rule to use for the document translation, either as a style rule
     ID string or a `StyleRuleInfo` object.
--   `style_id`: **deprecated**, use `style_rule`. Raises an `E_USER_DEPRECATED` notice
-    once per process and will be removed in the next major version.
 -   `style_profile`: same as in [Text translation options](#text-translation-options).
     Specify a style profile to use for the document translation, either as a style
     profile ID string or a `StyleProfile` object. An unknown style profile is not
@@ -463,8 +448,6 @@ using the following keys:
 -   `translation_memory`: same as in [Text translation options](#text-translation-options).
     Specify a translation memory to use for the document translation, either as a
     translation memory ID string or a `TranslationMemoryInfo` object.
--   `translation_memory_id`: **deprecated**, use `translation_memory`. Raises an
-    `E_USER_DEPRECATED` notice once per process and will be removed in the next major version.
 -   `translation_memory_threshold`: same as in [Text translation options](#text-translation-options).
     An integer from 0 to 100 controlling the minimum matching percentage for translation
     memory matches.
@@ -477,21 +460,10 @@ using the following keys:
     unspecified, it waits without limit. Not sent to the API.
 -   `output_format`: a string containing the file extension of the desired format of the
     translated document, for example `'docx'`. If unspecified, the translated document is in
-    the same format as the input file. If it differs from the input file's format, document
-    minification is not applied.
+    the same format as the input file.
 -   `enable_watermark`: a `bool` value. If set to `true`, a "Translated by DeepL" watermark is
     added to the translated document. Only supported for `docx` and `pdf` output; for other
     output formats the API ignores it. If unset, the parameter is not sent.
--   `enable_document_minification`: a `bool` value. **Deprecated**, will be removed in the next
-    major version: the DeepL API accepts larger documents (see
-    [Usage limits](https://developers.deepl.com/docs/resources/usage-limits)). If set to `true`,
-    the library tries to minify a document before translating it through the API, sending a
-    smaller document if the file contains a lot of media. Supported for `pptx` and `docx` files;
-    other files are uploaded unchanged. Setting it raises an `E_USER_DEPRECATED` notice once per
-    process. See also [Document minification](#document-minification). Note that this only works
-    in the high-level `translateDocument` method, not `translateDocumentUpload`. However, the behavior can
-    be emulated by creating a new `DocumentMinifier` object and calling the minifier's methods in
-    between.
 -   `extra_body_parameters`: same as in [Text translation options](#text-translation-options).
     The document request is a multipart form, so booleans are sent as `'true'`/`'false'`,
     arrays and objects as their JSON encoding, and other values as strings.
@@ -500,71 +472,6 @@ The `translateDocumentUpload` function also supports these options, except `time
 
 The `TranslateDocumentOptions` class defines constants for the options above,
 for example `TranslateDocumentOptions::FORMALITY` is defined as `'formality'`.
-
-#### Document minification
-
-> **Deprecated:** document minification (`TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION`,
-> `DocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`)
-> will be removed in the next major version. The DeepL API accepts larger documents; see
-> [Usage limits](https://developers.deepl.com/docs/resources/usage-limits) for the current
-> file size limits.
-
-In some contexts, one can end up with large document files (e.g. PowerPoint presentations
-or Word files with many contributors, especially in a larger organization). If such a file
-exceeds the API's file size limits (see
-[Usage limits](https://developers.deepl.com/docs/resources/usage-limits)) and most of its
-size comes from media included in the document (e.g. images, videos, animations), document
-minification can help.
-In this case, the library will create a temporary directory to extract the document into,
-replace the large media with tiny placeholders, create a minified document, translate that
-via the API, and re-insert the original media into the original file. Please note that this
-requires a bit of additional (temporary) disk space, we recommend at least 2x the file size
-of the document to be translated.
-
-To use document minification, simply pass the option to the `translateDocument` function:
-
-```php
-$deeplClient->translateDocument(
-    $inFile, $outFile, 'en', 'de', [TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION => true]
-);
-```
-
-In order to use document minification with the lower-level `translateDocumentUpload`,
-`translateDocumentWaitUntilDone` and `translateDocumentDownload` methods as well as other details,
-see the `DocumentMinifier` class.
-
-Currently supported document types for minification:
-
-1. `pptx`
-2. `docx`
-
-Currently supported media types for minification:
-
-1. `png`
-2. `jpg`
-3. `jpeg`
-4. `emf`
-5. `bmp`
-6. `tiff`
-7. `wdp`
-8. `svg`
-9. `gif`
-10. `mp4`
-11. `asf`
-12. `avi`
-13. `m4v`
-14. `mpg`
-15. `mpeg`
-16. `wmv`
-17. `mov`
-18. `aiff`
-19. `au`
-20. `mid`
-21. `midi`
-22. `mp3`
-23. `m4a`
-24. `wav`
-25. `wma`
 
 
 ### Glossaries
@@ -694,17 +601,12 @@ To list the entries of a dictionary in a stored glossary, use
 `getMultilingualGlossaryDictionaryEntries()` with either the
 `MultilingualGlossaryInfo` object or glossary ID, and the source and target
 language of the dictionary. It returns a `MultilingualGlossaryDictionaryEntries`
-object, or throws a `NotFoundException` (currently its deprecated subclass
-`GlossaryNotFoundException`) if the
-glossary has no such dictionary:
+object, or throws a `NotFoundException` if the glossary has no such dictionary:
 
 ```php
 $glossaryDict = $deeplClient->getMultilingualGlossaryDictionaryEntries($myGlossary, "en", "de");
 print_r($glossaryDict->entries); // Array ( [artist] => Maler, [prize] => Gewinn)
 ```
-
-`getMultilingualGlossaryEntries()` is deprecated: it takes the same arguments
-and returns the dictionary in a one-element array.
 
 #### Editing a glossary
 
@@ -988,9 +890,7 @@ for example `[LanguageInclude::BETA]`, is also accepted.
 The `LanguageResourceName` constants define the resource values
 (`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`, `GLOSSARY`, `VOICE`, `WRITE`,
 `STYLE_RULES`, `TRANSLATION_MEMORY`) and the `LanguageInclude` constants the
-include values (`BETA`, `EXTERNAL`); other strings are also accepted. The older
-`LanguageResource::RESOURCE_*` and `LanguageSupport::INCLUDE_*` constants are
-deprecated aliases.
+include values (`BETA`, `EXTERNAL`); other strings are also accepted.
 
 To discover which features each resource exposes (and whether a feature needs
 source/target language support), use `getLanguageResources()`:

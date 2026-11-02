@@ -126,11 +126,8 @@ class ClientUtils
      * Checks the HTTP status code, and in case of failure, throws an exception with diagnostic information.
      * @throws DeepLException
      */
-    public static function checkStatusCode(
-        array $response,
-        bool $inDocumentDownload = false,
-        bool $usingGlossary = false
-    ): void {
+    public static function checkStatusCode(array $response, bool $inDocumentDownload = false): void
+    {
         list($statusCode, $content) = $response;
 
         if (200 <= $statusCode && $statusCode < 300) {
@@ -152,7 +149,7 @@ class ClientUtils
         }
 
         throw self::withStatus(
-            self::exceptionForStatus($statusCode, $message, $content, $inDocumentDownload, $usingGlossary),
+            self::exceptionForStatus($statusCode, $message, $content, $inDocumentDownload),
             $statusCode
         );
     }
@@ -174,8 +171,7 @@ class ClientUtils
         int $statusCode,
         string $message,
         $content,
-        bool $inDocumentDownload,
-        bool $usingGlossary
+        bool $inDocumentDownload
     ): DeepLException {
         switch ($statusCode) {
             case 401:
@@ -184,9 +180,6 @@ class ClientUtils
             case 456:
                 return new QuotaExceededException("Quota for this billing period has been exceeded$message");
             case 404:
-                if ($usingGlossary) {
-                    return new GlossaryNotFoundException("Glossary not found$message");
-                }
                 return new NotFoundException("Not found$message");
             case 400:
                 return new DeepLException("Bad request$message");

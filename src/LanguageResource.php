@@ -12,21 +12,6 @@ namespace DeepL;
  */
 class LanguageResource
 {
-    /** @deprecated Use LanguageResourceName::TRANSLATE_TEXT instead. */
-    public const RESOURCE_TRANSLATE_TEXT = LanguageResourceName::TRANSLATE_TEXT;
-    /** @deprecated Use LanguageResourceName::TRANSLATE_DOCUMENT instead. */
-    public const RESOURCE_TRANSLATE_DOCUMENT = LanguageResourceName::TRANSLATE_DOCUMENT;
-    /** @deprecated Use LanguageResourceName::GLOSSARY instead. */
-    public const RESOURCE_GLOSSARY = LanguageResourceName::GLOSSARY;
-    /** @deprecated Use LanguageResourceName::VOICE instead. */
-    public const RESOURCE_VOICE = LanguageResourceName::VOICE;
-    /** @deprecated Use LanguageResourceName::WRITE instead. */
-    public const RESOURCE_WRITE = LanguageResourceName::WRITE;
-    /** @deprecated Use LanguageResourceName::STYLE_RULES instead. */
-    public const RESOURCE_STYLE_RULES = LanguageResourceName::STYLE_RULES;
-    /** @deprecated Use LanguageResourceName::TRANSLATION_MEMORY instead. */
-    public const RESOURCE_TRANSLATION_MEMORY = LanguageResourceName::TRANSLATION_MEMORY;
-
     /** @var string Name of the resource, for example 'translate_text'; see {@see LanguageResourceName}. */
     public $resource;
 

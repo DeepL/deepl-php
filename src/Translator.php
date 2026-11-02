@@ -32,30 +32,6 @@ class Translator
     protected $storageClient;
 
     /**
-     * Whether the enable_document_minification deprecation notice was already raised in this process.
-     * @var bool
-     */
-    private static $minificationDeprecationTriggered = false;
-
-    /**
-     * Whether the isAuthKeyFreeAccount() deprecation notice was already raised in this process.
-     * @var bool
-     */
-    private static $isAuthKeyFreeAccountDeprecationTriggered = false;
-
-    /**
-     * Deprecation notices for options and methods already raised in this process, by key.
-     * @var array<string, bool>
-     */
-    private static $deprecationsTriggered = [];
-
-    /**
-     * Whether a class overrides a deprecated document method, by class and method name.
-     * @var array<string, array<string, bool>>
-     */
-    private static $documentMethodOverrides = [];
-
-    /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
@@ -277,48 +253,12 @@ class Translator
             if (!is_readable($inputFile)) {
                 throw new DeepLException("Failed to read input file $inputFile");
             }
-            $minifier = null;
-            // The media removed by minification can only be reinserted into a file of the input's format.
-            $outputFormat = $options[TranslateDocumentOptions::OUTPUT_FORMAT] ?? null;
-            $enableMinification = $options[TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION] ?? false;
-            if ($enableMinification && !self::$minificationDeprecationTriggered) {
-                self::$minificationDeprecationTriggered = true;
-                @trigger_error(
-                    'The enable_document_minification option is deprecated and will be removed in the next major ' .
-                    'version. The DeepL API accepts larger documents; see ' .
-                    'https://developers.deepl.com/docs/resources/usage-limits.',
-                    E_USER_DEPRECATED
-                );
-            }
-            $willMinify = $enableMinification &&
-                DocumentMinifier::canMinifyFile($inputFile) &&
-                ($outputFormat === null ||
-                    strcasecmp($outputFormat, pathinfo($inputFile, PATHINFO_EXTENSION)) === 0);
-            $fileToUpload = $inputFile;
-            if ($willMinify) {
-                $minifier = new DocumentMinifier();
-                $minifier->minifyDocument($inputFile, true);
-                $fileToUpload = $minifier->getMinifiedDocFile($inputFile);
-            }
-            // Subclasses overriding the deprecated step methods keep having them called.
-            $handle = $this->overridesDocumentMethod('uploadDocument')
-                ? $this->uploadDocument($fileToUpload, $sourceLang, $targetLang, $options)
-                : $this->translateDocumentUpload($fileToUpload, $sourceLang, $targetLang, $options);
-            $status = $this->overridesDocumentMethod('waitUntilDocumentTranslationComplete')
-                ? $this->waitUntilDocumentTranslationComplete($handle)
-                : $this->translateDocumentWaitUntilDone(
-                    $handle,
-                    [TranslateDocumentOptions::TIMEOUT => $options[TranslateDocumentOptions::TIMEOUT] ?? null]
-                );
-            if ($this->overridesDocumentMethod('downloadDocument')) {
-                $this->downloadDocument($handle, $outputFile);
-            } else {
-                $this->translateDocumentDownload($handle, $outputFile);
-            }
-            if ($willMinify) {
-                // Translated minified file is at `$outputFile`. Reinsert media (deminify) before returning
-                $minifier->deminifyDocument($outputFile, $outputFile, true);
-            }
+            $handle = $this->translateDocumentUpload($inputFile, $sourceLang, $targetLang, $options);
+            $status = $this->translateDocumentWaitUntilDone(
+                $handle,
+                [TranslateDocumentOptions::TIMEOUT => $options[TranslateDocumentOptions::TIMEOUT] ?? null]
+            );
+            $this->translateDocumentDownload($handle, $outputFile);
             return $status;
         } catch (\Throwable $error) {
             if (file_exists($outputFile)) {
@@ -332,30 +272,6 @@ class Translator
             }
             throw $exception;
         }
-    }
-
-    /**
-     * Uploads specified document to DeepL to translate into target language, and returns handle associated with the
-     * document.
-     * @param string $inputFile String containing file path of document to be translated.
-     * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
-     * @param string $targetLang Language code of language to translate into.
-     * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
-     * @return DocumentHandle Handle associated with the in-progress document translation.
-     * @throws DeepLException
-     * @deprecated Use translateDocumentUpload() instead; uploadDocument() will be removed in the next major version.
-     */
-    public function uploadDocument(
-        string $inputFile,
-        ?string $sourceLang,
-        string $targetLang,
-        array $options = []
-    ): DocumentHandle {
-        self::triggerDeprecation(
-            'uploadDocument',
-            'Translator::uploadDocument() is deprecated, use Translator::translateDocumentUpload() instead.'
-        );
-        return $this->translateDocumentUpload($inputFile, $sourceLang, $targetLang, $options);
     }
 
     /**
@@ -374,19 +290,6 @@ class Translator
         string $targetLang,
         array $options = []
     ): DocumentHandle {
-        if (isset($options[TranslateDocumentOptions::STYLE_ID])) {
-            self::triggerDeprecation(
-                'document:' . TranslateDocumentOptions::STYLE_ID,
-                'TranslateDocumentOptions::STYLE_ID is deprecated, use TranslateDocumentOptions::STYLE_RULE instead.'
-            );
-        }
-        if (isset($options[TranslateDocumentOptions::TRANSLATION_MEMORY_ID])) {
-            self::triggerDeprecation(
-                'document:' . TranslateDocumentOptions::TRANSLATION_MEMORY_ID,
-                'TranslateDocumentOptions::TRANSLATION_MEMORY_ID is deprecated, use ' .
-                'TranslateDocumentOptions::TRANSLATION_MEMORY instead.'
-            );
-        }
         $params = $this->buildBodyParams(
             $sourceLang,
             $targetLang,
@@ -447,23 +350,6 @@ class Translator
      * @param DocumentHandle $handle Document handle associated with document.
      * @return DocumentStatus The document translation status.
      * @throws DeepLException
-     * @deprecated Use translateDocumentGetStatus() instead; getDocumentStatus() will be removed in the next major
-     *     version.
-     */
-    public function getDocumentStatus(DocumentHandle $handle): DocumentStatus
-    {
-        self::triggerDeprecation(
-            'getDocumentStatus',
-            'Translator::getDocumentStatus() is deprecated, use Translator::translateDocumentGetStatus() instead.'
-        );
-        return $this->translateDocumentGetStatus($handle);
-    }
-
-    /**
-     * Retrieves the status of the document translation associated with the given document handle.
-     * @param DocumentHandle $handle Document handle associated with document.
-     * @return DocumentStatus The document translation status.
-     * @throws DeepLException
      */
     public function translateDocumentGetStatus(DocumentHandle $handle): DocumentStatus
     {
@@ -476,23 +362,6 @@ class Translator
         $this->checkStatusCode($response);
         list(, $content) = $response;
         return new DocumentStatus($content);
-    }
-
-    /**
-     * Downloads the translated document associated with the given document handle to the specified output file path.
-     * @param DocumentHandle $handle Document handle associated with document.
-     * @param string $outputFile String containing file path to create translated document.
-     * @throws DeepLException
-     * @deprecated Use translateDocumentDownload() instead; downloadDocument() will be removed in the next major
-     *     version.
-     */
-    public function downloadDocument(DocumentHandle $handle, string $outputFile): void
-    {
-        self::triggerDeprecation(
-            'downloadDocument',
-            'Translator::downloadDocument() is deprecated, use Translator::translateDocumentDownload() instead.'
-        );
-        $this->translateDocumentDownload($handle, $outputFile);
     }
 
     /**
@@ -536,28 +405,6 @@ class Translator
 
     /**
      * Returns when the given document translation completes, or throws an exception if there was an error
-     * communicating with the DeepL API or the document translation failed.
-     * translateDocument() calls this method instead of translateDocumentWaitUntilDone() if a subclass overrides
-     * it; an override receives no timeout, so TranslateDocumentOptions::TIMEOUT does not apply then.
-     * @param DocumentHandle $handle Handle to the document translation.
-     * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
-     *     property to check how many characters were billed for the document.
-     * @throws DeepLException
-     * @deprecated Use translateDocumentWaitUntilDone() instead; waitUntilDocumentTranslationComplete() will be
-     *     removed in the next major version.
-     */
-    public function waitUntilDocumentTranslationComplete(DocumentHandle $handle): DocumentStatus
-    {
-        self::triggerDeprecation(
-            'waitUntilDocumentTranslationComplete',
-            'Translator::waitUntilDocumentTranslationComplete() is deprecated, use ' .
-            'Translator::translateDocumentWaitUntilDone() instead.'
-        );
-        return $this->translateDocumentWaitUntilDone($handle);
-    }
-
-    /**
-     * Returns when the given document translation completes, or throws an exception if there was an error
      * communicating with the DeepL API, the document translation failed, or the timeout expired.
      * @param DocumentHandle $handle Handle to the document translation.
      * @param array $options Wait options: TranslateDocumentOptions::TIMEOUT, the maximum time to wait in seconds
@@ -574,8 +421,7 @@ class Translator
             throw new DeepLException('timeout must be a non-negative number of seconds');
         }
         $startTime = microtime(true);
-        $pollWithDeprecated = $this->overridesDocumentMethod('getDocumentStatus');
-        $status = $pollWithDeprecated ? $this->getDocumentStatus($handle) : $this->translateDocumentGetStatus($handle);
+        $status = $this->translateDocumentGetStatus($handle);
         while (!$status->done() && $status->ok()) {
             $elapsed = microtime(true) - $startTime;
             if ($timeout !== null && $elapsed >= $timeout) {
@@ -588,9 +434,7 @@ class Translator
             }
             usleep((int)round($secs * 1000000));
             $this->client->logInfo("Rechecking document translation status after sleeping for $secs seconds.");
-            $status = $pollWithDeprecated
-                ? $this->getDocumentStatus($handle)
-                : $this->translateDocumentGetStatus($handle);
+            $status = $this->translateDocumentGetStatus($handle);
         }
         if (!$status->ok()) {
             throw new DeepLException($status->errorMessage ?? 'unknown error');
@@ -634,7 +478,7 @@ class Translator
             '/v2/glossaries',
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return GlossaryInfo::parse($content);
     }
@@ -675,7 +519,7 @@ class Translator
             '/v2/glossaries',
             [HttpClientWrapper::OPTION_JSON => json_encode($params)]
         );
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return GlossaryInfo::parse($content);
     }
@@ -689,7 +533,7 @@ class Translator
     public function getGlossary(string $glossaryId): GlossaryInfo
     {
         $response = $this->client->sendRequestWithBackoff('GET', "/v2/glossaries/$glossaryId");
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return GlossaryInfo::parse($content);
     }
@@ -702,7 +546,7 @@ class Translator
     public function listGlossaries(): array
     {
         $response = $this->client->sendRequestWithBackoff('GET', '/v2/glossaries');
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return GlossaryInfo::parseList($content);
     }
@@ -717,7 +561,7 @@ class Translator
     {
         $glossaryId = is_string($glossary) ? $glossary : $glossary->glossaryId;
         $response = $this->client->sendRequestWithBackoff('GET', "/v2/glossaries/$glossaryId/entries");
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
         list(, $content) = $response;
         return GlossaryEntries::fromTsv($content);
     }
@@ -731,7 +575,7 @@ class Translator
     {
         $glossaryId = is_string($glossary) ? $glossary : $glossary->glossaryId;
         $response = $this->client->sendRequestWithBackoff('DELETE', "/v2/glossaries/$glossaryId");
-        $this->checkStatusCode($response, false, true);
+        $this->checkStatusCode($response);
     }
 
     /**
@@ -896,18 +740,8 @@ class Translator
         }
         if (isset($options[TranslateTextOptions::SPLIT_SENTENCES])) {
             // Lower-cased as in released versions: the API rejects upper-case values.
-            $splitSentences = strtolower($options[TranslateTextOptions::SPLIT_SENTENCES]);
-            $aliases = ['on' => SentenceSplittingMode::ALL, 'default' => SentenceSplittingMode::ALL,
-                'off' => SentenceSplittingMode::OFF];
-            if (isset($aliases[$splitSentences])) {
-                self::triggerDeprecation(
-                    'split_sentences',
-                    "The split_sentences values 'on', 'default' and 'off' are deprecated, use the " .
-                    "SentenceSplittingMode values '1', '0' or 'nonewlines' instead."
-                );
-                $splitSentences = $aliases[$splitSentences];
-            }
-            $params[TranslateTextOptions::SPLIT_SENTENCES] = $splitSentences;
+            $params[TranslateTextOptions::SPLIT_SENTENCES] =
+                strtolower($options[TranslateTextOptions::SPLIT_SENTENCES]);
         }
         if (isset($options[TranslateTextOptions::PRESERVE_FORMATTING])) {
             $params[TranslateTextOptions::PRESERVE_FORMATTING] =
@@ -941,19 +775,6 @@ class Translator
             $params[TranslateTextOptions::IGNORE_TAGS] =
                 $this->toTagList($options[TranslateTextOptions::IGNORE_TAGS]);
         }
-        if (isset($options[TranslateTextOptions::STYLE_ID])) {
-            self::triggerDeprecation(
-                TranslateTextOptions::STYLE_ID,
-                'TranslateTextOptions::STYLE_ID is deprecated, use TranslateTextOptions::STYLE_RULE instead.'
-            );
-        }
-        if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
-            self::triggerDeprecation(
-                TranslateTextOptions::TRANSLATION_MEMORY_ID,
-                'TranslateTextOptions::TRANSLATION_MEMORY_ID is deprecated, use ' .
-                'TranslateTextOptions::TRANSLATION_MEMORY instead.'
-            );
-        }
         $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
         if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
             $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
@@ -977,16 +798,14 @@ class Translator
         if ($options === null) {
             return;
         }
-        $styleRuleKey = isset($options[TranslateTextOptions::STYLE_RULE]) ? TranslateTextOptions::STYLE_RULE
-            : TranslateTextOptions::STYLE_ID;
-        $styleRule = $options[$styleRuleKey] ?? null;
+        $styleRule = $options[TranslateTextOptions::STYLE_RULE] ?? null;
         if (isset($styleRule)) {
             if (is_string($styleRule)) {
                 $params['style_id'] = $styleRule;
             } elseif ($styleRule instanceof StyleRuleInfo) {
                 $params['style_id'] = $styleRule->styleId;
             } else {
-                throw new DeepLException("$styleRuleKey must be a string or StyleRuleInfo object");
+                throw new DeepLException('style_rule must be a string or StyleRuleInfo object');
             }
         }
         if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
@@ -999,48 +818,25 @@ class Translator
                 throw new DeepLException('style_profile must be a string or StyleProfile object');
             }
         }
-        $tmKey = isset($options[TranslateTextOptions::TRANSLATION_MEMORY]) ? TranslateTextOptions::TRANSLATION_MEMORY
-            : TranslateTextOptions::TRANSLATION_MEMORY_ID;
-        $tm = $options[$tmKey] ?? null;
+        $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY] ?? null;
         if (isset($tm)) {
             if (is_string($tm)) {
                 $params['translation_memory_id'] = $tm;
             } elseif ($tm instanceof TranslationMemoryInfo) {
                 $params['translation_memory_id'] = $tm->translationMemoryId;
             } else {
-                throw new DeepLException("$tmKey must be a string or TranslationMemoryInfo object");
+                throw new DeepLException('translation_memory must be a string or TranslationMemoryInfo object');
             }
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD])) {
             if (!isset($tm)) {
-                throw new DeepLException("translation_memory_threshold requires $tmKey");
+                throw new DeepLException('translation_memory_threshold requires translation_memory');
             }
             $threshold = $options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD];
             if (!is_int($threshold) || $threshold < 0 || $threshold > 100) {
                 throw new DeepLException('translation_memory_threshold must be an integer between 0 and 100');
             }
             $params['translation_memory_threshold'] = $threshold;
-        }
-    }
-
-    /**
-     * Returns whether the class of this object overrides the given deprecated document method of Translator.
-     */
-    private function overridesDocumentMethod(string $method): bool
-    {
-        $class = get_class($this);
-        if (!isset(self::$documentMethodOverrides[$class][$method])) {
-            self::$documentMethodOverrides[$class][$method] =
-                (new \ReflectionMethod($this, $method))->getDeclaringClass()->getName() !== Translator::class;
-        }
-        return self::$documentMethodOverrides[$class][$method];
-    }
-
-    private static function triggerDeprecation(string $key, string $message): void
-    {
-        if (!isset(self::$deprecationsTriggered[$key])) {
-            self::$deprecationsTriggered[$key] = true;
-            @trigger_error($message, E_USER_DEPRECATED);
         }
     }
 
@@ -1097,9 +893,9 @@ class Translator
      * Checks the HTTP status code, and in case of failure, throws an exception with diagnostic information.
      * @throws DeepLException
      */
-    protected function checkStatusCode(array $response, bool $inDocumentDownload = false, bool $usingGlossary = false)
+    protected function checkStatusCode(array $response, bool $inDocumentDownload = false)
     {
-        ClientUtils::checkStatusCode($response, $inDocumentDownload, $usingGlossary);
+        ClientUtils::checkStatusCode($response, $inDocumentDownload);
     }
 
     /**
@@ -1111,24 +907,5 @@ class Translator
     public static function isFreeAccountAuthKey(string $authKey): bool
     {
         return substr(trim($authKey), -3) === ':fx';
-    }
-
-    /**
-     * Returns true if the specified DeepL Authentication Key is associated with a free account,
-     * otherwise false.
-     * @param string $authKey The authentication key to check.
-     * @return bool True if the key is associated with a free account, otherwise false.
-     * @deprecated Use isFreeAccountAuthKey() instead.
-     */
-    public static function isAuthKeyFreeAccount(string $authKey): bool
-    {
-        if (!self::$isAuthKeyFreeAccountDeprecationTriggered) {
-            self::$isAuthKeyFreeAccountDeprecationTriggered = true;
-            @trigger_error(
-                'Translator::isAuthKeyFreeAccount() is deprecated, use Translator::isFreeAccountAuthKey() instead.',
-                E_USER_DEPRECATED
-            );
-        }
-        return substr($authKey, -3) === ':fx';
     }
 }

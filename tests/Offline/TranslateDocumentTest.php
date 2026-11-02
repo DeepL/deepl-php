@@ -10,7 +10,6 @@ use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\DocumentHandle;
 use DeepL\DocumentNotReadyException;
-use DeepL\DocumentStatus;
 use DeepL\DocumentStatusCode;
 use DeepL\DocumentTranslationException;
 use DeepL\Fixtures;
@@ -58,7 +57,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $input = Fixtures::tempFile('input.txt', 'Hello');
         $this->reply(self::UPLOAD_REPLY);
 
-        $this->makeTranslator()->uploadDocument($input, 'en', 'de', $options);
+        $this->makeTranslator()->translateDocumentUpload($input, 'en', 'de', $options);
 
         $this->assertMultipart($fields + ['target_lang' => 'de', 'source_lang' => 'en'], 'input.txt');
     }
@@ -85,7 +84,6 @@ class TranslateDocumentTest extends OfflineTestCase
                 [TranslateDocumentOptions::ENABLE_WATERMARK => false],
                 ['enable_watermark' => 'false'],
             ],
-            'style id' => [[TranslateDocumentOptions::STYLE_ID => $style], ['style_id' => 'sid']],
             'style rule' => [[TranslateDocumentOptions::STYLE_RULE => 'sid'], ['style_id' => 'sid']],
             'style rule from object' => [[TranslateDocumentOptions::STYLE_RULE => $style], ['style_id' => 'sid']],
             'translation memory' => [
@@ -102,7 +100,7 @@ class TranslateDocumentTest extends OfflineTestCase
             ],
             'translation memory with threshold as string' => [
                 [
-                    TranslateDocumentOptions::TRANSLATION_MEMORY_ID => $tm,
+                    TranslateDocumentOptions::TRANSLATION_MEMORY => $tm,
                     TranslateDocumentOptions::TRANSLATION_MEMORY_THRESHOLD => 75,
                 ],
                 ['translation_memory_id' => 'tmid', 'translation_memory_threshold' => '75'],
@@ -252,7 +250,7 @@ class TranslateDocumentTest extends OfflineTestCase
     {
         $this->reply(self::UPLOAD_REPLY);
 
-        $this->makeTranslator()->uploadDocument(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
+        $this->makeTranslator()->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), null, 'de');
 
         $this->assertStringNotContainsString('enable_watermark', (string)$this->request()->getBody());
     }
@@ -262,7 +260,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $docx = Fixtures::resourcePath('example_document_template.docx');
         $this->reply(self::UPLOAD_REPLY);
 
-        $this->makeTranslator()->uploadDocument($docx, null, 'de');
+        $this->makeTranslator()->translateDocumentUpload($docx, null, 'de');
 
         $this->assertMultipart(['target_lang' => 'de'], 'example_document_template.docx');
         $this->assertStringContainsString(file_get_contents($docx), (string)$this->request()->getBody());
@@ -304,9 +302,9 @@ class TranslateDocumentTest extends OfflineTestCase
     public function testThrowsWhenThresholdHasNoTranslationMemory(): void
     {
         $this->expectException(DeepLException::class);
-        $this->expectExceptionMessage('requires translation_memory_id');
+        $this->expectExceptionMessage('requires translation_memory');
 
-        $this->makeTranslator()->uploadDocument(
+        $this->makeTranslator()->translateDocumentUpload(
             Fixtures::tempFile('input.txt', 'Hello'),
             'en',
             'de',
@@ -320,7 +318,8 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->reply('', 429);
         $this->reply(self::UPLOAD_REPLY);
 
-        $handle = $this->makeTranslator()->uploadDocument(Fixtures::tempFile('input.txt', 'Hello'), 'en', 'de');
+        $handle = $this->makeTranslator()
+            ->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), 'en', 'de');
 
         $this->assertRequestCount(2);
         $this->assertMultipart(['target_lang' => 'de', 'source_lang' => 'en'], 'input.txt', 1);
@@ -333,8 +332,8 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->reply(['document_id' => 'doc1', 'status' => 'translating', 'seconds_remaining' => 7]);
         $this->reply(['document_id' => 'doc1', 'status' => 'error', 'error_message' => 'broken']);
 
-        $translating = $this->makeTranslator()->getDocumentStatus(new DocumentHandle('doc1', 'k'));
-        $failed = $this->makeTranslator()->getDocumentStatus(new DocumentHandle('doc1', 'k'));
+        $translating = $this->makeTranslator()->translateDocumentGetStatus(new DocumentHandle('doc1', 'k'));
+        $failed = $this->makeTranslator()->translateDocumentGetStatus(new DocumentHandle('doc1', 'k'));
 
         $this->assertFalse($translating->done());
         $this->assertTrue($translating->ok());
@@ -366,7 +365,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $logger = new TestLogger();
 
         $status = $this->makeTranslator([TranslatorOptions::LOGGER => $logger])
-            ->waitUntilDocumentTranslationComplete(new DocumentHandle('doc1', 'k'));
+            ->translateDocumentWaitUntilDone(new DocumentHandle('doc1', 'k'));
 
         $this->assertRequestCount(3);
         $this->assertRequest('POST', '/v2/document/doc1', 2);
@@ -384,7 +383,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('broken');
 
-        $this->makeTranslator()->waitUntilDocumentTranslationComplete(new DocumentHandle('doc1', 'k'));
+        $this->makeTranslator()->translateDocumentWaitUntilDone(new DocumentHandle('doc1', 'k'));
     }
 
     public function testThrowsWithTheHandleWhenTranslationFails(): void
@@ -425,7 +424,7 @@ class TranslateDocumentTest extends OfflineTestCase
 
         try {
             $this->makeTranslator(['max_retries' => 0])
-                ->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
+                ->translateDocumentDownload(new DocumentHandle('doc1', 'k'), $output);
             $this->fail('expected a DocumentNotReadyException');
         } catch (DocumentNotReadyException $exception) {
             $this->assertStringContainsString('still translating', $exception->getMessage());
@@ -438,7 +437,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->expectException(DeepLException::class);
         $this->expectExceptionMessage('File already exists');
 
-        $this->makeTranslator()->downloadDocument(
+        $this->makeTranslator()->translateDocumentDownload(
             new DocumentHandle('doc1', 'k'),
             Fixtures::tempFile('output.txt', 'old')
         );
@@ -449,7 +448,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $output = Fixtures::tempDir() . '/missing/output.txt';
 
         try {
-            $this->makeTranslator()->downloadDocument(new DocumentHandle('doc1', 'k'), $output);
+            $this->makeTranslator()->translateDocumentDownload(new DocumentHandle('doc1', 'k'), $output);
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
@@ -494,7 +493,7 @@ class TranslateDocumentTest extends OfflineTestCase
     public function testWrapsANonDeepLExceptionInDocumentTranslationException(): void
     {
         $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
-            public function uploadDocument(
+            public function translateDocumentUpload(
                 string $inputFile,
                 ?string $sourceLang,
                 string $targetLang,
@@ -612,73 +611,5 @@ class TranslateDocumentTest extends OfflineTestCase
         } finally {
             FullDiskStream::unregister();
         }
-    }
-
-    public function testTranslateDocumentCallsOverriddenUploadDocument(): void
-    {
-        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
-            public $calls = 0;
-
-            public function uploadDocument(
-                string $inputFile,
-                ?string $sourceLang,
-                string $targetLang,
-                array $options = []
-            ): DocumentHandle {
-                $this->calls++;
-                return parent::uploadDocument($inputFile, $sourceLang, $targetLang, $options);
-            }
-        };
-
-        $this->translateDocumentWith($client);
-
-        $this->assertSame(1, $client->calls);
-    }
-
-    public function testTranslateDocumentCallsOverriddenGetDocumentStatus(): void
-    {
-        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
-            public $calls = 0;
-
-            public function getDocumentStatus(DocumentHandle $handle): DocumentStatus
-            {
-                $this->calls++;
-                return parent::getDocumentStatus($handle);
-            }
-        };
-
-        $this->translateDocumentWith($client);
-
-        $this->assertSame(1, $client->calls);
-    }
-
-    public function testTranslateDocumentCallsOverriddenDownloadDocument(): void
-    {
-        $client = new class ('k', $this->clientOptions([])) extends DeepLClient {
-            public $calls = 0;
-
-            public function downloadDocument(DocumentHandle $handle, string $outputFile): void
-            {
-                $this->calls++;
-                parent::downloadDocument($handle, $outputFile);
-            }
-        };
-
-        $this->translateDocumentWith($client);
-
-        $this->assertSame(1, $client->calls);
-    }
-
-    private function translateDocumentWith(DeepLClient $client): void
-    {
-        $output = Fixtures::tempDir() . '/output.txt';
-        $this->reply(self::UPLOAD_REPLY);
-        $this->reply(['document_id' => 'doc1', 'status' => 'done', 'billed_characters' => 5]);
-        $this->mock->append(new Response(200, [], 'Hallo'));
-
-        $client->translateDocument(Fixtures::tempFile('input.txt', 'Hello'), $output, 'en', 'de');
-
-        $this->assertRequestCount(3);
-        $this->assertSame('Hallo', file_get_contents($output));
     }
 }
