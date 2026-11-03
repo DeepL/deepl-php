@@ -5,7 +5,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added a trailing options array with
+  `MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS` to
+  `createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`,
+  `updateMultilingualGlossary()` and `replaceMultilingualGlossaryDictionary()`.
+- Added a trailing options array with `StyleRuleOptions::EXTRA_BODY_PARAMETERS`
+  to `createStyleRule()`, `updateStyleRuleName()`,
+  `updateStyleRuleConfiguredRules()` (as further keys of the configured rules),
+  `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`.
+- `getStyleRuleCustomInstruction()`, `updateStyleRuleCustomInstruction()` and
+  `deleteStyleRuleCustomInstruction()` accept a `CustomInstruction` as well as
+  its ID.
+- Added `TranslationMemoryOptions`. `createTranslationMemoryImport()` accepts an
+  options array (`CONTENT_TYPE`, `DISPLAY_NAME`, `EXTRA_BODY_PARAMETERS`) as its
+  third argument and `importTranslationMemoryFromFilepath()` as its second
+  (`CONTENT_TYPE`, `DISPLAY_NAME`, `TIMEOUT`, `EXTRA_BODY_PARAMETERS`); the
+  positional forms remain. `CONTENT_TYPE` is used for both the import job and
+  the upload. `waitUntilTranslationMemoryJobDone()` and
+  `exportTranslationMemoryToFilepath()` accept `[TranslationMemoryOptions::TIMEOUT => seconds]`
+  in place of the timeout.
+- The `MultilingualGlossaryDictionaryEntries` constructor accepts
+  `GlossaryEntries` as well as an array.
+
 ### Changed
+- `updateMultilingualGlossary($glossary, $name, $dictionaries)` takes
+  `($glossary, array $options = [])`. Replace
+  `updateMultilingualGlossary($g, $name, $dicts)` with
+  `updateMultilingualGlossary($g, [MultilingualGlossaryOptions::NAME => $name, MultilingualGlossaryOptions::DICTIONARIES => $dicts])`.
+- `deleteMultilingualGlossaryDictionary()` takes
+  `($glossary, $sourceLang, $targetLang)`, or
+  `($glossary, MultilingualGlossaryDictionaryInfo $dictionary)`. Replace
+  `deleteMultilingualGlossaryDictionary($g, null, 'en', 'de')` with
+  `deleteMultilingualGlossaryDictionary($g, 'en', 'de')`.
+- `MultilingualGlossaryDictionaryEntries::$entries` is a `GlossaryEntries`
+  instead of an array. Replace `$dictionary->entries` with
+  `$dictionary->entries->getEntries()`.
+- `RephraseTextOptions` no longer extends `TranslateTextOptions`; it only
+  defines `WRITING_STYLE`, `TONE` and `EXTRA_BODY_PARAMETERS`, the options
+  `rephraseText()` reads. Use `TranslateTextOptions` for the translate option
+  constants.
+- `Usage::anyLimitReached()` also checks the per-key character limit
+  (`apiKeyCharacter`), so it returns true for an API Pro key that has used up
+  its own limit. The speech limits are still not checked.
+- The `formality` and `split_sentences` values are sent as given instead of
+  lower-cased; the API rejects upper-case values. Pass them in lower case, for
+  example with the `Formality` and `SentenceSplittingMode` constants.
+- Subclasses of `DeepLClient` that override `createMultilingualGlossary()`,
+  `createMultilingualGlossaryFromCsv()`, `updateMultilingualGlossary()`,
+  `replaceMultilingualGlossaryDictionary()`,
+  `deleteMultilingualGlossaryDictionary()`, the style rule methods above, or
+  `createTranslationMemoryImport()`, `importTranslationMemoryFromFilepath()`,
+  `waitUntilTranslationMemoryJobDone()` and
+  `exportTranslationMemoryToFilepath()` must update their signatures.
 - PHP 8.0 or later is required; support for PHP 7.3 and 7.4 is dropped.
   Users on PHP 7 must upgrade PHP before updating, or stay on the 1.x
   releases.

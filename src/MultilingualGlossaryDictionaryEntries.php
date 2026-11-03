@@ -17,21 +17,27 @@ class MultilingualGlossaryDictionaryEntries
     /** @var string Language code of the target terms in the dictionary. */
     public $targetLang;
 
-    /** @var array Associative array storing the dictionary entries as source-target entry pairs. */
+    /** @var GlossaryEntries The dictionary entries as source-target entry pairs, see GlossaryEntries::getEntries(). */
     public $entries;
 
     /**
      * @param string $sourceLang
      * @param string $targetLang
-     * @param array $entries Source-target entry pairs. Both terms are trimmed of surrounding whitespace, then
-     *  validated: they must not be empty or contain control characters.
+     * @param array|GlossaryEntries $entries Source-target entry pairs, as an associative array or GlossaryEntries.
+     *  Both terms are trimmed of surrounding whitespace, then validated: they must not be empty or contain
+     *  control characters.
      * @throws DeepLException If the entries are empty or a term is invalid.
      */
-    public function __construct(string $sourceLang, string $targetLang, array $entries)
+    public function __construct(string $sourceLang, string $targetLang, $entries)
     {
         $this->sourceLang = $sourceLang;
         $this->targetLang = $targetLang;
-        $this->entries = self::trimAndValidate($entries);
+        if ($entries instanceof GlossaryEntries) {
+            $entries = $entries->getEntries();
+        } elseif (!is_array($entries)) {
+            throw new DeepLException('entries must be an array or GlossaryEntries');
+        }
+        $this->entries = GlossaryEntries::fromEntries(self::trimAndValidate($entries));
     }
 
     /**
@@ -106,9 +112,20 @@ class MultilingualGlossaryDictionaryEntries
             $result = (new \ReflectionClass(self::class))->newInstanceWithoutConstructor();
             $result->sourceLang = (string)$object['source_lang'];
             $result->targetLang = (string)$object['target_lang'];
-            $result->entries = $entries;
+            $result->entries = self::unvalidatedGlossaryEntries($entries);
             return $result;
         });
+    }
+
+    /**
+     * Wraps entries returned by the API, which may be empty, without the validation of GlossaryEntries::fromEntries().
+     */
+    private static function unvalidatedGlossaryEntries(array $entries): GlossaryEntries
+    {
+        $create = \Closure::bind(static function (array $entries): GlossaryEntries {
+            return new GlossaryEntries($entries);
+        }, null, GlossaryEntries::class);
+        return $create($entries);
     }
 
     /**
@@ -121,13 +138,18 @@ class MultilingualGlossaryDictionaryEntries
         return [
             "source_lang" => $this->sourceLang,
             "target_lang" => $this->targetLang,
-            "entries" => GlossaryUtils::convertToTsv(self::trimAndValidate((array)$this->entries)),
+            "entries" => GlossaryUtils::convertToTsv(self::trimAndValidate($this->entryArray())),
             "entries_format" => "tsv",
         ];
     }
 
     public function convertToTsv(): string
     {
-        return GlossaryUtils::convertToTsv($this->entries);
+        return GlossaryUtils::convertToTsv($this->entryArray());
+    }
+
+    private function entryArray(): array
+    {
+        return $this->entries instanceof GlossaryEntries ? $this->entries->getEntries() : (array)$this->entries;
     }
 }

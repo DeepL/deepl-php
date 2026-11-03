@@ -7,6 +7,7 @@
 namespace DeepL\RealApi;
 
 use DeepL\MultilingualGlossaryDictionaryEntries;
+use DeepL\MultilingualGlossaryOptions;
 use DeepL\NotFoundException;
 
 class MultilingualGlossariesTest extends RealApiTestCase
@@ -39,9 +40,12 @@ class MultilingualGlossariesTest extends RealApiTestCase
             $this->assertContains($glossary->glossaryId, $ids);
 
             $dictionary = $client->getMultilingualGlossaryDictionaryEntries($glossary, 'en', 'de');
-            $this->assertSame(['Apple' => 'Apfel'], $dictionary->entries);
+            $this->assertSame(['Apple' => 'Apfel'], $dictionary->entries->getEntries());
 
-            $renamed = $client->updateMultilingualGlossary($glossary, "$name-renamed", null);
+            $renamed = $client->updateMultilingualGlossary(
+                $glossary,
+                [MultilingualGlossaryOptions::NAME => "$name-renamed"]
+            );
             $this->assertSame("$name-renamed", $renamed->name);
 
             $replaced = $client->replaceMultilingualGlossaryDictionary(
@@ -50,7 +54,7 @@ class MultilingualGlossariesTest extends RealApiTestCase
             );
             $this->assertSame(['en', 'de', 1], [$replaced->sourceLang, $replaced->targetLang, $replaced->entryCount]);
 
-            $client->deleteMultilingualGlossaryDictionary($glossary, null, 'en', 'fr');
+            $client->deleteMultilingualGlossaryDictionary($glossary, 'en', 'fr');
         } finally {
             try {
                 $client->deleteMultilingualGlossary($glossary);

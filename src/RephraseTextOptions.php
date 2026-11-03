@@ -6,7 +6,10 @@
 
 namespace DeepL;
 
-class RephraseTextOptions extends TranslateTextOptions
+/**
+ * Option keys for DeepLClient::rephraseText().
+ */
+class RephraseTextOptions
 {
     /** Sets the style the improved text should be in. Note that currently, only
      * a style OR a tone is supported.

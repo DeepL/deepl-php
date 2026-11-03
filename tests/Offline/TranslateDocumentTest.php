@@ -68,7 +68,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $tm = new TranslationMemoryInfo('tmid', 'name', 'en', ['de'], 1);
         $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, new \DateTime(), new \DateTime());
         return [
-            'formality' => [[TranslateDocumentOptions::FORMALITY => 'More'], ['formality' => 'more']],
+            'formality sent as given' => [[TranslateDocumentOptions::FORMALITY => 'More'], ['formality' => 'More']],
             'glossary' => [[TranslateDocumentOptions::GLOSSARY => $glossary], ['glossary_id' => 'g1']],
             'glossary ids joined by comma' => [
                 [TranslateDocumentOptions::GLOSSARY_IDS => ['g1', $glossary, 'g3']],

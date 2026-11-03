@@ -130,4 +130,12 @@ class RephraseTextTest extends OfflineTestCase
         $this->expectException(InvalidContentException::class);
         $this->makeDeepLClient()->rephraseText($texts);
     }
+
+    public function testRephraseOptionsDoNotExposeTranslateOptions(): void
+    {
+        $this->assertSame(
+            ['WRITING_STYLE', 'TONE', 'EXTRA_BODY_PARAMETERS'],
+            array_keys((new \ReflectionClass(RephraseTextOptions::class))->getConstants())
+        );
+    }
 }

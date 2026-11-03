@@ -546,8 +546,16 @@ are trimmed and checked again when they are sent, so a dictionary whose
 `entries` were changed, or one returned by the API, is sent trimmed; one without
 entries throws a `DeepLException` without sending a request.
 
-`updateMultilingualGlossaryName()`, `updateMultilingualGlossaryDictionary()`,
-`updateMultilingualGlossaryDictionaryFromCsv()` and
+The entries can also be given as `GlossaryEntries`, for example
+`new MultilingualGlossaryDictionaryEntries('en', 'de', GlossaryEntries::fromEntries([...]))`;
+the `entries` property is a `GlossaryEntries`, whose `getEntries()` returns the
+source-target pairs as an associative array.
+
+`createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`,
+`updateMultilingualGlossary()`, `updateMultilingualGlossaryName()`,
+`updateMultilingualGlossaryDictionary()`,
+`updateMultilingualGlossaryDictionaryFromCsv()`,
+`replaceMultilingualGlossaryDictionary()` and
 `replaceMultilingualGlossaryDictionaryFromCsv()` (see
 [Editing a glossary](#editing-a-glossary)) take an optional trailing options
 array. `MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS` is an associative
@@ -567,11 +575,10 @@ Functions to get, list, and delete stored glossaries are also provided:
   `MultilingualGlossaryInfo` object and deletes the stored glossary from the
   server, or raises an exception if no such glossary is found.
 - `deleteMultilingualGlossaryDictionary()` takes a glossary ID or
-  `MultilingualGlossaryInfo` object to identify the glossary. Additionally
-  takes in a source and target language or a
-  `MultilingualGlossaryDictionaryInfo` object and deletes the stored dictionary
-  from the server, or raises an exception if no such glossary dictionary is
-  found.
+  `MultilingualGlossaryInfo` object to identify the glossary, then either the
+  source and target language codes or one `MultilingualGlossaryDictionaryInfo`
+  object, and deletes the stored dictionary from the server, or raises an
+  exception if no such glossary dictionary is found.
 
 ```php
 // Retrieve a stored glossary using the ID
@@ -579,6 +586,7 @@ $glossaryId = '559192ed-8e23-...';
 $myGlossary = $deeplClient->getMultilingualGlossary($glossaryId);
 
 $deeplClient->deleteMultilingualGlossaryDictionary($glossaryId, $myGlossary->dictionaries[0]);
+$deeplClient->deleteMultilingualGlossaryDictionary($glossaryId, 'en', 'fr');
 
 // Find and delete glossaries named 'Old glossary'
 $glossaries = $deeplClient->listMultilingualGlossaries();
@@ -602,17 +610,19 @@ object, or throws a `NotFoundException` if the glossary has no such dictionary:
 
 ```php
 $glossaryDict = $deeplClient->getMultilingualGlossaryDictionaryEntries($myGlossary, "en", "de");
-print_r($glossaryDict->entries); // Array ( [artist] => Maler, [prize] => Gewinn)
+print_r($glossaryDict->entries->getEntries()); // Array ( [artist] => Maler, [prize] => Gewinn)
 ```
 
 #### Editing a glossary
 
 Functions to edit stored glossaries are also provided:
 
-- `updateMultilingualGlossary()` takes a glossary ID or 
-  `MultilingualGlossaryInfo` object, a new name for the glossary or `null`, and
-  an array of `MultilingualGlossaryDictionaryEntries` to merge into the
-  glossary or `null`. For a given glossary dictionary, it will then either
+- `updateMultilingualGlossary()` takes a glossary ID or
+  `MultilingualGlossaryInfo` object and an options array:
+  `MultilingualGlossaryOptions::NAME`, a new name for the glossary, and
+  `MultilingualGlossaryOptions::DICTIONARIES`, an array of
+  `MultilingualGlossaryDictionaryEntries` to merge into the glossary; both are
+  optional. For a given glossary dictionary, it will then either
   update the list of entries for that dictionary (either inserting new entries
   or replacing the target phrase for any existing entries) or will insert a new
   glossary dictionary if that language pair is not currently in the stored
@@ -641,8 +651,10 @@ $myGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['artist
 $myGlossary = $deeplClient->createMultilingualGlossary('My glossary', [$myGlossaryDict]);
 
 $myUpdatedGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['hello' => 'hallo', 'prize' => 'Gewinn']);
-$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary(
-    $myGlossary, 'My updated glossary', [$myUpdatedGlossaryDict]);
+$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary($myGlossary, [
+    MultilingualGlossaryOptions::NAME => 'My updated glossary',
+    MultilingualGlossaryOptions::DICTIONARIES => [$myUpdatedGlossaryDict],
+]);
 echo $myUpdatedGlossary->dictionaries[0]->entryCount; // 3: artist, hello and prize
 
 $deeplClient->updateMultilingualGlossaryName($myGlossary, 'My renamed glossary');
@@ -771,10 +783,10 @@ your account type: `character`, `document` and `teamDocument`. For API accounts
 Each usage subtypes (if set) have `count` and `limit` properties giving the
 amount used and maximum amount respectively, and the `limitReached()` function
 that checks if the usage has reached the limit. The top level `Usage` object has
-the `anyLimitReached()` function to check the `character`, `document` and
-`teamDocument` subtypes. It does not consider the API Pro subtypes described
-below; call `limitReached()` on those directly, e.g.
-`$usage->apiKeyCharacter->limitReached()`.
+the `anyLimitReached()` function to check the `character`, `document`,
+`teamDocument` and per-key `apiKeyCharacter` subtypes. It does not consider the
+speech subtypes described below; call `limitReached()` on those directly, e.g.
+`$usage->speechToTextMinutes->limitReached()`.
 
 ```php
 $usage = $deeplClient->getUsage();
@@ -1025,7 +1037,7 @@ $instruction = $deeplClient->createStyleRuleCustomInstruction(
 );
 echo "Instruction ID: {$instruction->id}\n";
 
-// Get a custom instruction
+// Get a custom instruction, by ID or CustomInstruction object
 $instruction = $deeplClient->getStyleRuleCustomInstruction($styleRule, $instruction->id);
 
 // Update a custom instruction
@@ -1037,8 +1049,20 @@ $updated = $deeplClient->updateStyleRuleCustomInstruction(
 );
 
 // Delete a custom instruction
-$deeplClient->deleteStyleRuleCustomInstruction($styleRule, $instruction->id);
+$deeplClient->deleteStyleRuleCustomInstruction($styleRule, $instruction);
 ```
+
+`getStyleRuleCustomInstruction()`, `updateStyleRuleCustomInstruction()` and
+`deleteStyleRuleCustomInstruction()` take the instruction ID or the
+`CustomInstruction` object.
+
+`createStyleRule()`, `updateStyleRuleName()`, `updateStyleRuleConfiguredRules()`,
+`createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
+take an optional trailing options array. `StyleRuleOptions::EXTRA_BODY_PARAMETERS`
+is an associative array of additional parameters added to the JSON body last,
+replacing a field the library sets with the same key; for
+`updateStyleRuleConfiguredRules()` they are further keys of the configured rules
+object.
 
 #### Using a stored style rule
 
@@ -1215,13 +1239,21 @@ do {
 `importTranslationMemoryFromFilepath()` imports a TMX file as a new translation
 memory: it creates the import job, uploads the file, and waits for processing to
 finish. The returned `TranslationMemoryJob` carries the ID of the new translation
-memory. An import usually takes under a minute; the optional third argument is a
-maximum time in seconds to wait for it.
+memory. An import usually takes under a minute. The second argument is an
+options array with the `TranslationMemoryOptions` keys `DISPLAY_NAME` (name of
+the new translation memory, defaults to the file name), `CONTENT_TYPE` (MIME type
+of the file, used for the import job and the upload, default
+`'application/xml'`), `TIMEOUT` (maximum time in seconds to wait) and
+`EXTRA_BODY_PARAMETERS` (added last to the JSON body of the import request). The
+released positional form, a display name and a timeout, is still accepted.
 If no file exists at the input file path, it throws an `InvalidArgumentException`
 before sending any request.
 
 ```php
-$job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', 'Legal TM', 300);
+$job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', [
+    TranslationMemoryOptions::DISPLAY_NAME => 'Legal TM',
+    TranslationMemoryOptions::TIMEOUT => 300,
+]);
 echo "Created translation memory {$job->result()->translationMemoryId}\n";
 echo "Skipped segments: {$job->result()->skippedSegmentCount}\n";
 ```
@@ -1235,23 +1267,27 @@ sent to it.
 
 ```php
 $fileContent = file_get_contents('/path/to/legal.tmx');
-$created = $deeplClient->createTranslationMemoryImport(
-    'legal.tmx',
-    strlen($fileContent),
-    null, // Content type, defaults to 'application/xml'
-    'Legal TM'
-);
+$created = $deeplClient->createTranslationMemoryImport('legal.tmx', strlen($fileContent), [
+    TranslationMemoryOptions::DISPLAY_NAME => 'Legal TM',
+]);
 // Until the file is uploaded, the job status is 'awaiting_input'
 $deeplClient->uploadTranslationMemoryFile($created, $fileContent);
 
-$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, 300);
+$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, [TranslationMemoryOptions::TIMEOUT => 300]);
 ```
+
+`createTranslationMemoryImport()` takes an options array with
+`CONTENT_TYPE`, `DISPLAY_NAME` and `EXTRA_BODY_PARAMETERS` as its third argument;
+the released positional form, a content type and a display name, is still
+accepted.
 
 `waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
 status is `completed`, and throws a `DeepLException` with the
 API's error message if it is `failed` or `expired`. Any other status, including
-one this library does not know, keeps polling, so pass a timeout in seconds as
-the second argument to bound the wait; the wait never runs past it. The known
+one this library does not know, keeps polling, so pass a timeout in seconds, or
+`[TranslationMemoryOptions::TIMEOUT => seconds]`, as the second argument to bound
+the wait; the wait never runs past it. `exportTranslationMemoryToFilepath()`
+takes the same timeout as its third argument. The known
 values are the `TranslationMemoryJobStatus` constants. Note that the job keeps
 reporting `'awaiting_input'` for a while after the file has been uploaded,
 because the API detects the upload asynchronously, and a job whose file is never

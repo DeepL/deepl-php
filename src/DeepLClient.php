@@ -657,8 +657,7 @@ class DeepLClient
             $params['source_lang'] = $sourceLang;
         }
         if (isset($formality)) {
-            $formality_str = strtolower($formality);
-            $params['formality'] = $formality_str;
+            $params['formality'] = $formality;
         }
         if (isset($glossary)) {
             if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
@@ -744,9 +743,7 @@ class DeepLClient
             return;
         }
         if (isset($options[TranslateTextOptions::SPLIT_SENTENCES])) {
-            // Lower-cased as in released versions: the API rejects upper-case values.
-            $params[TranslateTextOptions::SPLIT_SENTENCES] =
-                strtolower($options[TranslateTextOptions::SPLIT_SENTENCES]);
+            $params[TranslateTextOptions::SPLIT_SENTENCES] = $options[TranslateTextOptions::SPLIT_SENTENCES];
         }
         if (isset($options[TranslateTextOptions::PRESERVE_FORMATTING])) {
             $params[TranslateTextOptions::PRESERVE_FORMATTING] =
@@ -1018,14 +1015,16 @@ class DeepLClient
      * @param string $name User-defined name to assign to the glossary.
      * @param MultilingualGlossaryDictionaryEntries[] $dictionaries A list of MultilingualGlossaryDictionaryEntries
      *      which each contains entries for a particular language pair
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws DeepLException
      */
     public function createMultilingualGlossary(
         string $name,
-        array $dictionaries
+        array $dictionaries,
+        array $options = []
     ): MultilingualGlossaryInfo {
-
+        self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
             throw new DeepLException('glossary name must be a non-empty string');
         }
@@ -1034,7 +1033,7 @@ class DeepLClient
             'name' => $name,
             'dictionaries' => self::multilingualDictionariesToObjects($dictionaries),
         ];
-        return $this->createMultilingualGlossaryWithParams($params);
+        return $this->createMultilingualGlossaryWithParams($params, $options);
     }
 
     /**
@@ -1043,6 +1042,7 @@ class DeepLClient
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
      * @param string $csvContent String containing CSV content.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws DeepLException
      */
@@ -1050,9 +1050,10 @@ class DeepLClient
         string $name,
         string $sourceLang,
         string $targetLang,
-        string $csvContent
+        string $csvContent,
+        array $options = []
     ): MultilingualGlossaryInfo {
-
+        self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
             throw new DeepLException('glossary name must be a non-empty string');
         }
@@ -1061,18 +1062,18 @@ class DeepLClient
             'name' => $name,
             'dictionaries' => [self::csvDictionaryObject($sourceLang, $targetLang, $csvContent)],
         ];
-        return $this->createMultilingualGlossaryWithParams($params);
+        return $this->createMultilingualGlossaryWithParams($params, $options);
     }
 
     /**
      * @throws DeepLException
      */
-    private function createMultilingualGlossaryWithParams(array $params): MultilingualGlossaryInfo
+    private function createMultilingualGlossaryWithParams(array $params, array $options): MultilingualGlossaryInfo
     {
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/glossaries',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1085,25 +1086,27 @@ class DeepLClient
      * the given language pair, or adds new ones to the dictionary if not.
      * Without a name and dictionaries, the body is {}.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
-     * @param string|null $name Optional, new name for glossary.
-     * @param array|null $dictionaries Optional, array of MultilingualGlossaryDictionaryEntries to update or add to
-     *  glossary.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: NAME (new name for the
+     *  glossary), DICTIONARIES (MultilingualGlossaryDictionaryEntries[] to update or add) and EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws DeepLException
      */
-    public function updateMultilingualGlossary(
-        $glossary,
-        ?string $name,
-        ?array $dictionaries
-    ): MultilingualGlossaryInfo {
+    public function updateMultilingualGlossary($glossary, array $options = []): MultilingualGlossaryInfo
+    {
+        self::checkMultilingualGlossaryOptions(
+            $options,
+            [MultilingualGlossaryOptions::NAME, MultilingualGlossaryOptions::DICTIONARIES]
+        );
         $params = [];
-        if (isset($name)) {
+        $name = $options[MultilingualGlossaryOptions::NAME] ?? null;
+        if ($name !== null) {
             $params['name'] = $name;
         }
-        if (isset($dictionaries) and count($dictionaries) > 0) {
+        $dictionaries = $options[MultilingualGlossaryOptions::DICTIONARIES] ?? null;
+        if ($dictionaries !== null && count($dictionaries) > 0) {
             $params['dictionaries'] = self::multilingualDictionariesToObjects($dictionaries);
         }
-        return $this->patchMultilingualGlossary($glossary, $params, []);
+        return $this->patchMultilingualGlossary($glossary, $params, $options);
     }
 
     /**
@@ -1189,14 +1192,17 @@ class DeepLClient
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
      *  update.
      * @param MultilingualGlossaryDictionaryEntries $dictionaryEntries Replacement dictionary with entries.
+     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
      * @throws DeepLException
      */
     public function replaceMultilingualGlossaryDictionary(
         $glossary,
-        MultilingualGlossaryDictionaryEntries $dictionaryEntries
+        MultilingualGlossaryDictionaryEntries $dictionaryEntries,
+        array $options = []
     ): MultilingualGlossaryDictionaryInfo {
-        return $this->putMultilingualGlossaryDictionary($glossary, $dictionaryEntries->toObject(), []);
+        self::checkMultilingualGlossaryOptions($options, []);
+        return $this->putMultilingualGlossaryDictionary($glossary, $dictionaryEntries->toObject(), $options);
     }
 
     /**
@@ -1321,29 +1327,27 @@ class DeepLClient
     }
 
     /**
-     * Deletes specified glossary dictionary.
-     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
-     *  be deleted.
-     * @param MultilingualGlossaryDictionaryInfo|null $dictionary The dictionary to delete. Either the
-     * MultilingualGlossaryDictionaryInfo or both the source_lang and target_lang
-     * can be provided to identify the dictionary.
-     * @param string|null $sourceLang Optional parameter representing the source language of the dictionary
-     * @param string|null $targetLang Optional parameter representing the target language of the dictionary.
+     * Deletes the glossary dictionary of the given language pair.
+     * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of the glossary
+     *  containing the dictionary.
+     * @param string|MultilingualGlossaryDictionaryInfo $sourceLang Language code of the dictionary's source terms,
+     *  or the MultilingualGlossaryDictionaryInfo of the dictionary, which identifies both languages.
+     * @param string|null $targetLang Language code of the dictionary's target terms; required with a source
+     *  language code, not allowed with a MultilingualGlossaryDictionaryInfo.
      * @throws DeepLException
      */
-    public function deleteMultilingualGlossaryDictionary(
-        $glossary,
-        ?MultilingualGlossaryDictionaryInfo $dictionary,
-        ?string $sourceLang = null,
-        ?string $targetLang = null
-    ): void {
-        if (is_null($dictionary)) {
-            if (is_null($sourceLang) or is_null($targetLang)) {
-                throw new DeepLException('must provide dictionary or both source_lang and target_lang');
+    public function deleteMultilingualGlossaryDictionary($glossary, $sourceLang, ?string $targetLang = null): void
+    {
+        if ($sourceLang instanceof MultilingualGlossaryDictionaryInfo) {
+            if ($targetLang !== null) {
+                throw new DeepLException('targetLang must not be given with a MultilingualGlossaryDictionaryInfo');
             }
-        } else {
-            $sourceLang = $dictionary->sourceLang;
-            $targetLang = $dictionary->targetLang;
+            $targetLang = $sourceLang->targetLang;
+            $sourceLang = $sourceLang->sourceLang;
+        } elseif (!is_string($sourceLang) || $targetLang === null) {
+            throw new DeepLException(
+                'must provide a MultilingualGlossaryDictionaryInfo or both sourceLang and targetLang'
+            );
         }
 
         $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
@@ -1686,6 +1690,7 @@ class DeepLClient
      * @param string $language Language code for the style rule.
      * @param array|null $configuredRules Optional configured rules to apply.
      * @param array|null $customInstructions Optional custom instructions to include.
+     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Details about the created style rule.
      * @throws DeepLException
      */
@@ -1693,8 +1698,10 @@ class DeepLClient
         string $name,
         string $language,
         ?array $configuredRules = null,
-        ?array $customInstructions = null
+        ?array $customInstructions = null,
+        array $options = []
     ): StyleRuleInfo {
+        self::checkStyleRuleOptions($options);
         if (strlen($name) === 0) {
             throw new DeepLException('name must be a non-empty string');
         }
@@ -1716,7 +1723,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/style_rules',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1746,12 +1753,14 @@ class DeepLClient
      * Updates the name of an existing style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param string $name New name for the style rule.
+     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
      */
-    public function updateStyleRuleName($styleRule, string $name): StyleRuleInfo
+    public function updateStyleRuleName($styleRule, string $name, array $options = []): StyleRuleInfo
     {
+        self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
@@ -1764,7 +1773,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'PATCH',
             "/v3/style_rules/" . rawurlencode($styleId),
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1791,22 +1800,26 @@ class DeepLClient
      * Replaces the configured rules for a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param array $configuredRules The new configured rules to set.
+     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS, added as
+     *  further keys of the configured rules object.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
      */
-    public function updateStyleRuleConfiguredRules($styleRule, array $configuredRules): StyleRuleInfo
-    {
+    public function updateStyleRuleConfiguredRules(
+        $styleRule,
+        array $configuredRules,
+        array $options = []
+    ): StyleRuleInfo {
+        self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
         }
-        $params = empty($configuredRules) ? (object)$configuredRules : $configuredRules;
-
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
             "/v3/style_rules/" . rawurlencode($styleId) . "/configured_rules",
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($configuredRules, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1819,6 +1832,7 @@ class DeepLClient
      * @param string $label Label for the custom instruction.
      * @param string $prompt Prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
+     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The created custom instruction.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
@@ -1827,8 +1841,10 @@ class DeepLClient
         $styleRule,
         string $label,
         string $prompt,
-        ?string $sourceLanguage = null
+        ?string $sourceLanguage = null,
+        array $options = []
     ): CustomInstruction {
+        self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
@@ -1850,7 +1866,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             "/v3/style_rules/" . rawurlencode($styleId) . "/custom_instructions",
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1860,20 +1876,18 @@ class DeepLClient
     /**
      * Gets a custom instruction for a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
-     * @param string $instructionId ID of the custom instruction to retrieve.
+     * @param string|CustomInstruction $instructionId ID or CustomInstruction of the custom instruction to retrieve.
      * @return CustomInstruction The custom instruction.
      * @throws DeepLException
      * @throws NotFoundException If the style rule or custom instruction is not found.
      */
-    public function getStyleRuleCustomInstruction($styleRule, string $instructionId): CustomInstruction
+    public function getStyleRuleCustomInstruction($styleRule, $instructionId): CustomInstruction
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
         }
-        if (strlen($instructionId) === 0) {
-            throw new DeepLException('instructionId must be a non-empty string');
-        }
+        $instructionId = self::getCustomInstructionId($instructionId);
         $response = $this->client->sendRequestWithBackoff(
             'GET',
             "/v3/style_rules/" . rawurlencode($styleId) . "/custom_instructions/" . rawurlencode($instructionId)
@@ -1886,28 +1900,29 @@ class DeepLClient
     /**
      * Updates a custom instruction for a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
-     * @param string $instructionId ID of the custom instruction to update.
+     * @param string|CustomInstruction $instructionId ID or CustomInstruction of the custom instruction to update.
      * @param string $label New label for the custom instruction.
      * @param string $prompt New prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
+     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The updated custom instruction.
      * @throws DeepLException
      * @throws NotFoundException If the style rule or custom instruction is not found.
      */
     public function updateStyleRuleCustomInstruction(
         $styleRule,
-        string $instructionId,
+        $instructionId,
         string $label,
         string $prompt,
-        ?string $sourceLanguage = null
+        ?string $sourceLanguage = null,
+        array $options = []
     ): CustomInstruction {
+        self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
         }
-        if (strlen($instructionId) === 0) {
-            throw new DeepLException('instructionId must be a non-empty string');
-        }
+        $instructionId = self::getCustomInstructionId($instructionId);
         if (strlen($label) === 0) {
             throw new DeepLException('label must be a non-empty string');
         }
@@ -1925,7 +1940,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
             "/v3/style_rules/" . rawurlencode($styleId) . "/custom_instructions/" . rawurlencode($instructionId),
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1935,24 +1950,61 @@ class DeepLClient
     /**
      * Deletes a custom instruction from a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
-     * @param string $instructionId ID of the custom instruction to delete.
+     * @param string|CustomInstruction $instructionId ID or CustomInstruction of the custom instruction to delete.
      * @throws DeepLException
      * @throws NotFoundException If the style rule or custom instruction is not found.
      */
-    public function deleteStyleRuleCustomInstruction($styleRule, string $instructionId): void
+    public function deleteStyleRuleCustomInstruction($styleRule, $instructionId): void
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
             throw new DeepLException('styleId must be a non-empty string');
         }
-        if (strlen($instructionId) === 0) {
-            throw new DeepLException('instructionId must be a non-empty string');
-        }
+        $instructionId = self::getCustomInstructionId($instructionId);
         $response = $this->client->sendRequestWithBackoff(
             'DELETE',
             "/v3/style_rules/" . rawurlencode($styleId) . "/custom_instructions/" . rawurlencode($instructionId)
         );
         $this->checkStatusCode($response);
+    }
+
+    /**
+     * @param string|CustomInstruction $instruction
+     * @throws DeepLException
+     */
+    private static function getCustomInstructionId($instruction): string
+    {
+        if ($instruction instanceof CustomInstruction) {
+            $instruction = $instruction->id;
+        }
+        if (!is_string($instruction) || strlen($instruction) === 0) {
+            throw new DeepLException('instructionId must be a non-empty string or a CustomInstruction with an id');
+        }
+        return $instruction;
+    }
+
+    /**
+     * @throws DeepLException If an option key is unknown.
+     */
+    private static function checkStyleRuleOptions(array $options): void
+    {
+        foreach (array_keys($options) as $key) {
+            if ($key !== StyleRuleOptions::EXTRA_BODY_PARAMETERS) {
+                throw new DeepLException("Unknown style rule option: $key");
+            }
+        }
+    }
+
+    /**
+     * Encodes the JSON body of a style rule request, with the extra body parameters added last. An empty
+     * body encodes as {}.
+     */
+    private static function styleRuleJsonBody(array $params, array $options): string
+    {
+        foreach ($options[StyleRuleOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+            $params[$key] = $value;
+        }
+        return json_encode((object)$params);
     }
 
     /**
@@ -2305,18 +2357,29 @@ class DeepLClient
      * importTranslationMemoryFromFilepath() to do all three steps at once.
      * @param string $fileName Name of the TMX file to import, for example 'legal.tmx'.
      * @param int $contentLength Size of the TMX file in bytes.
-     * @param string|null $contentType Optional MIME type of the file, defaults to 'application/xml'.
+     * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE,
+     *  DISPLAY_NAME and EXTRA_BODY_PARAMETERS. A string is the MIME type of the file, as CONTENT_TYPE; the API
+     *  defaults it to 'application/xml'.
      * @param string|null $displayName Optional name for the resulting translation memory, defaults
-     *  to the file name.
+     *  to the file name. Only with a string or null $options; with an array, use DISPLAY_NAME.
      * @return TranslationMemoryImport The job ID and upload URL.
      * @throws DeepLException
      */
     public function createTranslationMemoryImport(
         string $fileName,
         int $contentLength,
-        ?string $contentType = null,
+        $options = null,
         ?string $displayName = null
     ): TranslationMemoryImport {
+        $options = self::translationMemoryOptions(
+            $options,
+            TranslationMemoryOptions::CONTENT_TYPE,
+            TranslationMemoryOptions::DISPLAY_NAME,
+            $displayName,
+            [TranslationMemoryOptions::CONTENT_TYPE, TranslationMemoryOptions::DISPLAY_NAME]
+        );
+        $contentType = $options[TranslationMemoryOptions::CONTENT_TYPE] ?? null;
+        $displayName = $options[TranslationMemoryOptions::DISPLAY_NAME] ?? null;
         if (strlen($fileName) === 0) {
             throw new DeepLException('fileName must be a non-empty string');
         }
@@ -2334,6 +2397,9 @@ class DeepLClient
         $params = ['source_file' => $sourceFile];
         if ($displayName !== null) {
             $params['parameters'] = ['display_name' => $displayName];
+        }
+        foreach ($options[TranslationMemoryOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+            $params[$key] = $value;
         }
 
         $response = $this->client->sendRequestWithBackoff(
@@ -2437,15 +2503,17 @@ class DeepLClient
      * Any other status, including one this library does not know, keeps polling. Note that an
      * import job keeps reporting 'awaiting_input' for a while after its file has been uploaded,
      * because the API detects the upload asynchronously. A job whose file is never uploaded does
-     * not finish on its own, so pass $timeout when that is a possibility.
+     * not finish on its own, so pass a timeout when that is a possibility.
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
-     * @param float|null $timeout Optional maximum time in seconds to wait before throwing an
-     *  exception. The last sleep between polls is shortened so the wait does not run past it.
+     * @param array|float|null $timeout Optional maximum time in seconds to wait before throwing an
+     *  exception, or wait options, see \DeepL\TranslationMemoryOptions: only TIMEOUT. The last sleep
+     *  between polls is shortened so the wait does not run past it.
      * @return TranslationMemoryJob The completed job.
      * @throws DeepLException
      */
-    public function waitUntilTranslationMemoryJobDone($job, ?float $timeout = null): TranslationMemoryJob
+    public function waitUntilTranslationMemoryJobDone($job, $timeout = null): TranslationMemoryJob
     {
+        $timeout = self::translationMemoryTimeout($timeout);
         $jobId = TranslationMemoryJob::getJobId($job);
         $deadline = $timeout === null ? null : microtime(true) + $timeout;
         $status = $this->getTranslationMemoryJob($jobId);
@@ -2524,9 +2592,12 @@ class DeepLClient
      * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
      * waits for processing to finish.
      * @param string $inputFile String containing file path of the TMX file to import.
-     * @param string|null $displayName Optional name for the resulting translation memory, defaults
-     *  to the file name.
-     * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
+     * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE (used
+     *  for the import job and the upload, default 'application/xml'), DISPLAY_NAME, TIMEOUT and
+     *  EXTRA_BODY_PARAMETERS. A string is the name for the resulting translation memory, as DISPLAY_NAME; it
+     *  defaults to the file name.
+     * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish. Only with a
+     *  string or null $options; with an array, use TIMEOUT.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
      * @throws \InvalidArgumentException If no file exists at the input file path, before any request is
@@ -2536,9 +2607,22 @@ class DeepLClient
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
-        ?string $displayName = null,
+        $options = null,
         ?float $timeout = null
     ): TranslationMemoryJob {
+        $options = self::translationMemoryOptions(
+            $options,
+            TranslationMemoryOptions::DISPLAY_NAME,
+            TranslationMemoryOptions::TIMEOUT,
+            $timeout,
+            [
+                TranslationMemoryOptions::CONTENT_TYPE,
+                TranslationMemoryOptions::DISPLAY_NAME,
+                TranslationMemoryOptions::TIMEOUT,
+            ]
+        );
+        $timeout = self::translationMemoryTimeout($options[TranslationMemoryOptions::TIMEOUT] ?? null);
+        unset($options[TranslationMemoryOptions::TIMEOUT]);
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
         }
@@ -2556,13 +2640,12 @@ class DeepLClient
             throw new DeepLException("Failed reading input file $inputFile", 0, $cause);
         }
 
-        $created = $this->createTranslationMemoryImport(
-            basename($inputFile),
-            strlen($fileContent),
-            null,
-            $displayName
+        $created = $this->createTranslationMemoryImport(basename($inputFile), strlen($fileContent), $options);
+        $this->uploadTranslationMemoryFile(
+            $created,
+            $fileContent,
+            $options[TranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
         );
-        $this->uploadTranslationMemoryFile($created, $fileContent);
         return $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
     }
 
@@ -2572,7 +2655,8 @@ class DeepLClient
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
      *  TranslationMemoryInfo of the translation memory to export.
      * @param string $outputFile String containing file path to create the exported TMX file.
-     * @param float|null $timeout Optional maximum time in seconds to wait for the export to finish.
+     * @param array|float|null $timeout Optional maximum time in seconds to wait for the export to finish, or wait
+     *  options, see \DeepL\TranslationMemoryOptions: only TIMEOUT.
      * @return TranslationMemoryJob The completed export job.
      * @throws DeepLException Also if a file already exists at the output file path or its directory
      *  does not exist or is not writable; this is checked before the export job is created.
@@ -2580,8 +2664,9 @@ class DeepLClient
     public function exportTranslationMemoryToFilepath(
         $translationMemory,
         string $outputFile,
-        ?float $timeout = null
+        $timeout = null
     ): TranslationMemoryJob {
+        $timeout = self::translationMemoryTimeout($timeout);
         if (file_exists($outputFile)) {
             throw new DeepLException("File already exists at output file path $outputFile");
         }
@@ -2595,6 +2680,65 @@ class DeepLClient
         $job = $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
         $this->downloadTranslationMemoryExport($job, $outputFile);
         return $job;
+    }
+
+    /**
+     * Returns the options array of a translation memory method whose options parameter also takes the
+     * released positional form: a string for $scalarKey, then $second for $secondKey.
+     * @param array|string|null $options
+     * @param mixed $second
+     * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
+     * @throws DeepLException
+     */
+    private static function translationMemoryOptions(
+        $options,
+        string $scalarKey,
+        string $secondKey,
+        $second,
+        array $allowed
+    ): array {
+        if (!is_array($options)) {
+            if ($options !== null && !is_string($options)) {
+                throw new DeepLException('options must be an array, a string or null');
+            }
+            return array_filter([$scalarKey => $options, $secondKey => $second], function ($value) {
+                return $value !== null;
+            });
+        }
+        if ($second !== null) {
+            throw new DeepLException('pass all options in the options array, not as further arguments');
+        }
+        $allowed[] = TranslationMemoryOptions::EXTRA_BODY_PARAMETERS;
+        foreach (array_keys($options) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                throw new DeepLException("Unknown translation memory option: $key");
+            }
+        }
+        return $options;
+    }
+
+    /**
+     * Returns the timeout in seconds of a wait helper, from a number or a TranslationMemoryOptions array.
+     * @param array|float|int|null $timeout
+     * @throws DeepLException
+     */
+    private static function translationMemoryTimeout($timeout): ?float
+    {
+        if (is_array($timeout)) {
+            foreach (array_keys($timeout) as $key) {
+                if ($key !== TranslationMemoryOptions::TIMEOUT) {
+                    throw new DeepLException("Unknown translation memory wait option: $key");
+                }
+            }
+            $timeout = $timeout[TranslationMemoryOptions::TIMEOUT] ?? null;
+        }
+        if ($timeout === null) {
+            return null;
+        }
+        if (!is_numeric($timeout)) {
+            throw new DeepLException('timeout must be a number of seconds');
+        }
+        return (float)$timeout;
     }
 
     /**

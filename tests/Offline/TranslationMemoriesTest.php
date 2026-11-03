@@ -15,6 +15,7 @@ use DeepL\TranslationMemoryImport;
 use DeepL\TranslationMemoryInfo;
 use DeepL\TranslationMemoryJob;
 use DeepL\TranslationMemoryJobResult;
+use DeepL\TranslationMemoryOptions;
 use DeepL\TranslationMemorySegmentsOptions;
 use GuzzleHttp\Psr7\Response;
 
@@ -239,6 +240,57 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertNull($import->expiresAt);
     }
 
+    public function testSendsImportRequestFromAnOptionsArrayWithExtraBodyParametersLast(): void
+    {
+        $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
+
+        $this->makeDeepLClient()->createTranslationMemoryImport('a.tmx', 42, [
+            TranslationMemoryOptions::CONTENT_TYPE => 'text/xml',
+            TranslationMemoryOptions::DISPLAY_NAME => 'My TM',
+            TranslationMemoryOptions::EXTRA_BODY_PARAMETERS => [
+                'parameters' => ['display_name' => 'X'],
+                'flag' => true,
+            ],
+        ]);
+
+        $this->assertSame([
+            'source_file' => ['file_name' => 'a.tmx', 'content_length' => 42, 'content_type' => 'text/xml'],
+            'parameters' => ['display_name' => 'X'],
+            'flag' => true,
+        ], $this->jsonBody());
+    }
+
+    public function testThrowsWithoutRequestForPositionalArgumentsBesideAnOptionsArray(): void
+    {
+        $client = $this->makeDeepLClient();
+        $file = Fixtures::tempFile('example.tmx', '<tmx/>');
+
+        foreach ([
+            function () use ($client) {
+                $client->createTranslationMemoryImport('a.tmx', 42, [], 'My TM');
+            },
+            function () use ($client, $file) {
+                $client->importTranslationMemoryFromFilepath($file, [], 60.0);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testThrowsForAnUnknownTranslationMemoryOption(): void
+    {
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('Unknown translation memory option: timeout');
+
+        $this->makeDeepLClient()->createTranslationMemoryImport('a.tmx', 42, [TranslationMemoryOptions::TIMEOUT => 1]);
+    }
+
     public function testThrowsWhenTheImportFileIsInvalid(): void
     {
         $client = $this->makeDeepLClient();
@@ -401,6 +453,51 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertEqualsWithDelta(7.0, \DeepL\microtime(true) - $start, 0.01);
     }
 
+    public function testAcceptsWaitOptionsInTheTimeoutParameter(): void
+    {
+        $this->useFakeClock();
+        foreach (range(1, 6) as $_) {
+            $this->reply(self::job('processing'));
+        }
+        $this->reply(['job_id' => 'job2', 'parameters' => ['translation_memory_id' => 'tm1']], 202);
+        foreach (range(1, 3) as $_) {
+            $this->reply(self::job('processing'));
+        }
+        $client = $this->makeDeepLClient();
+        $output = Fixtures::tempDir() . '/export.tmx';
+
+        foreach ([
+            function () use ($client) {
+                $client->waitUntilTranslationMemoryJobDone('job1', [TranslationMemoryOptions::TIMEOUT => 7]);
+            },
+            function () use ($client) {
+                $client->waitUntilTranslationMemoryJobDone('job1', [TranslationMemoryOptions::TIMEOUT => 7.0]);
+            },
+            function () use ($client, $output) {
+                $client->exportTranslationMemoryToFilepath('tm1', $output, [TranslationMemoryOptions::TIMEOUT => 7]);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertStringContainsString('Manual timeout of 7s exceeded', $exception->getMessage());
+            }
+        }
+        $this->assertFileDoesNotExist($output);
+    }
+
+    public function testThrowsForAnUnknownWaitOption(): void
+    {
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('Unknown translation memory wait option: display_name');
+
+        $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone(
+            'job1',
+            [TranslationMemoryOptions::DISPLAY_NAME => 'x']
+        );
+    }
+
     public function testKeepsPollingThroughAnUnknownStatusUntilTheJobCompletes(): void
     {
         $this->useFakeClock();
@@ -550,6 +647,28 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertSame('<tmx>hello</tmx>', (string)$this->request(1)->getBody());
         $this->assertRequest('GET', '/v3/translation_memories/jobs/job1', 2);
         $this->assertSame('tm1', $job->result()->translationMemoryId);
+    }
+
+    public function testImportsAFileWithAnOptionsArray(): void
+    {
+        $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
+        $this->reply('', 200);
+        $this->reply(self::job('completed', ['translation_memory_id' => 'tm1']));
+        $file = Fixtures::tempFile('example.tmx', '<tmx>hello</tmx>');
+
+        $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file, [
+            TranslationMemoryOptions::CONTENT_TYPE => 'text/xml',
+            TranslationMemoryOptions::DISPLAY_NAME => 'My TM',
+            TranslationMemoryOptions::TIMEOUT => 60,
+            TranslationMemoryOptions::EXTRA_BODY_PARAMETERS => ['flag' => true],
+        ]);
+
+        $this->assertSame([
+            'source_file' => ['file_name' => 'example.tmx', 'content_length' => 16, 'content_type' => 'text/xml'],
+            'parameters' => ['display_name' => 'My TM'],
+            'flag' => true,
+        ], $this->jsonBody(0));
+        $this->assertSame('text/xml', $this->request(1)->getHeaderLine('Content-Type'));
     }
 
     public function testThrowsInvalidArgumentExceptionWithoutRequestWhenTheImportFileDoesNotExist(): void

@@ -12,6 +12,7 @@ use DeepL\DeepLException;
 use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\StyleRuleInfo;
+use DeepL\StyleRuleOptions;
 
 class StyleRulesTest extends OfflineTestCase
 {
@@ -180,6 +181,71 @@ class StyleRulesTest extends OfflineTestCase
         $this->assertRequest('PUT', '/v3/style_rules/sid/custom_instructions/i1', 4);
         $this->assertSame(['label' => 'L2', 'prompt' => 'P2', 'source_language' => 'fr'], $this->jsonBody(4));
         $this->assertRequest('DELETE', '/v3/style_rules/sid/custom_instructions/i1', 5);
+    }
+
+    public function testAcceptsACustomInstructionForTheInstructionId(): void
+    {
+        $this->reply(self::INSTRUCTION);
+        $this->reply(self::INSTRUCTION);
+        $this->reply('', 204);
+        $client = $this->makeDeepLClient();
+        $instruction = new CustomInstruction('L', 'P', null, 'i/1');
+
+        $client->getStyleRuleCustomInstruction('sid', $instruction);
+        $client->updateStyleRuleCustomInstruction('sid', $instruction, 'L2', 'P2');
+        $client->deleteStyleRuleCustomInstruction('sid', $instruction);
+
+        $this->assertRequest('GET', '/v3/style_rules/sid/custom_instructions/i%2F1', 0);
+        $this->assertRequest('PUT', '/v3/style_rules/sid/custom_instructions/i%2F1', 1);
+        $this->assertRequest('DELETE', '/v3/style_rules/sid/custom_instructions/i%2F1', 2);
+    }
+
+    public function testThrowsForACustomInstructionWithoutId(): void
+    {
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('instructionId must be a non-empty string or a CustomInstruction with an id');
+
+        $this->makeDeepLClient()->deleteStyleRuleCustomInstruction('sid', new CustomInstruction('L', 'P'));
+    }
+
+    public function testAddsExtraBodyParametersLastToStyleRuleBodies(): void
+    {
+        $this->reply(self::STYLE_RULE, 201);
+        $this->reply(self::STYLE_RULE);
+        $this->reply(self::STYLE_RULE);
+        $this->reply(self::INSTRUCTION, 201);
+        $this->reply(self::INSTRUCTION);
+        $client = $this->makeDeepLClient();
+        $extra = [StyleRuleOptions::EXTRA_BODY_PARAMETERS => ['label' => 'X', 'flag' => true]];
+        $rules = ['numbers' => ['number_format' => 'use_comma']];
+
+        $client->createStyleRule('My rules', 'en', null, null, $extra);
+        $client->updateStyleRuleName('sid', 'New', $extra);
+        $client->updateStyleRuleConfiguredRules('sid', $rules, [
+            StyleRuleOptions::EXTRA_BODY_PARAMETERS => ['punctuation' => ['quotation_mark' => 'use_guillemets']],
+        ]);
+        $client->createStyleRuleCustomInstruction('sid', 'L', 'P', null, $extra);
+        $client->updateStyleRuleCustomInstruction('sid', 'i1', 'L2', 'P2', null, $extra);
+
+        $this->assertSame(
+            ['name' => 'My rules', 'language' => 'en', 'label' => 'X', 'flag' => true],
+            $this->jsonBody(0)
+        );
+        $this->assertSame(['name' => 'New', 'label' => 'X', 'flag' => true], $this->jsonBody(1));
+        $this->assertSame(
+            $rules + ['punctuation' => ['quotation_mark' => 'use_guillemets']],
+            $this->jsonBody(2)
+        );
+        $this->assertSame(['label' => 'X', 'prompt' => 'P', 'flag' => true], $this->jsonBody(3));
+        $this->assertSame(['label' => 'X', 'prompt' => 'P2', 'flag' => true], $this->jsonBody(4));
+    }
+
+    public function testThrowsForAnUnknownStyleRuleOption(): void
+    {
+        $this->expectException(DeepLException::class);
+        $this->expectExceptionMessage('Unknown style rule option: name');
+
+        $this->makeDeepLClient()->updateStyleRuleName('sid', 'New', ['name' => 'x']);
     }
 
     public function testParsesCustomInstruction(): void

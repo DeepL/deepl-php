@@ -111,6 +111,29 @@ class TranslateTextTest extends OfflineTestCase
         $this->assertSame($expectedBody, $this->jsonBody());
     }
 
+    public function testFormalitySentAsGiven(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->translateText('Hello', 'en', 'de', [TranslateTextOptions::FORMALITY => 'LESS']);
+
+        $this->assertSame('LESS', $this->jsonBody()['formality']);
+    }
+
+    public function testSplitSentencesSentAsGiven(): void
+    {
+        $this->reply(self::REPLY);
+
+        $this->makeDeepLClient()->translateText(
+            'Hello',
+            'en',
+            'de',
+            [TranslateTextOptions::SPLIT_SENTENCES => 'NoNewlines']
+        );
+
+        $this->assertSame('NoNewlines', $this->jsonBody()['split_sentences']);
+    }
+
     public static function provideOptions(): array
     {
         $base = ['target_lang' => 'de', 'source_lang' => 'en'];
@@ -121,10 +144,6 @@ class TranslateTextTest extends OfflineTestCase
         $profile = new StyleProfile('spid', 'name', null, null, [], [], [], false, new \DateTime(), new \DateTime());
         $tail = ['show_billed_characters' => true, 'text' => ['Hello']];
         return [
-            'formality' => [
-                [TranslateTextOptions::FORMALITY => 'LESS'],
-                $base + ['formality' => 'less'] + $tail,
-            ],
             'formality constant' => [
                 [TranslateTextOptions::FORMALITY => Formality::PREFER_LESS],
                 $base + ['formality' => 'prefer_less'] + $tail,

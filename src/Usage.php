@@ -14,7 +14,8 @@ use DateTime;
  *
  * Depending on the account type, different usage types are included: the character, document and
  * teamDocument fields provide details about each corresponding usage type, allowing each usage type
- * to be checked individually. The anyLimitReached() function checks if any usage type is exceeded.
+ * to be checked individually. The anyLimitReached() function checks if any of these or the per-key
+ * character limit is exceeded.
  *
  * API Pro accounts additionally receive per-key character usage, speech usage, the billing period
  * and a per-product breakdown; these fields are null for other accounts.
@@ -68,15 +69,16 @@ class Usage
     public $endTime;
 
     /**
-     * @return bool True if the character, document or team document limit has been reached or passed,
-     * otherwise false. The API Pro usage types ($apiKeyCharacter, $speechToTextMinutes,
+     * @return bool True if the character, document, team document or per-key character ($apiKeyCharacter)
+     * limit has been reached or passed, otherwise false. The speech usage types ($speechToTextMinutes,
      * $speechToSpeechMinutes) are not considered; call limitReached() on them directly.
      */
     public function anyLimitReached(): bool
     {
         return ($this->character !== null && $this->character->limitReached()) ||
             ($this->document !== null && $this->document->limitReached()) ||
-            ($this->teamDocument !== null && $this->teamDocument->limitReached());
+            ($this->teamDocument !== null && $this->teamDocument->limitReached()) ||
+            ($this->apiKeyCharacter !== null && $this->apiKeyCharacter->limitReached());
     }
 
     public function __toString(): string
