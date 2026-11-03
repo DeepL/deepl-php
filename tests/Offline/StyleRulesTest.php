@@ -59,9 +59,17 @@ class StyleRulesTest extends OfflineTestCase
         $this->assertSame('sid', $rules[0]->styleId);
         $this->assertSame('2024-05-06 07:08:09', $rules[0]->creationTime->format('Y-m-d H:i:s'));
         $this->assertSame('2024-06-07 08:09:10', $rules[0]->updatedTime->format('Y-m-d H:i:s'));
-        $this->assertSame(['calendar_era' => 'use_bc_and_ad'], $rules[0]->configuredRules->datesAndTimes);
-        $this->assertNull($rules[0]->configuredRules->numbers);
         $this->assertSame('de', $rules[0]->customInstructions[0]->sourceLanguage);
+    }
+
+    public function testReturnsConfiguredRulesAsGivenIncludingUnknownCategories(): void
+    {
+        $configured = ['numbers' => ['decimal_separator' => 'comma'], 'new_category' => ['new_rule' => 'on']];
+        $this->reply(['configured_rules' => $configured] + self::STYLE_RULE);
+
+        $rule = $this->makeDeepLClient()->getStyleRule('sid');
+
+        $this->assertSame($configured, $rule->configuredRules);
     }
 
     public function testParsesStyleRulesWithoutDetails(): void

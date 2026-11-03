@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The protected `DeepLClient::checkStatusCode()` no longer has the third
   parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
   receive `$usingGlossary`; the SDK calls it with two arguments.
+- `StyleRuleInfo::$configuredRules` is the `configured_rules` array as the
+  API returns it (category => rule => value, snake_case keys) instead of a
+  `ConfiguredRules` object; categories the SDK did not know are no longer
+  dropped. Replace `$info->configuredRules->datesAndTimes` with
+  `$info->configuredRules['dates_and_times']`, and likewise for the other
+  categories. The `StyleRuleInfo` constructor takes this array.
 
 ### Removed
 - Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
@@ -58,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `Translator` type hints, `instanceof` checks, `Translator::VERSION` and
   `Translator::isFreeAccountAuthKey()` with `DeepLClient`. Subclasses of
   `Translator` extend `DeepLClient` instead. `TranslatorOptions` remains.
+- Removed the `ConfiguredRules` class. `StyleRuleInfo::$configuredRules` is
+  a plain array; see Changed.
 - Removed `Translator::isAuthKeyFreeAccount()`. Use `isFreeAccountAuthKey()`,
   which also trims whitespace around the key.
 - Removed the constants `LanguageResource::RESOURCE_*` and

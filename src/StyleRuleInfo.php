@@ -31,7 +31,10 @@ class StyleRuleInfo
     /** @var int Version number of the style rule list. */
     public $version;
 
-    /** @var ConfiguredRules|null The predefined rules that have been enabled. */
+    /**
+     * @var array<string, array<string, string>>|null The predefined rules that have been enabled, as returned by
+     * the API: category => rule => value, with snake_case keys such as 'dates_and_times'.
+     */
     public $configuredRules;
 
     /** @var CustomInstruction[]|null Optional list of custom instructions. */
@@ -44,7 +47,7 @@ class StyleRuleInfo
         DateTime $updatedTime,
         string $language,
         int $version,
-        ?ConfiguredRules $configuredRules = null,
+        ?array $configuredRules = null,
         ?array $customInstructions = null
     ) {
         $this->styleId = $styleId;
@@ -77,11 +80,6 @@ class StyleRuleInfo
 
     private static function parseObject(array $json): StyleRuleInfo
     {
-        $configuredRules = null;
-        if (isset($json['configured_rules'])) {
-            $configuredRules = ConfiguredRules::fromJson($json['configured_rules']);
-        }
-
         $customInstructions = null;
         if (isset($json['custom_instructions']) && is_array($json['custom_instructions'])) {
             $customInstructions = [];
@@ -97,7 +95,7 @@ class StyleRuleInfo
             ParsingUtils::parseTimestamp($json['updated_time'] ?? null),
             $json['language'],
             $json['version'],
-            $configuredRules,
+            $json['configured_rules'] ?? null,
             $customInstructions
         );
     }

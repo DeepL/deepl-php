@@ -963,7 +963,11 @@ echo "{$styleRule->name} ({$styleRule->language})\n";
 corresponding to all of your stored style rules. The method accepts optional
 parameters: `page` (page number for pagination, 0-indexed), `pageSize` (number
 of items per page), and `detailed` (whether to include detailed configuration
-rules in the `configuredRules` property).
+rules in the `configuredRules` property). `configuredRules` is the array the
+API returns, in the same shape that `createStyleRule()` and
+`updateStyleRuleConfiguredRules()` take: category => rule => value, with
+snake_case keys such as `'dates_and_times'`. Categories and rules are not
+validated, so new ones appear as the API adds them.
 
 ```php
 // Get all style rules
@@ -975,8 +979,8 @@ foreach ($styleRules as $rule) {
 // Get style rules with detailed configuration
 $styleRulesDetailed = $deeplClient->getAllStyleRules(detailed: true);
 foreach ($styleRulesDetailed as $rule) {
-    if ($rule->configuredRules && $rule->configuredRules->numbers) {
-        echo "  Number formatting: " . implode(", ", array_keys($rule->configuredRules->numbers)) . "\n";
+    if (isset($rule->configuredRules['numbers'])) {
+        echo "  Number formatting: " . implode(", ", array_keys($rule->configuredRules['numbers'])) . "\n";
     }
 }
 ```
