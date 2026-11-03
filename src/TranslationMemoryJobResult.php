@@ -22,12 +22,6 @@ class TranslationMemoryJobResult
     /** The job completed successfully. */
     public const STATUS_COMPLETED = TranslationMemoryJobStatus::COMPLETED;
 
-    /**
-     * The exported TMX file of the job was downloaded. Not a status the API reports, so it has no
-     * TranslationMemoryJobStatus counterpart.
-     */
-    public const STATUS_DOWNLOADED = 'downloaded';
-
     /** The job failed. */
     public const STATUS_FAILED = TranslationMemoryJobStatus::FAILED;
 
@@ -90,16 +84,12 @@ class TranslationMemoryJobResult
     }
 
     /**
-     * @return bool True if the job has finished, successfully or not, otherwise false.
+     * @return bool True if the job completed successfully, otherwise false. A failed or expired job
+     * is not done; check ok() for those.
      */
     public function done(): bool
     {
-        return in_array($this->status, [
-            self::STATUS_COMPLETED,
-            self::STATUS_DOWNLOADED,
-            self::STATUS_FAILED,
-            self::STATUS_EXPIRED,
-        ], true);
+        return $this->status === self::STATUS_COMPLETED;
     }
 
     /**

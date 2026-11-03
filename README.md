@@ -385,10 +385,12 @@ try {
 }
 ```
 
-Every failure throws a `DocumentTranslationException`. If no file exists at the
-input file path, or a file already exists at the output file path, it is thrown
-before any request is sent, with a `null` handle. For a failure during upload,
-translation or download, its `httpStatusCode` and `shouldRetry` are those of the
+If no file exists at the input file path, `translateDocument()` and
+`translateDocumentUpload()` throw an `InvalidArgumentException` before any
+request is sent. Every other failure of `translateDocument()` throws a
+`DocumentTranslationException`. If a file already exists at the output file
+path, it is thrown before any request is sent, with a `null` handle. For a
+failure during upload, translation or download, its `httpStatusCode` and `shouldRetry` are those of the
 `DeepLException` that caused it, which `getPrevious()` returns.
 
 `translateDocument()` wraps multiple API calls: uploading, polling status until
@@ -1215,8 +1217,8 @@ memory: it creates the import job, uploads the file, and waits for processing to
 finish. The returned `TranslationMemoryJob` carries the ID of the new translation
 memory. An import usually takes under a minute; the optional third argument is a
 maximum time in seconds to wait for it.
-If no file exists at the input file path, it throws a `DeepLException` before
-sending any request.
+If no file exists at the input file path, it throws an `InvalidArgumentException`
+before sending any request.
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', 'Legal TM', 300);
@@ -1246,7 +1248,7 @@ $job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, 300);
 ```
 
 `waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
-status is `completed` or `downloaded`, and throws a `DeepLException` with the
+status is `completed`, and throws a `DeepLException` with the
 API's error message if it is `failed` or `expired`. Any other status, including
 one this library does not know, keeps polling, so pass a timeout in seconds as
 the second argument to bound the wait; the wait never runs past it. The known

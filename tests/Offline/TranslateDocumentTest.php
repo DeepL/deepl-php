@@ -455,7 +455,7 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
-    public function testThrowsDocumentTranslationExceptionWithoutRequestWhenTheInputFileDoesNotExist(): void
+    public function testThrowsInvalidArgumentExceptionWithoutRequestWhenTheInputFileDoesNotExist(): void
     {
         $input = Fixtures::tempDir() . '/missing.txt';
         $output = Fixtures::tempDir() . '/output.txt';
@@ -463,11 +463,22 @@ class TranslateDocumentTest extends OfflineTestCase
         foreach ([$this->makeDeepLClient(), new DeepLClient('k')] as $deeplClient) {
             try {
                 $deeplClient->translateDocument($input, $output, 'en', 'de');
-                $this->fail('expected a DocumentTranslationException');
-            } catch (DocumentTranslationException $exception) {
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertSame("File does not exist at input file path $input", $exception->getMessage());
-                $this->assertNull($exception->handle);
             }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testUploadThrowsInvalidArgumentExceptionWithoutRequestWhenTheInputFileDoesNotExist(): void
+    {
+        $input = Fixtures::tempDir() . '/missing.txt';
+        try {
+            $this->makeDeepLClient()->translateDocumentUpload($input, 'en', 'de');
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame("File does not exist at input file path $input", $exception->getMessage());
         }
         $this->assertRequestCount(0);
     }

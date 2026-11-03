@@ -225,9 +225,11 @@ class DeepLClient
      * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
-     * @throws DocumentTranslationException If no file exists at the input file path or a file already exists at the
-     * output file path, both checked before any request is sent with a null `handle`, or if any error occurs
-     * during document upload, translation or download. The `handle` property of the exception, if not null,
+     * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
+     * sent.
+     * @throws DocumentTranslationException If a file already exists at the output file path, checked before any
+     * request is sent with a null `handle`, or if any error occurs during document upload, translation or
+     * download. The `handle` property of the exception, if not null,
      * may be used to recover the document ID and key of an in-progress translation. This includes the expiry of the
      * TranslateDocumentOptions::TIMEOUT option. The exception carries the httpStatusCode and shouldRetry of the
      * DeepLException that caused it, which is also available via getPrevious().
@@ -242,7 +244,7 @@ class DeepLClient
     ): DocumentStatus {
         $handle = null;
         if (!file_exists($inputFile)) {
-            throw new DocumentTranslationException("File does not exist at input file path $inputFile");
+            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
         }
         if (file_exists($outputFile)) {
             throw new DocumentTranslationException("File already exists at output file path $outputFile");
@@ -280,6 +282,8 @@ class DeepLClient
      * @param string $targetLang Language code of language to translate into.
      * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
      * @return DocumentHandle Handle associated with the in-progress document translation.
+     * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
+     * sent.
      * @throws DeepLException
      */
     public function translateDocumentUpload(
@@ -288,6 +292,9 @@ class DeepLClient
         string $targetLang,
         array $options = []
     ): DocumentHandle {
+        if (!file_exists($inputFile)) {
+            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
+        }
         $params = $this->buildBodyParams(
             $sourceLang,
             $targetLang,
@@ -2425,8 +2432,8 @@ class DeepLClient
      * Returns when the given translation memory job completes, or throws an exception if there was
      * an error communicating with the DeepL API, the job failed or expired, or the timeout expired.
      *
-     * The job is polled every 5 seconds until its status is 'completed' or 'downloaded', which return
-     * the job, or 'failed' or 'expired', which throw a DeepLException with the API's error message.
+     * The job is polled every 5 seconds until its status is 'completed', which returns the job, or
+     * 'failed' or 'expired', which throw a DeepLException with the API's error message.
      * Any other status, including one this library does not know, keeps polling. Note that an
      * import job keeps reporting 'awaiting_input' for a while after its file has been uploaded,
      * because the API detects the upload asynchronously. A job whose file is never uploaded does
@@ -2434,7 +2441,7 @@ class DeepLClient
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
      * @param float|null $timeout Optional maximum time in seconds to wait before throwing an
      *  exception. The last sleep between polls is shortened so the wait does not run past it.
-     * @return TranslationMemoryJob The completed or downloaded job.
+     * @return TranslationMemoryJob The completed job.
      * @throws DeepLException
      */
     public function waitUntilTranslationMemoryJobDone($job, ?float $timeout = null): TranslationMemoryJob
@@ -2442,7 +2449,7 @@ class DeepLClient
         $jobId = TranslationMemoryJob::getJobId($job);
         $deadline = $timeout === null ? null : microtime(true) + $timeout;
         $status = $this->getTranslationMemoryJob($jobId);
-        while (!$status->done()) {
+        while (!$status->done() && $status->ok()) {
             // The job duration is not reported by the API, so just poll equidistantly
             $secs = 5.0;
             if ($deadline !== null) {
@@ -2522,8 +2529,10 @@ class DeepLClient
      * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
-     * @throws DeepLException If no file exists at the input file path or it cannot be read, before any
-     *  request is sent; the read error, if any, is the previous exception.
+     * @throws \InvalidArgumentException If no file exists at the input file path, before any request is
+     *  sent.
+     * @throws DeepLException If the input file cannot be read, before any request is sent; the read
+     *  error, if any, is the previous exception.
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
@@ -2531,7 +2540,7 @@ class DeepLClient
         ?float $timeout = null
     ): TranslationMemoryJob {
         if (!file_exists($inputFile)) {
-            throw new DeepLException("File does not exist at input file path $inputFile");
+            throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
         }
         if (is_dir($inputFile) || !is_readable($inputFile)) {
             throw new DeepLException("Failed reading input file $inputFile: the file is not readable");

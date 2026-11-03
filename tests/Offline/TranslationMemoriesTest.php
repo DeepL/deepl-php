@@ -347,9 +347,8 @@ class TranslationMemoriesTest extends OfflineTestCase
             'awaiting_input' => ['awaiting_input', false, true],
             'processing' => ['processing', false, true],
             'completed' => ['completed', true, true],
-            'downloaded' => ['downloaded', true, true],
-            'failed' => ['failed', true, false],
-            'expired' => ['expired', true, false],
+            'failed' => ['failed', false, false],
+            'expired' => ['expired', false, false],
         ];
     }
 
@@ -412,16 +411,6 @@ class TranslationMemoriesTest extends OfflineTestCase
 
         $this->assertRequestCount(2);
         $this->assertSame('completed', $job->status());
-    }
-
-    public function testReturnsAJobWhoseStatusIsDownloaded(): void
-    {
-        $this->reply(self::job('downloaded'));
-
-        $job = $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1');
-
-        $this->assertRequestCount(1);
-        $this->assertSame('downloaded', $job->status());
     }
 
     public function testThrowsTheErrorMessageWhenTheJobFails(): void
@@ -563,14 +552,13 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertSame('tm1', $job->result()->translationMemoryId);
     }
 
-    public function testThrowsDeepLExceptionWithoutRequestWhenTheImportFileDoesNotExist(): void
+    public function testThrowsInvalidArgumentExceptionWithoutRequestWhenTheImportFileDoesNotExist(): void
     {
         $file = Fixtures::tempDir() . '/missing.tmx';
         try {
             $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
-            $this->fail('expected a DeepLException');
-        } catch (DeepLException $exception) {
-            $this->assertSame(DeepLException::class, get_class($exception));
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
             $this->assertSame("File does not exist at input file path $file", $exception->getMessage());
         }
         $this->assertRequestCount(0);

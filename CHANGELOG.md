@@ -33,6 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dropped. Replace `$info->configuredRules->datesAndTimes` with
   `$info->configuredRules['dates_and_times']`, and likewise for the other
   categories. The `StyleRuleInfo` constructor takes this array.
+- `translateDocument()`, `translateDocumentUpload()` and
+  `importTranslationMemoryFromFilepath()` throw `\InvalidArgumentException`
+  when no file exists at the input file path, before any request is sent.
+  Previously `translateDocument()` threw `DocumentTranslationException`,
+  `importTranslationMemoryFromFilepath()` threw `DeepLException`, and
+  `translateDocumentUpload()` did not check and failed in the transport. Catch
+  `\InvalidArgumentException` for a missing input file.
+- `TranslationMemoryJob::done()` and `TranslationMemoryJobResult::done()` return
+  true only for the status `completed`, as `DocumentStatus::done()` does;
+  `failed` and `expired` jobs return false. Code that used `done()` to detect
+  any finished job must check `done() || !ok()`.
 
 ### Removed
 - Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
@@ -58,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentDeminificationException`. The DeepL API accepts larger documents;
   drop the option and upload the document unchanged.
 - Removed `GlossaryNotFoundException`. Catch `NotFoundException`.
+- Removed `TranslationMemoryJobResult::STATUS_DOWNLOADED`. `'downloaded'` is
+  not a job status the API reports; `waitUntilTranslationMemoryJobDone()` no
+  longer counts it as finished and keeps polling, like any unknown status. Use
+  `TranslationMemoryJobStatus::COMPLETED`.
 - Removed the `Translator` class. Its methods, the `VERSION` constant and
   the constructor moved into `DeepLClient`, which no longer extends it.
   Replace `new Translator(...)` with `new DeepLClient(...)` (same arguments),

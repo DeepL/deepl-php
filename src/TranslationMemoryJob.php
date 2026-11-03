@@ -129,7 +129,8 @@ class TranslationMemoryJob
     }
 
     /**
-     * @return bool True if the job has finished, successfully or not, otherwise false.
+     * @return bool True if the job completed successfully, otherwise false. A failed or expired job
+     * is not done; check ok() for those.
      */
     public function done(): bool
     {
