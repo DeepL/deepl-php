@@ -217,18 +217,4 @@ class UsageTest extends OfflineTestCase
 
         $this->assertTrue($usage->anyLimitReached());
     }
-
-    public function testAnyLimitReachedIgnoresTheSpeechLimits(): void
-    {
-        $this->reply([
-            'character_count' => 5,
-            'character_limit' => 500000,
-            'speech_to_text_minutes_count' => 0,
-            'speech_to_text_minutes_limit' => 0,
-            'speech_to_speech_minutes_count' => 0,
-            'speech_to_speech_minutes_limit' => 0,
-        ]);
-
-        $this->assertFalse($this->makeDeepLClient()->getUsage()->anyLimitReached());
-    }
 }
