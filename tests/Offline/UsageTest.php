@@ -10,36 +10,54 @@ use DeepL\InvalidContentException;
 
 class UsageTest extends OfflineTestCase
 {
-    public function testParsesCharacterAndDocumentLimits(): void
+    public function testAnyCharacterLimitReachedForTheAccountCharacterLimit(): void
     {
         $this->reply([
             'character_count' => 20,
             'character_limit' => 20,
-            'document_count' => 0,
-            'document_limit' => 1,
+            'api_key_character_count' => 5,
+            'api_key_character_limit' => 1000,
         ]);
 
         $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertRequest('GET', '/v2/usage');
-        $this->assertTrue($usage->character->limitReached());
-        $this->assertFalse($usage->document->limitReached());
-        $this->assertNull($usage->teamDocument);
-        $this->assertTrue($usage->anyLimitReached());
-        $this->assertSame("Usage this billing period:\nCharacters: 20 of 20\nDocuments: 0 of 1", (string)$usage);
+        $this->assertTrue($usage->anyCharacterLimitReached());
     }
 
-    public function testParsesTeamDocumentLimitWithoutOtherLimits(): void
+    public function testAnyCharacterLimitReachedIgnoresTheSpeechMinuteLimits(): void
     {
-        $this->reply(['team_document_count' => 1, 'team_document_limit' => 1]);
+        $this->reply([
+            'character_count' => 5,
+            'character_limit' => 500000,
+            'speech_to_text_minutes_count' => 600,
+            'speech_to_text_minutes_limit' => 600,
+            'speech_to_speech_minutes_count' => 600,
+            'speech_to_speech_minutes_limit' => 600,
+        ]);
 
         $usage = $this->makeDeepLClient()->getUsage();
 
-        $this->assertNull($usage->character);
-        $this->assertNull($usage->document);
-        $this->assertTrue($usage->teamDocument->limitReached());
-        $this->assertTrue($usage->anyLimitReached());
-        $this->assertSame("Usage this billing period:\nTeam documents: 1 of 1", (string)$usage);
+        $this->assertTrue($usage->speechToTextMinutes->limitReached());
+        $this->assertFalse($usage->anyCharacterLimitReached());
+    }
+
+    public function testIgnoresDocumentUsageFields(): void
+    {
+        $this->reply([
+            'character_count' => 5,
+            'character_limit' => 500000,
+            'document_count' => 1,
+            'document_limit' => 1,
+            'team_document_count' => 1,
+            'team_document_limit' => 1,
+        ]);
+
+        $usage = $this->makeDeepLClient()->getUsage();
+
+        $this->assertSame(5, $usage->character->count);
+        $this->assertFalse($usage->anyCharacterLimitReached());
+        $this->assertSame("Usage this billing period:\nCharacters: 5 of 500000", (string)$usage);
     }
 
     public function testParsesApiProFields(): void
@@ -96,7 +114,7 @@ class UsageTest extends OfflineTestCase
         $this->assertSame('minutes', $usage->products[1]->billingUnit);
         $this->assertSame(30, $usage->products[1]->apiKeyUnitCount);
         $this->assertSame(45, $usage->products[1]->accountUnitCount);
-        $this->assertFalse($usage->anyLimitReached());
+        $this->assertFalse($usage->anyCharacterLimitReached());
         $this->assertSame("Usage this billing period:\nCharacters: 180118 of 1250000", (string)$usage);
     }
 
@@ -108,8 +126,6 @@ class UsageTest extends OfflineTestCase
 
         $this->assertSame(5, $usage->character->count);
         $this->assertSame(500000, $usage->character->limit);
-        $this->assertNull($usage->document);
-        $this->assertNull($usage->teamDocument);
         $this->assertNull($usage->apiKeyCharacter);
         $this->assertNull($usage->speechToTextMinutes);
         $this->assertNull($usage->speechToSpeechMinutes);
@@ -150,7 +166,7 @@ class UsageTest extends OfflineTestCase
     {
         $this->reply(['character_count' => 0, 'character_limit' => 20]);
 
-        $this->assertFalse($this->makeDeepLClient()->getUsage()->anyLimitReached());
+        $this->assertFalse($this->makeDeepLClient()->getUsage()->anyCharacterLimitReached());
     }
 
     public function nonObjectBodies(): array
@@ -178,10 +194,6 @@ class UsageTest extends OfflineTestCase
         $this->reply([
             'character_count' => null,
             'character_limit' => 500000,
-            'document_count' => 'many',
-            'document_limit' => 10,
-            'team_document_count' => 1,
-            'team_document_limit' => ['unlimited'],
             'api_key_character_count' => 636,
             'api_key_character_limit' => 1000,
             'speech_to_text_minutes_count' => true,
@@ -193,16 +205,14 @@ class UsageTest extends OfflineTestCase
         $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertNull($usage->character);
-        $this->assertNull($usage->document);
-        $this->assertNull($usage->teamDocument);
         $this->assertSame(636, $usage->apiKeyCharacter->count);
         $this->assertSame(1000, $usage->apiKeyCharacter->limit);
         $this->assertNull($usage->speechToTextMinutes);
         $this->assertNull($usage->speechToSpeechMinutes);
-        $this->assertFalse($usage->anyLimitReached());
+        $this->assertFalse($usage->anyCharacterLimitReached());
     }
 
-    public function testAnyLimitReachedIncludesThePerKeyCharacterLimit(): void
+    public function testAnyCharacterLimitReachedForThePerKeyCharacterLimit(): void
     {
         $this->reply([
             'character_count' => 5,
@@ -215,6 +225,6 @@ class UsageTest extends OfflineTestCase
 
         $usage = $this->makeDeepLClient()->getUsage();
 
-        $this->assertTrue($usage->anyLimitReached());
+        $this->assertTrue($usage->anyCharacterLimitReached());
     }
 }

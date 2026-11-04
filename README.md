@@ -776,28 +776,23 @@ $deeplClient->deleteSpokenTerms($spokenTerms);
 
 To check account usage, use the `getUsage()` function.
 
-The returned `Usage` object contains up to three usage subtypes, depending on
-your account type: `character`, `document` and `teamDocument`. For API accounts
-`character` will be set, the others `null`.
-
-Each usage subtypes (if set) have `count` and `limit` properties giving the
-amount used and maximum amount respectively, and the `limitReached()` function
-that checks if the usage has reached the limit. The top level `Usage` object has
-the `anyLimitReached()` function to check the `character`, `document`,
-`teamDocument` and per-key `apiKeyCharacter` subtypes. It does not consider the
-speech subtypes described below; call `limitReached()` on those directly, e.g.
+The returned `Usage` object has a `character` property with the account's
+character usage. It has `count` and `limit` properties giving the amount used
+and maximum amount respectively, and the `limitReached()` function that checks
+if the usage has reached the limit. The top level `Usage` object has the
+`anyCharacterLimitReached()` function: it returns true if the account's
+character limit or this API key's character limit (`apiKeyCharacter`) is
+reached. The speech minutes described below have their own details; call
+`limitReached()` on those directly, e.g.
 `$usage->speechToTextMinutes->limitReached()`.
 
 ```php
 $usage = $deeplClient->getUsage();
-if ($usage->anyLimitReached()) {
+if ($usage->anyCharacterLimitReached()) {
     echo 'Translation limit exceeded.';
 }
 if ($usage->character) {
     echo 'Characters: ' . $usage->character->count . ' of ' . $usage->character->limit;
-}
-if ($usage->document) {
-    echo 'Documents: ' . $usage->document->count . ' of ' . $usage->document->limit;
 }
 ```
 

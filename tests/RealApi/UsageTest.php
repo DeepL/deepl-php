@@ -13,6 +13,6 @@ class UsageTest extends RealApiTestCase
         $usage = $this->makeDeepLClient()->getUsage();
 
         $this->assertStringContainsString('Usage this billing period', (string)$usage);
-        $this->assertIsBool($usage->anyLimitReached());
+        $this->assertIsBool($usage->anyCharacterLimitReached());
     }
 }

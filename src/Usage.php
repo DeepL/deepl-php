@@ -12,10 +12,8 @@ use DateTime;
  * Information about the API usage: how much has been translated in this billing period, and the
  * maximum allowable amount.
  *
- * Depending on the account type, different usage types are included: the character, document and
- * teamDocument fields provide details about each corresponding usage type, allowing each usage type
- * to be checked individually. The anyLimitReached() function checks if any of these or the per-key
- * character limit is exceeded.
+ * The character field holds the account's character usage. The anyCharacterLimitReached() function
+ * checks the account's and this API key's character limits.
  *
  * API Pro accounts additionally receive per-key character usage, speech usage, the billing period
  * and a per-product breakdown; these fields are null for other accounts.
@@ -26,16 +24,6 @@ class Usage
      * @var UsageDetail|null Usage details for characters, for example due to the translateText() function.
      */
     public $character;
-
-    /**
-     * @var UsageDetail|null Usage details for documents.
-     */
-    public $document;
-
-    /**
-     * @var UsageDetail|null Usage details for documents shared among your team.
-     */
-    public $teamDocument;
 
     /**
      * @var UsageDetail|null Usage details for characters translated with this API key, as opposed to
@@ -69,15 +57,12 @@ class Usage
     public $endTime;
 
     /**
-     * @return bool True if the character, document, team document or per-key character ($apiKeyCharacter)
-     * limit has been reached or passed, otherwise false. The speech usage types ($speechToTextMinutes,
-     * $speechToSpeechMinutes) are not considered; call limitReached() on them directly.
+     * @return bool True if the account's character limit or this API key's character limit is reached;
+     * the speech minutes have their own details.
      */
-    public function anyLimitReached(): bool
+    public function anyCharacterLimitReached(): bool
     {
         return ($this->character !== null && $this->character->limitReached()) ||
-            ($this->document !== null && $this->document->limitReached()) ||
-            ($this->teamDocument !== null && $this->teamDocument->limitReached()) ||
             ($this->apiKeyCharacter !== null && $this->apiKeyCharacter->limitReached());
     }
 
@@ -85,8 +70,6 @@ class Usage
     {
         $list = [
             'Characters' => $this->character,
-            'Documents' => $this->document,
-            'Team documents' => $this->teamDocument,
         ];
         $result = 'Usage this billing period:';
         foreach ($list as $label => $detail) {
@@ -105,8 +88,6 @@ class Usage
         $json = ParsingUtils::decodeJson($content);
 
         $this->character = $this->buildUsageDetail('character', $json);
-        $this->document = $this->buildUsageDetail('document', $json);
-        $this->teamDocument = $this->buildUsageDetail('team_document', $json);
         $this->apiKeyCharacter = $this->buildUsageDetail('api_key_character', $json);
         $this->speechToTextMinutes = $this->buildUsageDetail('speech_to_text_minutes', $json);
         $this->speechToSpeechMinutes = $this->buildUsageDetail('speech_to_speech_minutes', $json);

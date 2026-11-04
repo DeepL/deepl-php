@@ -45,9 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   defines `WRITING_STYLE`, `TONE` and `EXTRA_BODY_PARAMETERS`, the options
   `rephraseText()` reads. Use `TranslateTextOptions` for the translate option
   constants.
-- `Usage::anyLimitReached()` also checks the per-key character limit
-  (`apiKeyCharacter`), so it returns true for an API Pro key that has used up
-  its own limit. The speech limits are still not checked.
+- `Usage::anyLimitReached()` is replaced by `Usage::anyCharacterLimitReached()`:
+  true if the account's character limit (`character`) or this API key's
+  character limit (`apiKeyCharacter`) is reached. The speech minutes are not
+  checked. Replace `$usage->anyLimitReached()` with
+  `$usage->anyCharacterLimitReached()`.
 - The `formality` and `split_sentences` values are sent as given instead of
   lower-cased; the API rejects upper-case values. Pass them in lower case, for
   example with the `Formality` and `SentenceSplittingMode` constants.
@@ -98,6 +100,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   any finished job must check `done() || !ok()`.
 
 ### Removed
+- Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
+  the string form of `Usage`; the API no longer returns them. `document_*`
+  and `team_document_*` fields in a response are ignored.
 - Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
   `getMultilingualGlossaryDictionaryEntries()` with the same arguments; it
   returns the `MultilingualGlossaryDictionaryEntries` instead of a one-element
