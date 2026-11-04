@@ -17,6 +17,7 @@ use DeepL\StyleProfile;
 use DeepL\StyleRuleInfo;
 use DeepL\TranslationMemoryInfo;
 use DeepL\UpdateStyleProfileOptions;
+use DeepL\DeepLClient;
 
 class StyleProfilesTest extends OfflineTestCase
 {
@@ -312,5 +313,12 @@ class StyleProfilesTest extends OfflineTestCase
         $this->expectException(NotFoundException::class);
         $this->expectExceptionMessage('Style profile not found');
         $this->makeDeepLClient()->getStyleProfile('pid');
+    }
+
+    public function testDoesNotRetryStyleProfileCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createStyleProfile('name');
+        });
     }
 }

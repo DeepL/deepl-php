@@ -20,6 +20,7 @@ use phpmock\environment\SleepEnvironmentBuilder;
 use phpmock\phpunit\PHPMock;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
+use DeepL\DeepLException;
 
 /**
  * Base class of the offline suite. Requests go to a Guzzle MockHandler through the SDK's own
@@ -176,5 +177,20 @@ abstract class OfflineTestCase extends TestCase
         }
         $this->assertStringContainsString("name=\"file\"; filename=\"$fileName\"", $body);
         $this->assertSame(count($fields) + 1, substr_count($body, 'Content-Disposition: form-data;'));
+    }
+
+    /**
+     * Asserts that the given call, which creates a resource, sends its request once after HTTP 503.
+     */
+    protected function assertNotRetriedAfterAServerError(callable $create): void
+    {
+        $this->reply(['message' => 'unavailable'], 503);
+
+        try {
+            $create($this->makeDeepLClient());
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertRequestCount(1);
+        }
     }
 }

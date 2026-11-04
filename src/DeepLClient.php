@@ -218,6 +218,9 @@ class DeepLClient
     /**
      * Uploads specified document to DeepL to translate into given target language, waits for translation to complete,
      * then downloads translated document to specified output path.
+     * The upload is only retried if it was not processed: after HTTP 429, or a connection failure before
+     * the request was sent. With a custom HTTP client, only HTTP 429 is retried. Status checks and the download
+     * use the full retry set.
      * @param string $inputFile String containing file path of document to be translated.
      * @param string $outputFile String containing file path to create translated document.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
@@ -277,6 +280,8 @@ class DeepLClient
     /**
      * Uploads specified document to DeepL to translate into target language, and returns handle associated with the
      * document. Use translateDocumentWaitUntilDone() and translateDocumentDownload() to complete the translation.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $inputFile String containing file path of document to be translated.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
@@ -335,6 +340,7 @@ class DeepLClient
                 HttpClientWrapper::OPTION_FILE => $inputFile,
                 HttpClientWrapper::OPTION_FILENAME =>
                     $options[TranslateDocumentOptions::FILENAME] ?? basename($inputFile),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
             ]
         );
         $this->checkStatusCode($response);
@@ -449,6 +455,8 @@ class DeepLClient
 
     /**
      * Creates a new glossary on DeepL server with given name, languages, and entries.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -481,7 +489,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/glossaries',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [
+                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -490,6 +501,8 @@ class DeepLClient
 
     /**
      * Creates a new glossary on DeepL server with given name, languages, and entries.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -522,7 +535,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/glossaries',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [
+                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1012,6 +1028,8 @@ class DeepLClient
     /**
      * Creates a new glossary on DeepL server with given name with all the specified
      * dictionaries, each with their own language pair and entries.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the glossary.
      * @param MultilingualGlossaryDictionaryEntries[] $dictionaries A list of MultilingualGlossaryDictionaryEntries
      *      which each contains entries for a particular language pair
@@ -1038,6 +1056,8 @@ class DeepLClient
 
     /**
      * Creates a new glossary on DeepL server with given name, languages, and entries.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -1073,7 +1093,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/glossaries',
-            [HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options)]
+            [
+                HttpClientWrapper::OPTION_JSON => self::multilingualGlossaryJsonBody($params, $options),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1412,6 +1435,8 @@ class DeepLClient
 
     /**
      * Creates a spoken terms collection with the given name and term lists.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the collection.
      * @param SpokenTermsEntries[] $termLists Term lists to add, one per language.
      * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
@@ -1425,7 +1450,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/spoken-terms',
-            [HttpClientWrapper::OPTION_JSON => self::spokenTermsJsonBody($params, $options)]
+            [
+                HttpClientWrapper::OPTION_JSON => self::spokenTermsJsonBody($params, $options),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1686,6 +1714,8 @@ class DeepLClient
 
     /**
      * Creates a new style rule on DeepL server.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name User-defined name to assign to the style rule.
      * @param string $language Language code for the style rule.
      * @param array|null $configuredRules Optional configured rules to apply.
@@ -1723,7 +1753,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/style_rules',
-            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
+            [
+                HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1828,6 +1861,8 @@ class DeepLClient
 
     /**
      * Creates a custom instruction for a style rule.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
      * @param string $label Label for the custom instruction.
      * @param string $prompt Prompt text for the custom instruction.
@@ -1866,7 +1901,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             "/v3/style_rules/" . rawurlencode($styleId) . "/custom_instructions",
-            [HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options)]
+            [
+                HttpClientWrapper::OPTION_JSON => self::styleRuleJsonBody($params, $options),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -2034,6 +2072,8 @@ class DeepLClient
 
     /**
      * Creates a style profile.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $name Name of the style profile.
      * @param array $options Optional fields, see \DeepL\CreateStyleProfileOptions. Options that are
      *  null are not sent. If any of the linked component IDs cannot be used, no style profile is created.
@@ -2049,7 +2089,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/style_profiles',
-            [HttpClientWrapper::OPTION_JSON => $params]
+            [
+                HttpClientWrapper::OPTION_JSON => $params,
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -2355,6 +2398,8 @@ class DeepLClient
      * The job only declares the file; upload the TMX file itself to the returned upload URL with
      * uploadTranslationMemoryFile(), then poll getTranslationMemoryJob() for the outcome. Use
      * importTranslationMemoryFromFilepath() to do all three steps at once.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string $fileName Name of the TMX file to import, for example 'legal.tmx'.
      * @param int $contentLength Size of the TMX file in bytes.
      * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE,
@@ -2405,7 +2450,10 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v3/translation_memories/import',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [
+                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
+            ]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -2452,6 +2500,8 @@ class DeepLClient
      *
      * Poll getTranslationMemoryJob() for the download URL of the exported TMX file. Use
      * exportTranslationMemoryToFilepath() to do both steps and write the file at once.
+     * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
+     * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
      *  TranslationMemoryInfo of the translation memory to export.
      * @return TranslationMemoryExport The job ID, and whether the API reused a previously completed
@@ -2464,7 +2514,8 @@ class DeepLClient
         $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
         $response = $this->client->sendRequestWithBackoff(
             'POST',
-            "/v3/translation_memories/" . rawurlencode($translationMemoryId) . "/export"
+            "/v3/translation_memories/" . rawurlencode($translationMemoryId) . "/export",
+            [HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true]
         );
         $this->checkStatusCode($response);
         list($statusCode, $content) = $response;

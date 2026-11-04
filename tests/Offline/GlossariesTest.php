@@ -9,6 +9,7 @@ namespace DeepL\Offline;
 use DeepL\DeepLException;
 use DeepL\GlossaryEntries;
 use DeepL\GlossaryInfo;
+use DeepL\DeepLClient;
 
 class GlossariesTest extends OfflineTestCase
 {
@@ -169,5 +170,19 @@ class GlossariesTest extends OfflineTestCase
             'unicode line separator' => [['A' => "B\u{2028}C"], 'invalid characters'],
             'blank term' => [['A' => '  '], 'no non-whitespace characters'],
         ];
+    }
+
+    public function testDoesNotRetryGlossaryCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createGlossary('name', 'en', 'de', GlossaryEntries::fromEntries(['a' => 'b']));
+        });
+    }
+
+    public function testDoesNotRetryGlossaryCreationFromCsvAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createGlossaryFromCsv('name', 'en', 'de', "a,b\n");
+        });
     }
 }

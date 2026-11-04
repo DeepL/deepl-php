@@ -11,6 +11,7 @@ use DeepL\InvalidContentException;
 use DeepL\SpokenTerms;
 use DeepL\SpokenTermsEntries;
 use DeepL\SpokenTermsOptions;
+use DeepL\DeepLClient;
 
 class SpokenTermsTest extends OfflineTestCase
 {
@@ -198,5 +199,12 @@ class SpokenTermsTest extends OfflineTestCase
             'entries body is not an object' => ['entries', '"a"'],
             'term list body is not an object' => ['replace', '"a"'],
         ];
+    }
+
+    public function testDoesNotRetrySpokenTermsCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createSpokenTerms('name', [new SpokenTermsEntries('en', ['a'])]);
+        });
     }
 }

@@ -622,4 +622,11 @@ class TranslateDocumentTest extends OfflineTestCase
             FullDiskStream::unregister();
         }
     }
+
+    public function testDoesNotRetryDocumentUploadAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->translateDocumentUpload(Fixtures::tempFile('input.txt', 'Hello'), 'en', 'de');
+        });
+    }
 }

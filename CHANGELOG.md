@@ -98,6 +98,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   true only for the status `completed`, as `DocumentStatus::done()` does;
   `failed` and `expired` jobs return false. Code that used `done()` to detect
   any finished job must check `done() || !ok()`.
+- Breaking: every function that creates a resource is retried only when the
+  request was not processed, as `createDeveloperKey()` already was: after HTTP
+  429, or a DNS failure, refused connection or connect timeout. A 5xx response,
+  a read timeout or a reset connection is no longer retried, so the resource
+  is not created twice. This applies to `translateDocumentUpload()` (the
+  upload of `translateDocument()`), `createGlossary()`,
+  `createGlossaryFromCsv()`, `createMultilingualGlossary()`,
+  `createMultilingualGlossaryFromCsv()`, `createSpokenTerms()`,
+  `createStyleRule()`, `createStyleRuleCustomInstruction()`,
+  `createStyleProfile()`, `createTranslationMemoryImport()` and
+  `createTranslationMemoryExport()`. With a custom HTTP client only HTTP 429 is
+  retried for them. Catch the exception and check whether the resource exists
+  before creating it again.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

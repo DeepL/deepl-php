@@ -1423,11 +1423,8 @@ after the library's fields, replacing fields with the same key.
 are `null` when the API response does not include them.
 
 To avoid duplicate keys, `createDeveloperKey()` is retried only when the
-request was not processed: after HTTP 429, or when the connection failed before
-the request was sent (DNS resolution failure, refused connection, or a timeout
-before the connection was established). With a
-custom HTTP client, only HTTP 429 is retried. The other functions are retried
-like all other requests.
+request was not processed, like every function that creates a resource (see
+[Request retries](#request-retries)).
 
 #### Retrieving usage analytics
 
@@ -1591,7 +1588,21 @@ resolution errors, refused connections, timeouts, connection resets and broken
 pipes. Proxy failures are not retried. A response body cut off mid-read (cURL
 errors 18 and 92) throws a `ConnectionException` with `shouldRetry` set to
 `true` but is not retried automatically, as the request was already processed
-and a downloaded file may already be partly written. The maximum number of
+and a downloaded file may already be partly written.
+
+To avoid creating duplicates, functions that create a resource are retried only
+when the request was not processed: after HTTP 429, or when the connection
+failed before the request was sent (DNS resolution failure, refused connection,
+or a timeout before the connection was established). These are
+`translateDocumentUpload()` (and the upload of `translateDocument()`),
+`createGlossary()`, `createGlossaryFromCsv()`, `createMultilingualGlossary()`,
+`createMultilingualGlossaryFromCsv()`, `createSpokenTerms()`,
+`createStyleRule()`, `createStyleRuleCustomInstruction()`,
+`createStyleProfile()`, `createTranslationMemoryImport()`,
+`createTranslationMemoryExport()` and `createDeveloperKey()`. With a custom HTTP
+client, only HTTP 429 is retried for them.
+
+The maximum number of
 retries after the first attempt can be configured when constructing the `DeepLClient` object using the
 `max_retries` option. The timeout for each request attempt may be controlled
 using the `timeout` option. An exponential-backoff strategy is used, so

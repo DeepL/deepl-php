@@ -13,6 +13,7 @@ use DeepL\MultilingualGlossaryDictionaryEntries;
 use DeepL\MultilingualGlossaryDictionaryInfo;
 use DeepL\MultilingualGlossaryInfo;
 use DeepL\MultilingualGlossaryOptions;
+use DeepL\DeepLClient;
 
 class MultilingualGlossariesTest extends OfflineTestCase
 {
@@ -479,5 +480,19 @@ class MultilingualGlossariesTest extends OfflineTestCase
             'unicode line separator' => [['A' => "B\u{2028}C"], 'invalid characters'],
             'duplicate after trimming' => [['A' => 'B', ' A' => 'C'], 'duplicate source term'],
         ];
+    }
+
+    public function testDoesNotRetryGlossaryCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createMultilingualGlossary('name', [$this->dictionary()]);
+        });
+    }
+
+    public function testDoesNotRetryGlossaryCreationFromCsvAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createMultilingualGlossaryFromCsv('name', 'en', 'de', "a,b\n");
+        });
     }
 }

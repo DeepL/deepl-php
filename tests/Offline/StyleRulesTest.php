@@ -386,4 +386,18 @@ class StyleRulesTest extends OfflineTestCase
             }, 'instructionId must be a non-empty string'],
         ];
     }
+
+    public function testDoesNotRetryStyleRuleCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createStyleRule('name', 'en');
+        });
+    }
+
+    public function testDoesNotRetryCustomInstructionCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createStyleRuleCustomInstruction('sid', 'L', 'P');
+        });
+    }
 }

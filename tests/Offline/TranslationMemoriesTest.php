@@ -785,4 +785,18 @@ class TranslationMemoriesTest extends OfflineTestCase
         }
         $this->assertRequestCount(0);
     }
+
+    public function testDoesNotRetryImportCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createTranslationMemoryImport('memory.tmx', 10);
+        });
+    }
+
+    public function testDoesNotRetryExportCreationAfterAServerError(): void
+    {
+        $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
+            $client->createTranslationMemoryExport('tmid');
+        });
+    }
 }
