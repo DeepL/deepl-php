@@ -143,6 +143,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException` for an empty text, alone or in the array, before
   any request is sent. `translateText()` and `rephraseText()` sent it, and
   `correctText()` only rejected a single empty string.
+- The multilingual glossary functions that take a glossary
+  (`getMultilingualGlossary()`, `updateMultilingualGlossary()`,
+  `updateMultilingualGlossaryName()`, the dictionary update, replace, entries
+  and delete functions, and `deleteMultilingualGlossary()`) and the spoken
+  terms functions that take a spoken terms collection (`getSpokenTerms()`,
+  `updateSpokenTerms()`, `deleteSpokenTerms()`, `getSpokenTermsEntries()`,
+  `replaceSpokenTermsList()`, `deleteSpokenTermsList()`) throw an
+  `\InvalidArgumentException` for an empty ID, or an object with an empty ID,
+  before any request is sent. `MultilingualGlossaryInfo::getGlossaryId()` and
+  `SpokenTerms::getSpokenTermsId()` throw it too.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

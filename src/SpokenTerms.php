@@ -35,10 +35,15 @@ class SpokenTerms
 
     /**
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getSpokenTermsId($spokenTerms): string
     {
-        return is_string($spokenTerms) ? $spokenTerms : $spokenTerms->spokenTermsId;
+        $spokenTermsId = is_string($spokenTerms) ? $spokenTerms : $spokenTerms->spokenTermsId;
+        if (!is_string($spokenTermsId) || $spokenTermsId === '') {
+            throw new \InvalidArgumentException('spokenTermsId must be a non-empty string');
+        }
+        return $spokenTermsId;
     }
 
     /**

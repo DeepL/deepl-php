@@ -117,6 +117,50 @@ class SpokenTermsTest extends OfflineTestCase
         $this->assertSame(['term_lists' => [['lang' => 'en', 'entries' => "a\nb"]]], $this->jsonBody(2));
     }
 
+    /**
+     * @dataProvider provideEmptySpokenTermsIds
+     */
+    public function testRejectsAnEmptySpokenTermsIdBeforeSending($spokenTerms): void
+    {
+        $client = $this->makeDeepLClient();
+        foreach ([
+            function () use ($client, $spokenTerms) {
+                $client->getSpokenTerms($spokenTerms);
+            },
+            function () use ($client, $spokenTerms) {
+                $client->updateSpokenTerms($spokenTerms, [SpokenTermsOptions::NAME => 'n']);
+            },
+            function () use ($client, $spokenTerms) {
+                $client->deleteSpokenTerms($spokenTerms);
+            },
+            function () use ($client, $spokenTerms) {
+                $client->getSpokenTermsEntries($spokenTerms, 'en');
+            },
+            function () use ($client, $spokenTerms) {
+                $client->replaceSpokenTermsList($spokenTerms, new SpokenTermsEntries('en', ['a']));
+            },
+            function () use ($client, $spokenTerms) {
+                $client->deleteSpokenTermsList($spokenTerms, 'en');
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('spokenTermsId must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideEmptySpokenTermsIds(): array
+    {
+        return [
+            'empty ID' => [''],
+            'spoken terms without ID' => [new SpokenTerms('', 'n', new \DateTime(), [])],
+        ];
+    }
+
     public function testRejectsAnUnknownOptionBeforeSending(): void
     {
         $client = $this->makeDeepLClient();

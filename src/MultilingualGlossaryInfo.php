@@ -40,10 +40,15 @@ class MultilingualGlossaryInfo
 
     /**
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getGlossaryId($glossary): string
     {
-        return is_string($glossary) ? $glossary : $glossary->glossaryId;
+        $glossaryId = is_string($glossary) ? $glossary : $glossary->glossaryId;
+        if (!is_string($glossaryId) || $glossaryId === '') {
+            throw new \InvalidArgumentException('glossaryId must be a non-empty string');
+        }
+        return $glossaryId;
     }
 
     /**

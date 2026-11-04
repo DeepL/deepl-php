@@ -146,6 +146,63 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->makeDeepLClient()->updateMultilingualGlossary('gid', ['names' => 'x']);
     }
 
+    /**
+     * @dataProvider provideEmptyGlossaryIds
+     */
+    public function testRejectsAnEmptyGlossaryIdBeforeSending($glossary): void
+    {
+        $client = $this->makeDeepLClient();
+        $dictionary = $this->dictionary();
+        foreach ([
+            function () use ($client, $glossary) {
+                $client->getMultilingualGlossary($glossary);
+            },
+            function () use ($client, $glossary) {
+                $client->updateMultilingualGlossary($glossary, [MultilingualGlossaryOptions::NAME => 'n']);
+            },
+            function () use ($client, $glossary) {
+                $client->updateMultilingualGlossaryName($glossary, 'n');
+            },
+            function () use ($client, $glossary, $dictionary) {
+                $client->updateMultilingualGlossaryDictionary($glossary, $dictionary);
+            },
+            function () use ($client, $glossary) {
+                $client->updateMultilingualGlossaryDictionaryFromCsv($glossary, 'en', 'de', 'a,b');
+            },
+            function () use ($client, $glossary, $dictionary) {
+                $client->replaceMultilingualGlossaryDictionary($glossary, $dictionary);
+            },
+            function () use ($client, $glossary) {
+                $client->replaceMultilingualGlossaryDictionaryFromCsv($glossary, 'en', 'de', 'a,b');
+            },
+            function () use ($client, $glossary) {
+                $client->getMultilingualGlossaryDictionaryEntries($glossary, 'en', 'de');
+            },
+            function () use ($client, $glossary) {
+                $client->deleteMultilingualGlossaryDictionary($glossary, 'en', 'de');
+            },
+            function () use ($client, $glossary) {
+                $client->deleteMultilingualGlossary($glossary);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('glossaryId must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideEmptyGlossaryIds(): array
+    {
+        return [
+            'empty ID' => [''],
+            'glossary without ID' => [new MultilingualGlossaryInfo('', 'n', new \DateTime(), [])],
+        ];
+    }
+
     public function testThrowsWhenTargetLangIsGivenWithADictionaryInfoForDeletion(): void
     {
         $this->expectException(\InvalidArgumentException::class);
