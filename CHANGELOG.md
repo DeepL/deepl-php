@@ -153,6 +153,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException` for an empty ID, or an object with an empty ID,
   before any request is sent. `MultilingualGlossaryInfo::getGlossaryId()` and
   `SpokenTerms::getSpokenTermsId()` throw it too.
+- `updateMultilingualGlossaryName()` throws an `\InvalidArgumentException` for
+  an empty name, `createMultilingualGlossary()` for an empty dictionary list,
+  and `deleteMultilingualGlossaryDictionary()` for an empty source or target
+  language, also from a `MultilingualGlossaryDictionaryInfo`, before any
+  request is sent.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

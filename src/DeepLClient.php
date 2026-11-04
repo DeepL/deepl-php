@@ -1057,6 +1057,9 @@ class DeepLClient
         if (strlen($name) === 0) {
             throw new \InvalidArgumentException('glossary name must be a non-empty string');
         }
+        if (count($dictionaries) === 0) {
+            throw new \InvalidArgumentException('dictionaries must not be empty');
+        }
 
         $params = [
             'name' => $name,
@@ -1159,6 +1162,9 @@ class DeepLClient
         array $options = []
     ): MultilingualGlossaryInfo {
         self::checkMultilingualGlossaryOptions($options, []);
+        if ($name === '') {
+            throw new \InvalidArgumentException('glossary name must be a non-empty string');
+        }
         return $this->patchMultilingualGlossary($glossary, ['name' => $name], $options);
     }
 
@@ -1386,6 +1392,9 @@ class DeepLClient
             throw new \InvalidArgumentException(
                 'must provide a MultilingualGlossaryDictionaryInfo or both sourceLang and targetLang'
             );
+        }
+        if ($sourceLang === '' || $targetLang === '') {
+            throw new \InvalidArgumentException('sourceLang and targetLang must be non-empty strings');
         }
 
         $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);

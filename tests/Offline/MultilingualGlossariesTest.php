@@ -203,6 +203,60 @@ class MultilingualGlossariesTest extends OfflineTestCase
         ];
     }
 
+    /**
+     * @dataProvider provideRejectedGlossaryArguments
+     */
+    public function testRejectsAnEmptyNameDictionaryListOrLanguageBeforeSending(callable $call, string $message): void
+    {
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideRejectedGlossaryArguments(): array
+    {
+        $languages = 'sourceLang and targetLang must be non-empty strings';
+        return [
+            'empty name on rename' => [
+                function (DeepLClient $client) {
+                    $client->updateMultilingualGlossaryName('id', '');
+                },
+                'glossary name must be a non-empty string',
+            ],
+            'no dictionaries on create' => [
+                function (DeepLClient $client) {
+                    $client->createMultilingualGlossary('name', []);
+                },
+                'dictionaries must not be empty',
+            ],
+            'empty source language on dictionary deletion' => [
+                function (DeepLClient $client) {
+                    $client->deleteMultilingualGlossaryDictionary('id', '', 'de');
+                },
+                $languages,
+            ],
+            'empty target language on dictionary deletion' => [
+                function (DeepLClient $client) {
+                    $client->deleteMultilingualGlossaryDictionary('id', 'en', '');
+                },
+                $languages,
+            ],
+            'dictionary info with an empty language on deletion' => [
+                function (DeepLClient $client) {
+                    $client->deleteMultilingualGlossaryDictionary(
+                        'id',
+                        new MultilingualGlossaryDictionaryInfo('en', '', 1)
+                    );
+                },
+                $languages,
+            ],
+        ];
+    }
+
     public function testThrowsWhenTargetLangIsGivenWithADictionaryInfoForDeletion(): void
     {
         $this->expectException(\InvalidArgumentException::class);
