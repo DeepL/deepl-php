@@ -52,12 +52,23 @@ class CorrectTextTest extends OfflineTestCase
         ]);
     }
 
-    public function testThrowsWhenTheTextIsEmpty(): void
+    /**
+     * @dataProvider provideEmptyTexts
+     */
+    public function testThrowsWhenATextIsEmpty($texts): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('text must not be empty');
+        try {
+            $this->makeDeepLClient()->correctText($texts);
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame('text must not be empty', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
 
-        $this->makeDeepLClient()->correctText('');
+    public static function provideEmptyTexts(): array
+    {
+        return ['a single empty text' => [''], 'an empty text inside the texts' => [['a', '']]];
     }
 
     public function testAddsExtraBodyParametersLastReplacingFields(): void

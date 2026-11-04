@@ -312,6 +312,8 @@ class TranslateTextTest extends OfflineTestCase
         return [
             'empty target language' => ['a', null, [], 'langCode must be a non-empty string', ''],
             'empty source language' => ['a', '', [], 'langCode must be a non-empty string'],
+            'an empty text' => ['', null, [], 'text must not be empty'],
+            'an empty text inside the texts' => [['a', ''], null, [], 'text must not be empty'],
             'a number instead of text' => [42, null, [], 'texts parameter'],
             'a number inside the texts' => [[42], null, [], 'texts parameter'],
             'glossary together with glossary_ids' => [

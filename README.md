@@ -330,7 +330,7 @@ response does not contain one improvement with a text per input text.
 
 ### Correcting text
 
-To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string is rejected with an `InvalidArgumentException`.
+To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string, alone or in the array, is rejected with an `InvalidArgumentException` before any request is sent; the same applies to `translateText()` and `rephraseText()`.
 
 The second argument is the target language code, which is optional. If not provided, the text is corrected in its original language.
 

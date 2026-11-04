@@ -152,6 +152,8 @@ class DeepLClient
      * @param array $options Translation options to apply. See \DeepL\TranslateTextOptions.
      * @return TextResult|TextResult[] A TextResult or array of TextResult objects containing translated texts.
      * @phpstan-return ($texts is array ? TextResult[] : TextResult)
+     * @throws \InvalidArgumentException If a text is empty or an argument or option is invalid, checked before
+     * any request is sent.
      * @throws DeepLException
      * @see \DeepL\TranslateTextOptions
      */
@@ -738,23 +740,15 @@ class DeepLClient
      */
     protected function validateAndAppendTexts(array &$params, $texts)
     {
-        if (is_array($texts)) {
-            foreach ($texts as $text) {
-                if (!is_string($text)) {
-                    throw new \InvalidArgumentException(
-                        'texts parameter must be a string or array of strings',
-                    );
-                }
+        foreach (is_array($texts) ? $texts : [$texts] as $text) {
+            if (!is_string($text)) {
+                throw new \InvalidArgumentException('texts parameter must be a string or array of strings');
             }
-            $params['text'] = $texts;
-        } else {
-            if (!is_string($texts)) {
-                throw new \InvalidArgumentException(
-                    'texts parameter must be a string or array of strings',
-                );
+            if ($text === '') {
+                throw new \InvalidArgumentException('text must not be empty');
             }
-            $params['text'] = [$texts];
         }
+        $params['text'] = is_array($texts) ? $texts : [$texts];
     }
 
     /**
@@ -951,6 +945,7 @@ class DeepLClient
      *  and EXTRA_BODY_PARAMETERS.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing rephrased texts
+     * @throws \InvalidArgumentException If a text is empty, checked before any request is sent.
      * @throws DeepLException
      * @see \DeepL\RephraseTextOptions
      */
@@ -982,9 +977,6 @@ class DeepLClient
      */
     public function correctText($texts, ?string $targetLang = null, array $options = [])
     {
-        if ($texts === '') {
-            throw new \InvalidArgumentException('text must not be empty');
-        }
         $params = [];
         if ($targetLang !== null) {
             $params['target_lang'] = LanguageCode::standardizeLanguageCode($targetLang);

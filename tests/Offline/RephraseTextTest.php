@@ -120,6 +120,25 @@ class RephraseTextTest extends OfflineTestCase
     }
 
     /**
+     * @dataProvider provideEmptyTexts
+     */
+    public function testThrowsWhenATextIsEmpty($texts): void
+    {
+        try {
+            $this->makeDeepLClient()->rephraseText($texts);
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame('text must not be empty', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideEmptyTexts(): array
+    {
+        return ['a single empty text' => [''], 'an empty text inside the texts' => [['a', '']]];
+    }
+
+    /**
      * @dataProvider malformedResponses
      * @param string|string[] $texts
      */

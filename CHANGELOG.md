@@ -139,6 +139,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `downloadTranslationMemoryExport()`, still throw `DeepLException`;
   `translateDocument()` still wraps the argument errors of its upload in a
   `DocumentTranslationException`.
+- Breaking: `translateText()`, `rephraseText()` and `correctText()` throw an
+  `\InvalidArgumentException` for an empty text, alone or in the array, before
+  any request is sent. `translateText()` and `rephraseText()` sent it, and
+  `correctText()` only rejected a single empty string.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
