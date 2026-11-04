@@ -1586,9 +1586,10 @@ Requests to the DeepL API that fail due to transient conditions will be
 retried: HTTP 429, any 5xx status, and network failures such as DNS
 resolution errors, refused connections, timeouts, connection resets and broken
 pipes. Proxy failures are not retried. A response body cut off mid-read (cURL
-errors 18 and 92) throws a `ConnectionException` with `shouldRetry` set to
-`true` but is not retried automatically, as the request was already processed
-and a downloaded file may already be partly written.
+errors 18 and 92) is retried as well, except for the functions that create a
+resource listed below; a downloaded file is rewritten from the start on each
+attempt. If no attempt succeeds, a `ConnectionException` with `shouldRetry` set
+to `true` is thrown.
 
 To avoid creating duplicates, functions that create a resource are retried only
 when the request was not processed: after HTTP 429, or when the connection

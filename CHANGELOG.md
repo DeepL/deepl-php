@@ -111,6 +111,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createTranslationMemoryExport()`. With a custom HTTP client only HTTP 429 is
   retried for them. Catch the exception and check whether the resource exists
   before creating it again.
+- Breaking: a response body cut off mid-read (cURL errors 18 and 92, for
+  example a short body or an HTTP/2 stream reset) is retried like a reset
+  connection, except by the functions that create a resource. If no attempt
+  succeeds, the `ConnectionException` has `shouldRetry` set to `true` instead
+  of `false`. A download to a file rewrites the file from the start on each
+  attempt.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

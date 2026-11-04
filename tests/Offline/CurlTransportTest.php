@@ -278,18 +278,21 @@ class CurlTransportTest extends OfflineTestCase
     /**
      * @dataProvider provideBodyCutOffErrors
      */
-    public function testReportsABodyCutOffMidReadAsNotRetryableWithoutRetrying(int $errorCode): void
+    public function testRetriesABodyCutOffMidReadAndReportsItAsRetryable(int $errorCode): void
     {
         $this->useFakeClock();
-        $this->failCurlWith([$errorCode], $attempts);
+        $this->failCurlWith([$errorCode, $errorCode], $attempts);
 
         try {
-            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+            (new DeepLClient('k', [
+                TranslatorOptions::SERVER_URL => 'https://api.deepl.com',
+                TranslatorOptions::MAX_RETRIES => 1,
+            ]))->getUsage();
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
             $this->assertSame($errorCode, $exception->getCode());
-            $this->assertFalse($exception->shouldRetry);
-            $this->assertCount(1, $attempts);
+            $this->assertTrue($exception->shouldRetry);
+            $this->assertCount(2, $attempts);
         }
     }
 
