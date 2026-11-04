@@ -101,7 +101,7 @@ class ClientUtils
 
     /**
      * Creates an HttpClientWrapper using the transport settings in the options.
-     * @throws \InvalidArgumentException If max_retries is negative.
+     * @throws \InvalidArgumentException If max_retries is negative or proxy is not a URL with a scheme and host.
      */
     public static function createHttpClient(string $serverUrl, array $headers, array $options): HttpClientWrapper
     {
@@ -111,13 +111,22 @@ class ClientUtils
                 'If specified, ' . TranslatorOptions::MAX_RETRIES . ' option must not be negative.'
             );
         }
+        $proxy = $options[TranslatorOptions::PROXY] ?? null;
+        if ($proxy !== null) {
+            $parts = is_string($proxy) ? parse_url($proxy) : false;
+            if ($parts === false || !isset($parts['scheme']) || !isset($parts['host'])) {
+                throw new \InvalidArgumentException(
+                    'If specified, ' . TranslatorOptions::PROXY . ' option must be a URL with a scheme and host.'
+                );
+            }
+        }
         return new HttpClientWrapper(
             $serverUrl,
             $headers,
             $options[TranslatorOptions::TIMEOUT] ?? TranslatorOptions::DEFAULT_TIMEOUT,
             $maxRetries,
             $options[TranslatorOptions::LOGGER] ?? null,
-            $options[TranslatorOptions::PROXY] ?? null,
+            $proxy,
             $options[TranslatorOptions::HTTP_CLIENT] ?? null
         );
     }

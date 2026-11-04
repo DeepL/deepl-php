@@ -7,6 +7,7 @@
 namespace DeepL\Offline;
 
 use DeepL\AppInfo;
+use DeepL\DeepLAdminClient;
 use DeepL\DeepLException;
 use DeepL\DeepLClient;
 use DeepL\TranslatorOptions;
@@ -173,6 +174,33 @@ class TranslatorOptionsTest extends OfflineTestCase
     public static function provideInvalidServerUrls(): array
     {
         return [[''], [false], [42]];
+    }
+
+    /**
+     * @dataProvider provideInvalidProxies
+     */
+    public function testThrowsWhenTheProxyIsInvalid($proxy): void
+    {
+        foreach ([
+            function () use ($proxy) {
+                new DeepLClient('k', [TranslatorOptions::PROXY => $proxy]);
+            },
+            function () use ($proxy) {
+                new DeepLAdminClient('k', [TranslatorOptions::PROXY => $proxy]);
+            },
+        ] as $construct) {
+            try {
+                $construct();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertStringContainsString('proxy option must be a URL', $exception->getMessage());
+            }
+        }
+    }
+
+    public static function provideInvalidProxies(): array
+    {
+        return ['not a URL' => ['not a url'], 'no scheme' => ['proxy.local:3128'], 'not a string' => [42]];
     }
 
     public function testLogsRequestAndResponse(): void

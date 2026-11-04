@@ -71,7 +71,8 @@ class TranslatorOptions
     public const MAX_RETRIES = 'max_retries';
 
     /**
-     * Proxy server URL, for example 'https://user:pass@10.10.1.10:3128'.
+     * Proxy server URL with a scheme and host, for example 'https://user:pass@10.10.1.10:3128'. Any other
+     * value throws an \InvalidArgumentException when the client is constructed.
      */
     public const PROXY = 'proxy';
 

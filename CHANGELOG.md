@@ -177,6 +177,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keys were ignored. `translateDocument()` wraps it in a
   `DocumentTranslationException`. Pass extra request fields with
   `EXTRA_BODY_PARAMETERS`.
+- The `DeepLClient` and `DeepLAdminClient` constructors throw an
+  `\InvalidArgumentException` if the `proxy` option is not a URL string with a
+  scheme and host. Before, it was passed to cURL as given and the first request
+  failed with a `ConnectionException`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
