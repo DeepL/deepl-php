@@ -401,6 +401,15 @@ before any request is sent, with a `null` handle. For a
 failure during upload, translation or download, its `httpStatusCode` and `shouldRetry` are those of the
 `DeepLException` that caused it, which `getPrevious()` returns.
 
+The translation memory file helpers `importTranslationMemoryFromFilepath()` and
+`exportTranslationMemoryToFilepath()` work the same way with a
+`TranslationMemoryJobException`: every failure except a missing input file is
+wrapped in it, the cause is `getPrevious()`, and its `httpStatusCode` and
+`shouldRetry` are copied from a `DeepLException` cause. Its `job` is the
+`TranslationMemoryJob` once the job was created (the last status fetched), and
+`null` for a failure before that. See
+[Importing a translation memory](#importing-a-translation-memory).
+
 `translateDocument()` wraps multiple API calls: uploading, polling status until
 the translation is complete, and downloading. If your application needs to
 execute these steps individually, you can instead use the following functions
@@ -1249,8 +1258,11 @@ of the file, used for the import job and the upload, default
 `'application/xml'`), `TIMEOUT` (maximum time in seconds to wait) and
 `EXTRA_BODY_PARAMETERS` (added last to the JSON body of the import request). The
 released positional form, a display name and a timeout, is still accepted.
-If no file exists at the input file path, or the file is empty, it throws an
-`InvalidArgumentException` before sending any request.
+If no file exists at the input file path, it throws an
+`InvalidArgumentException` before sending any request. Every other failure
+throws a `TranslationMemoryJobException`: an empty or unreadable file before any
+request, with a `null` `job`; a failure of the job creation, the upload or the
+wait with `job` set to the created job, so you can inspect or resume it.
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', [
@@ -1286,7 +1298,8 @@ accepted.
 
 `waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
 status is `completed`, and throws a `DeepLException` with the
-API's error message if it is `failed` or `expired`. Any other status, including
+API's error message if it is `failed` or `expired` (the file helpers wrap it in a
+`TranslationMemoryJobException`). Any other status, including
 one this library does not know, keeps polling, so pass a timeout in seconds, or
 `[TranslationMemoryOptions::TIMEOUT => seconds]`, as the second argument to bound
 the wait; the wait never runs past it. `exportTranslationMemoryToFilepath()`
@@ -1301,7 +1314,10 @@ uploaded does not finish on its own.
 `exportTranslationMemoryToFilepath()` exports a translation memory to a TMX file:
 it creates the export job, waits for it to finish, and writes the result. If a
 file already exists at the output path, or its directory does not exist or is not
-writable, it throws a `DeepLException` before creating the export job.
+writable, it throws a `TranslationMemoryJobException` with a `null` `job` before
+creating the export job. Every later failure, of the job creation, the wait or
+the download, throws a `TranslationMemoryJobException` with `job` set once the
+job was created.
 
 ```php
 $job = $deeplClient->exportTranslationMemoryToFilepath('YOUR_TM_ID', '/path/to/exported.tmx');

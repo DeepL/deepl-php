@@ -131,12 +131,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   language code, text, name, label, prompt or resource ID, `glossary` together
   with `glossary_ids`, more than 5 glossary IDs, an invalid
   `translation_memory_threshold`, an invalid glossary or spoken terms term,
-  empty glossary entries, an empty translation memory import file, a
-  `contentLength` that is not positive, an invalid admin date, and an unknown
-  option key. `InvalidArgumentException` is not a `DeepLException`: to keep
-  handling these errors, also catch `\InvalidArgumentException`. API, I/O and
-  wait failures, and an export job without a download URL passed to
-  `downloadTranslationMemoryExport()`, still throw `DeepLException`;
+  empty glossary entries, a `contentLength` that is not positive, an invalid
+  admin date, and an unknown option key. `InvalidArgumentException` is not a
+  `DeepLException`: to keep handling these errors, also catch
+  `\InvalidArgumentException`. API, I/O and wait failures, and an export job
+  without a download URL passed to `downloadTranslationMemoryExport()`, still
+  throw `DeepLException`;
   `translateDocument()` still wraps the argument errors of its upload in a
   `DocumentTranslationException`.
 - Breaking: `translateText()`, `rephraseText()` and `correctText()` throw an
@@ -181,6 +181,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException` if the `proxy` option is not a URL string with a
   scheme and host. Before, it was passed to cURL as given and the first request
   failed with a `ConnectionException`.
+- Breaking: added `TranslationMemoryJobException`, a `DeepLException` with an
+  optional `job`. `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()` wrap every failure in it, except a
+  missing input file, which still throws `\InvalidArgumentException`
+  unwrapped. Wrapped failures include invalid options, an empty or unreadable
+  input file, an existing or unwritable output path, a failed job creation,
+  upload or download, and a job that fails, expires or times out. `job` is the
+  `TranslationMemoryJob` once the job was created (the last status fetched),
+  else `null`; `httpStatusCode` and `shouldRetry` are copied from a
+  `DeepLException` cause, which `getPrevious()` returns. Code that catches
+  `DeepLException` still catches it; code that catches a subclass such as
+  `NotFoundException` or `\InvalidArgumentException` from these two functions
+  must catch `TranslationMemoryJobException` and check `getPrevious()`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

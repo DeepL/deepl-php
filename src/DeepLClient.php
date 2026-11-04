@@ -2631,9 +2631,22 @@ class DeepLClient
     public function waitUntilTranslationMemoryJobDone($job, $timeout = null): TranslationMemoryJob
     {
         $timeout = self::translationMemoryTimeout($timeout);
-        $jobId = TranslationMemoryJob::getJobId($job);
+        $latest = null;
+        return $this->pollTranslationMemoryJob(TranslationMemoryJob::getJobId($job), $timeout, $latest);
+    }
+
+    /**
+     * Polls the job until it is done; $latest is set to each status fetched, so a caller can report it
+     * on failure.
+     * @throws DeepLException
+     */
+    private function pollTranslationMemoryJob(
+        string $jobId,
+        ?float $timeout,
+        ?TranslationMemoryJob &$latest
+    ): TranslationMemoryJob {
         $deadline = $timeout === null ? null : microtime(true) + $timeout;
-        $status = $this->getTranslationMemoryJob($jobId);
+        $status = $latest = $this->getTranslationMemoryJob($jobId);
         while (!$status->done() && $status->ok()) {
             // The job duration is not reported by the API, so just poll equidistantly
             $secs = 5.0;
@@ -2646,7 +2659,7 @@ class DeepLClient
             }
             usleep((int)round($secs * 1000000));
             $this->client->logInfo("Rechecking translation memory job status after sleeping for $secs seconds.");
-            $status = $this->getTranslationMemoryJob($jobId);
+            $status = $latest = $this->getTranslationMemoryJob($jobId);
         }
         if (!$status->ok()) {
             $result = $status->result();
@@ -2718,52 +2731,68 @@ class DeepLClient
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
      * @throws \InvalidArgumentException If no file exists at the input file path, before any request is
-     *  sent.
-     * @throws DeepLException If the input file cannot be read, before any request is sent; the read
-     *  error, if any, is the previous exception.
+     *  sent; not wrapped.
+     * @throws TranslationMemoryJobException For every other failure, with the cause as the previous exception:
+     *  an invalid option or an empty or unreadable input file before any request (job null), or a failure of
+     *  the job creation, the upload or the wait, with job set once the job was created.
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
         $options = null,
         ?float $timeout = null
     ): TranslationMemoryJob {
-        $options = self::translationMemoryOptions(
-            $options,
-            TranslationMemoryOptions::DISPLAY_NAME,
-            TranslationMemoryOptions::TIMEOUT,
-            $timeout,
-            [
-                TranslationMemoryOptions::CONTENT_TYPE,
+        $job = null;
+        try {
+            $options = self::translationMemoryOptions(
+                $options,
                 TranslationMemoryOptions::DISPLAY_NAME,
                 TranslationMemoryOptions::TIMEOUT,
-            ]
-        );
-        $timeout = self::translationMemoryTimeout($options[TranslationMemoryOptions::TIMEOUT] ?? null);
-        unset($options[TranslationMemoryOptions::TIMEOUT]);
+                $timeout,
+                [
+                    TranslationMemoryOptions::CONTENT_TYPE,
+                    TranslationMemoryOptions::DISPLAY_NAME,
+                    TranslationMemoryOptions::TIMEOUT,
+                ]
+            );
+            $timeout = self::translationMemoryTimeout($options[TranslationMemoryOptions::TIMEOUT] ?? null);
+            unset($options[TranslationMemoryOptions::TIMEOUT]);
+        } catch (\Throwable $error) {
+            throw self::translationMemoryJobException($error, null);
+        }
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
         }
-        if (is_dir($inputFile) || !is_readable($inputFile)) {
-            throw new DeepLException("Failed reading input file $inputFile: the file is not readable");
-        }
-        error_clear_last();
-        // Suppressed so error handlers that turn warnings into exceptions see the DeepLException
-        $fileContent = @file_get_contents($inputFile);
-        if ($fileContent === false) {
-            $error = error_get_last();
-            $cause = $error === null
-                ? null
-                : new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
-            throw new DeepLException("Failed reading input file $inputFile", 0, $cause);
-        }
+        try {
+            if (is_dir($inputFile) || !is_readable($inputFile)) {
+                throw new DeepLException("Failed reading input file $inputFile: the file is not readable");
+            }
+            error_clear_last();
+            // Suppressed so error handlers that turn warnings into exceptions see the DeepLException
+            $fileContent = @file_get_contents($inputFile);
+            if ($fileContent === false) {
+                $error = error_get_last();
+                $cause = $error === null
+                    ? null
+                    : new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+                throw new DeepLException("Failed reading input file $inputFile", 0, $cause);
+            }
 
-        $created = $this->createTranslationMemoryImport(basename($inputFile), strlen($fileContent), $options);
-        $this->uploadTranslationMemoryFile(
-            $created,
-            $fileContent,
-            $options[TranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
-        );
-        return $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
+            $created = $this->createTranslationMemoryImport(basename($inputFile), strlen($fileContent), $options);
+            $job = new TranslationMemoryJob($created->jobId, 'import', 'translation_memory', []);
+            $this->uploadTranslationMemoryFile(
+                $created,
+                $fileContent,
+                $options[TranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
+            );
+            $latest = null;
+            try {
+                return $this->pollTranslationMemoryJob($created->jobId, $timeout, $latest);
+            } finally {
+                $job = $latest ?? $job;
+            }
+        } catch (\Throwable $error) {
+            throw self::translationMemoryJobException($error, $job);
+        }
     }
 
     /**
@@ -2775,28 +2804,63 @@ class DeepLClient
      * @param array|float|null $timeout Optional maximum time in seconds to wait for the export to finish, or wait
      *  options, see \DeepL\TranslationMemoryOptions: only TIMEOUT.
      * @return TranslationMemoryJob The completed export job.
-     * @throws DeepLException Also if a file already exists at the output file path or its directory
-     *  does not exist or is not writable; this is checked before the export job is created.
+     * @throws TranslationMemoryJobException For every failure, with the cause as the previous exception: if a
+     *  file already exists at the output file path or its directory does not exist or is not writable, checked
+     *  before the export job is created (job null), or a failure of the job creation, the wait or the download,
+     *  with job set once the job was created.
      */
     public function exportTranslationMemoryToFilepath(
         $translationMemory,
         string $outputFile,
         $timeout = null
     ): TranslationMemoryJob {
-        $timeout = self::translationMemoryTimeout($timeout);
-        if (file_exists($outputFile)) {
-            throw new DeepLException("File already exists at output file path $outputFile");
+        $job = null;
+        try {
+            $timeout = self::translationMemoryTimeout($timeout);
+            if (file_exists($outputFile)) {
+                throw new DeepLException("File already exists at output file path $outputFile");
+            }
+            $outputDir = dirname($outputFile);
+            if (!is_dir($outputDir) || !is_writable($outputDir)) {
+                throw new DeepLException(
+                    "Failed to open output file $outputFile for writing: the directory does not exist or is not " .
+                    'writable'
+                );
+            }
+            $created = $this->createTranslationMemoryExport($translationMemory);
+            $job = new TranslationMemoryJob($created->jobId, 'export', 'translation_memory', []);
+            $latest = null;
+            try {
+                $job = $this->pollTranslationMemoryJob($created->jobId, $timeout, $latest);
+            } finally {
+                $job = $latest ?? $job;
+            }
+            $this->downloadTranslationMemoryExport($job, $outputFile);
+            return $job;
+        } catch (\Throwable $error) {
+            throw self::translationMemoryJobException($error, $job);
         }
-        $outputDir = dirname($outputFile);
-        if (!is_dir($outputDir) || !is_writable($outputDir)) {
-            throw new DeepLException(
-                "Failed to open output file $outputFile for writing: the directory does not exist or is not writable"
-            );
+    }
+
+    /**
+     * Wraps a failure of a translation memory file helper, copying httpStatusCode and shouldRetry from a
+     * DeepLException cause.
+     */
+    private static function translationMemoryJobException(
+        \Throwable $error,
+        ?TranslationMemoryJob $job
+    ): TranslationMemoryJobException {
+        $exception = new TranslationMemoryJobException(
+            $error->getMessage() ?: 'unknown error',
+            $error->getCode(),
+            $error,
+            $job
+        );
+        if ($error instanceof DeepLException) {
+            $exception->httpStatusCode = $error->httpStatusCode;
+            $exception->shouldRetry = $error->shouldRetry;
         }
-        $created = $this->createTranslationMemoryExport($translationMemory);
-        $job = $this->waitUntilTranslationMemoryJobDone($created->jobId, $timeout);
-        $this->downloadTranslationMemoryExport($job, $outputFile);
-        return $job;
+        return $exception;
     }
 
     /**

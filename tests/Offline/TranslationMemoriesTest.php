@@ -14,6 +14,7 @@ use DeepL\NotFoundException;
 use DeepL\TranslationMemoryImport;
 use DeepL\TranslationMemoryInfo;
 use DeepL\TranslationMemoryJob;
+use DeepL\TranslationMemoryJobException;
 use DeepL\TranslationMemoryJobResult;
 use DeepL\TranslationMemoryOptions;
 use DeepL\TranslationMemorySegmentsOptions;
@@ -291,20 +292,19 @@ class TranslationMemoriesTest extends OfflineTestCase
         $client = $this->makeDeepLClient();
         $file = Fixtures::tempFile('example.tmx', '<tmx/>');
 
-        foreach ([
-            function () use ($client) {
-                $client->createTranslationMemoryImport('a.tmx', 42, [], 'My TM');
-            },
-            function () use ($client, $file) {
-                $client->importTranslationMemoryFromFilepath($file, [], 60.0);
-            },
-        ] as $call) {
-            try {
-                $call();
-                $this->fail('expected a DeepLException');
-            } catch (\InvalidArgumentException $exception) {
-                $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
-            }
+        try {
+            $client->createTranslationMemoryImport('a.tmx', 42, [], 'My TM');
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
+        }
+        try {
+            $client->importTranslationMemoryFromFilepath($file, [], 60.0);
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->job);
+            $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
+            $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
         }
         $this->assertRequestCount(0);
     }
@@ -712,7 +712,7 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
-    public function testThrowsDeepLExceptionWithoutRequestWhenTheImportFileIsUnreadable(): void
+    public function testThrowsTranslationMemoryJobExceptionWithoutRequestWhenTheImportFileIsUnreadable(): void
     {
         $file = Fixtures::tempFile('example.tmx', '<tmx/>');
         chmod($file, 0);
@@ -729,14 +729,81 @@ class TranslationMemoriesTest extends OfflineTestCase
 
         try {
             $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
-            $this->fail('expected a DeepLException');
-        } catch (DeepLException $exception) {
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->job);
             $this->assertStringContainsString('Failed reading input file', $exception->getMessage());
         } finally {
             restore_error_handler();
             chmod($file, 0600);
         }
         $this->assertRequestCount(0);
+    }
+
+    public function testWrapsAnEmptyImportFileWithoutRequest(): void
+    {
+        try {
+            $this->makeDeepLClient()->importTranslationMemoryFromFilepath(Fixtures::tempFile('empty.tmx', ''));
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->job);
+            $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
+            $this->assertSame('contentLength must be greater than 0', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testWrapsAFailedImportJobWithTheJob(): void
+    {
+        $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
+        $this->reply('', 200);
+        $this->reply(self::job('failed', ['error' => ['message' => 'invalid TMX']]));
+        $file = Fixtures::tempFile('example.tmx', '<tmx/>');
+
+        try {
+            $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertSame('invalid TMX', $exception->getMessage());
+            $this->assertSame('job1', $exception->job->jobId);
+            $this->assertSame('failed', $exception->job->status());
+            $this->assertInstanceOf(DeepLException::class, $exception->getPrevious());
+        }
+    }
+
+    public function testWrapsAFailedUploadWithTheJobAndTheCausesStatus(): void
+    {
+        $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
+        $this->reply('', 503);
+        $file = Fixtures::tempFile('example.tmx', '<tmx/>');
+
+        try {
+            $this->makeDeepLClient(['max_retries' => 0])->importTranslationMemoryFromFilepath($file);
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertSame('job1', $exception->job->jobId);
+            $this->assertSame('import', $exception->job->operation);
+            $this->assertSame(503, $exception->httpStatusCode);
+            $this->assertSame($exception->getPrevious()->shouldRetry, $exception->shouldRetry);
+            $this->assertSame($exception->getPrevious()->getMessage(), $exception->getMessage());
+        }
+    }
+
+    public function testWrapsAFailedExportJobWithTheJob(): void
+    {
+        $output = Fixtures::tempDir() . '/export.tmx';
+        $this->reply(['job_id' => 'job2', 'parameters' => ['translation_memory_id' => 'tm1']], 202);
+        $this->reply(self::job('failed', ['error' => ['message' => 'export failed']]));
+
+        try {
+            $this->makeDeepLClient()->exportTranslationMemoryToFilepath('tm1', $output);
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertSame('export failed', $exception->getMessage());
+            $this->assertSame('failed', $exception->job->status());
+            $this->assertInstanceOf(DeepLException::class, $exception->getPrevious());
+        }
+        $this->assertFileDoesNotExist($output);
     }
 
     public function testExportsToAFileByCreatingWaitingAndDownloading(): void
@@ -772,8 +839,9 @@ class TranslationMemoriesTest extends OfflineTestCase
             foreach ($cases as list($output, $message)) {
                 try {
                     $client->exportTranslationMemoryToFilepath('tm1', $output);
-                    $this->fail("expected a DeepLException for $output");
-                } catch (DeepLException $exception) {
+                    $this->fail("expected a TranslationMemoryJobException for $output");
+                } catch (TranslationMemoryJobException $exception) {
+                    $this->assertNull($exception->job);
                     $this->assertStringContainsString($message, $exception->getMessage());
                 }
             }
