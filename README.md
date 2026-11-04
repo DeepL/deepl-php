@@ -1601,7 +1601,11 @@ or a timeout before the connection was established). These are
 `createStyleRule()`, `createStyleRuleCustomInstruction()`,
 `createStyleProfile()`, `createTranslationMemoryImport()`,
 `createTranslationMemoryExport()` and `createDeveloperKey()`. With a custom HTTP
-client, only HTTP 429 is retried for them.
+client, only HTTP 429 is retried for them. When one of them fails, the
+exception's `shouldRetry` is `true` only for these failures and for a response
+body cut off mid-read; after a 5xx status, a timeout after connecting, an empty
+reply, a reset connection or a broken pipe it is `false`, as the resource may
+already have been created.
 
 The maximum number of
 retries after the first attempt can be configured when constructing the `DeepLClient` object using the

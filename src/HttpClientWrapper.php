@@ -163,11 +163,25 @@ class HttpClientWrapper
         }
 
         if ($exception !== null) {
+            if ($onlyUnprocessed) {
+                // Repeating a request that may have been processed may create a duplicate.
+                $exception->shouldRetry = $exception->shouldRetry
+                    && ($this->isUnsentRequestError($exception) || $this->isBodyCutOffError($exception));
+            }
             throw $exception;
         } else {
             list($statusCode, $content) = $response;
             $this->logInfo("DeepL API response $method $url $statusCode");
             $this->logDebug("Response details: $content");
+            if ($onlyUnprocessed && $statusCode >= 500) {
+                // The request may have been processed: repeating it may create a duplicate.
+                try {
+                    ClientUtils::checkStatusCode($response);
+                } catch (DeepLException $error) {
+                    $error->shouldRetry = false;
+                    throw $error;
+                }
+            }
             return $response;
         }
     }
@@ -486,6 +500,16 @@ class HttpClientWrapper
     private function isUnsentRequestError(ConnectionException $exception): bool
     {
         return $this->customHttpClient === null && $this->lastCurlErrorUnsent;
+    }
+
+    /**
+     * Returns true if cURL received a response whose body was cut off mid-read (cURL errors 18 and 92). It is
+     * reported as retryable for every request, including those that are not retried automatically.
+     */
+    private function isBodyCutOffError(ConnectionException $exception): bool
+    {
+        return $this->customHttpClient === null
+            && in_array($exception->getCode(), [\CURLE_PARTIAL_FILE, self::CURLE_HTTP2_STREAM], true);
     }
 
     public function logDebug(string $message): void

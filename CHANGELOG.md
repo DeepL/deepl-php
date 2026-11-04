@@ -117,6 +117,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   succeeds, the `ConnectionException` has `shouldRetry` set to `true` instead
   of `false`. A download to a file rewrites the file from the start on each
   attempt.
+- Breaking: when a function that creates a resource fails, the exception's
+  `shouldRetry` is `true` only if the request was not processed (HTTP 429, DNS
+  failure, refused connection, connect timeout) or the response body was cut
+  off mid-read. After a 5xx status, a timeout after connecting, an empty reply,
+  a reset connection or a broken pipe it is `false` instead of `true`, as
+  repeating the request may create a duplicate. This applies to the functions
+  listed above and to `createDeveloperKey()`, and to the
+  `DocumentTranslationException` of a failed `translateDocument()` upload.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

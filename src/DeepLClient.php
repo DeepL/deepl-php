@@ -221,6 +221,8 @@ class DeepLClient
      * The upload is only retried if it was not processed: after HTTP 429, or a connection failure before
      * the request was sent. With a custom HTTP client, only HTTP 429 is retried. Status checks and the download
      * use the full retry set.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $inputFile String containing file path of document to be translated.
      * @param string $outputFile String containing file path to create translated document.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
@@ -282,6 +284,8 @@ class DeepLClient
      * document. Use translateDocumentWaitUntilDone() and translateDocumentDownload() to complete the translation.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $inputFile String containing file path of document to be translated.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
@@ -457,6 +461,8 @@ class DeepLClient
      * Creates a new glossary on DeepL server with given name, languages, and entries.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -503,6 +509,8 @@ class DeepLClient
      * Creates a new glossary on DeepL server with given name, languages, and entries.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -1030,6 +1038,8 @@ class DeepLClient
      * dictionaries, each with their own language pair and entries.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the glossary.
      * @param MultilingualGlossaryDictionaryEntries[] $dictionaries A list of MultilingualGlossaryDictionaryEntries
      *      which each contains entries for a particular language pair
@@ -1058,6 +1068,8 @@ class DeepLClient
      * Creates a new glossary on DeepL server with given name, languages, and entries.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the glossary.
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
@@ -1437,6 +1449,8 @@ class DeepLClient
      * Creates a spoken terms collection with the given name and term lists.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the collection.
      * @param SpokenTermsEntries[] $termLists Term lists to add, one per language.
      * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
@@ -1716,6 +1730,8 @@ class DeepLClient
      * Creates a new style rule on DeepL server.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name User-defined name to assign to the style rule.
      * @param string $language Language code for the style rule.
      * @param array|null $configuredRules Optional configured rules to apply.
@@ -1863,6 +1879,8 @@ class DeepLClient
      * Creates a custom instruction for a style rule.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
      * @param string $label Label for the custom instruction.
      * @param string $prompt Prompt text for the custom instruction.
@@ -2074,6 +2092,8 @@ class DeepLClient
      * Creates a style profile.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $name Name of the style profile.
      * @param array $options Optional fields, see \DeepL\CreateStyleProfileOptions. Options that are
      *  null are not sent. If any of the linked component IDs cannot be used, no style profile is created.
@@ -2400,6 +2420,8 @@ class DeepLClient
      * importTranslationMemoryFromFilepath() to do all three steps at once.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string $fileName Name of the TMX file to import, for example 'legal.tmx'.
      * @param int $contentLength Size of the TMX file in bytes.
      * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE,
@@ -2502,6 +2524,8 @@ class DeepLClient
      * exportTranslationMemoryToFilepath() to do both steps and write the file at once.
      * To avoid creating duplicates, the request is only retried if it was not processed: after HTTP 429,
      * or a connection failure before the request was sent. With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
      *  TranslationMemoryInfo of the translation memory to export.
      * @return TranslationMemoryExport The job ID, and whether the API reused a previously completed

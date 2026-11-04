@@ -11,6 +11,7 @@ use DeepL\DeepLAdminClient;
 use DeepL\DeepLClient;
 use DeepL\DocumentHandle;
 use DeepL\Fixtures;
+use DeepL\GlossaryEntries;
 use DeepL\TranslateDocumentOptions;
 use DeepL\TranslatorOptions;
 
@@ -360,6 +361,38 @@ class CurlTransportTest extends OfflineTestCase
             ->willReturnCallback(function ($handle, int $option) use ($connectTime) {
                 return $option === CURLINFO_CONNECT_TIME ? $connectTime : 200;
             });
+    }
+
+    public function testReportsATimeoutAfterConnectingOnACreateAsNotRetryable(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([CURLE_OPERATION_TIMEDOUT], $attempts, '{}', 0.1);
+
+        try {
+            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))
+                ->createGlossary('name', 'en', 'de', GlossaryEntries::fromEntries(['a' => 'b']));
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+            $this->assertFalse($exception->shouldRetry);
+            $this->assertCount(1, $attempts);
+        }
+    }
+
+    public function testReportsABodyCutOffMidReadOnACreateAsRetryableWithoutRetrying(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith([CURLE_PARTIAL_FILE], $attempts);
+
+        try {
+            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))
+                ->createGlossary('name', 'en', 'de', GlossaryEntries::fromEntries(['a' => 'b']));
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame(CURLE_PARTIAL_FILE, $exception->getCode());
+            $this->assertTrue($exception->shouldRetry);
+            $this->assertCount(1, $attempts);
+        }
     }
 
     private function makeCurlAdminClient(): DeepLAdminClient

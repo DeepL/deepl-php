@@ -109,6 +109,8 @@ class DeepLAdminClient
      * Creates a developer key in the organization. To avoid creating duplicate keys, the request is only
      * retried if it was not processed: after HTTP 429, or a connection failure before the request was sent.
      * With a custom HTTP client, only HTTP 429 is retried.
+     * A failed request throws an exception whose shouldRetry is true only for these failures and for a
+     * response body cut off mid-read.
      * @param array $options Request options, see CreateDeveloperKeyOptions: LABEL and EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The created key.
      * @throws DeepLException

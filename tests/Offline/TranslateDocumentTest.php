@@ -545,7 +545,12 @@ class TranslateDocumentTest extends OfflineTestCase
 
     public function provideStatusOfTheCause(): array
     {
-        return ['quota exceeded' => [456, false], 'service unavailable' => [503, true]];
+        // The upload creates a document: after a 5xx it may have been processed, so it is not retryable.
+        return [
+            'quota exceeded' => [456, false],
+            'too many requests' => [429, true],
+            'service unavailable' => [503, false],
+        ];
     }
 
     public function testCutsTheLastSleepOfTheWaitToTheTimeout(): void

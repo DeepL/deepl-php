@@ -180,7 +180,8 @@ abstract class OfflineTestCase extends TestCase
     }
 
     /**
-     * Asserts that the given call, which creates a resource, sends its request once after HTTP 503.
+     * Asserts that the given call, which creates a resource, sends its request once after HTTP 503 and reports
+     * the error as not retryable.
      */
     protected function assertNotRetriedAfterAServerError(callable $create): void
     {
@@ -191,6 +192,8 @@ abstract class OfflineTestCase extends TestCase
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertRequestCount(1);
+            $this->assertSame(503, $exception->httpStatusCode);
+            $this->assertFalse($exception->shouldRetry);
         }
     }
 }

@@ -347,6 +347,8 @@ class AdminClientTest extends OfflineTestCase
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertRequestCount(1);
+            $this->assertSame(503, $exception->httpStatusCode);
+            $this->assertFalse($exception->shouldRetry);
         }
     }
 
