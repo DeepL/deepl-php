@@ -294,18 +294,24 @@ class TranslateTextTest extends OfflineTestCase
         $texts,
         ?string $source,
         array $options,
-        string $message
+        string $message,
+        string $target = 'de'
     ): void {
-        $this->expectException(DeepLException::class);
-        $this->expectExceptionMessage($message);
-
-        $this->makeDeepLClient()->translateText($texts, $source, 'de', $options);
+        try {
+            $this->makeDeepLClient()->translateText($texts, $source, $target, $options);
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
     }
 
     public static function provideRejectedArguments(): array
     {
         $glossary = new GlossaryInfo('gid', 'name', true, 'en', 'de', new \DateTime(), 1);
         return [
+            'empty target language' => ['a', null, [], 'langCode must be a non-empty string', ''],
+            'empty source language' => ['a', '', [], 'langCode must be a non-empty string'],
             'a number instead of text' => [42, null, [], 'texts parameter'],
             'a number inside the texts' => [[42], null, [], 'texts parameter'],
             'glossary together with glossary_ids' => [

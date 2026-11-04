@@ -65,7 +65,7 @@ class SpokenTermsTest extends OfflineTestCase
             try {
                 $call();
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString('contains invalid characters', $exception->getMessage());
             }
         }
@@ -121,7 +121,7 @@ class SpokenTermsTest extends OfflineTestCase
     {
         $client = $this->makeDeepLClient();
 
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown spoken terms option: name');
         try {
             $client->createSpokenTerms('My terms', [], [SpokenTermsOptions::NAME => 'x']);

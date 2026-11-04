@@ -20,7 +20,7 @@ class GlossaryEntries
     }
 
     /**
-     * @throws DeepLException
+     * @throws \InvalidArgumentException
      */
     public static function fromTsv(string $tsv): GlossaryEntries
     {
@@ -28,7 +28,7 @@ class GlossaryEntries
     }
 
     /**
-     * @throws DeepLException
+     * @throws \InvalidArgumentException
      */
     public static function fromEntries(array $entries): GlossaryEntries
     {

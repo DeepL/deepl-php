@@ -28,13 +28,13 @@ class DeepLAdminClient
      * @param string $adminKey Admin API key as found in your DeepL account.
      * @param array $options Additional options controlling client behaviour, see TranslatorOptions. The
      * server URL defaults to TranslatorOptions::DEFAULT_SERVER_URL for all admin keys.
-     * @throws DeepLException If the admin key is empty.
+     * @throws \InvalidArgumentException If the admin key is empty.
      * @see TranslatorOptions for a list of available request options.
      */
     public function __construct(string $adminKey, array $options = [])
     {
         if (trim($adminKey) === '') {
-            throw new DeepLException('adminKey must be a non-empty string');
+            throw new \InvalidArgumentException('adminKey must be a non-empty string');
         }
         // Validation is currently only logging warnings
         $_ = TranslatorOptions::isValid($options);
@@ -55,7 +55,8 @@ class DeepLAdminClient
      * @param string|null $groupBy Group the usage by key or by key and day, see AdminUsageGroupBy. The value
      * is sent to the API as given.
      * @return AdminUsageReport
-     * @throws DeepLException If a date is invalid, or if the request fails.
+     * @throws \InvalidArgumentException If a date is invalid, checked before any request is sent.
+     * @throws DeepLException If the request fails.
      */
     public function getUsageAnalytics($startDate, $endDate, ?string $groupBy = null): AdminUsageReport
     {
@@ -83,7 +84,8 @@ class DeepLAdminClient
      * CustomTagUsageAggregateBy. The value is sent to the API as given.
      * @param int|null $page Page number to retrieve.
      * @return CustomTagUsageReport
-     * @throws DeepLException If a date is invalid, or if the request fails.
+     * @throws \InvalidArgumentException If a date is invalid, checked before any request is sent.
+     * @throws DeepLException If the request fails.
      */
     public function getCustomTagUsageAnalytics(
         $startDate,
@@ -239,14 +241,14 @@ class DeepLAdminClient
 
     /**
      * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
-     * @throws DeepLException If an option key is unknown to the method.
+     * @throws \InvalidArgumentException If an option key is unknown to the method.
      */
     private static function checkOptions(array $options, array $allowed): void
     {
         $allowed[] = DeveloperKeyOptions::EXTRA_BODY_PARAMETERS;
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
-                throw new DeepLException("Unknown developer key option: $key");
+                throw new \InvalidArgumentException("Unknown developer key option: $key");
             }
         }
     }
@@ -304,7 +306,7 @@ class DeepLAdminClient
     {
         $keyId = $key instanceof DeveloperKey ? $key->keyId : $key;
         if (!is_string($keyId) || $keyId === '') {
-            throw new DeepLException('key must be a non-empty key ID or a DeveloperKey');
+            throw new \InvalidArgumentException('key must be a non-empty key ID or a DeveloperKey');
         }
         return $keyId;
     }
@@ -347,7 +349,7 @@ class DeepLAdminClient
         } else {
             $actual = gettype($date);
         }
-        throw new DeepLException(
+        throw new \InvalidArgumentException(
             "$name must be a DateTimeInterface or a date string in the format YYYY-MM-DD, got $actual"
         );
     }

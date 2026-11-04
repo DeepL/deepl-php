@@ -20,7 +20,7 @@ class ClientUtils
     {
         $serverUrl = $options[TranslatorOptions::SERVER_URL] ?? $defaultServerUrl;
         if (!is_string($serverUrl) || strlen($serverUrl) == 0) {
-            throw new DeepLException('If specified, ' .
+            throw new \InvalidArgumentException('If specified, ' .
                 TranslatorOptions::SERVER_URL . ' option must be a non-empty string.');
         } elseif (substr($serverUrl, -1) === "/") { // Remove trailing slash if present
             $serverUrl = substr($serverUrl, 0, strlen($serverUrl) - 1);
@@ -101,13 +101,13 @@ class ClientUtils
 
     /**
      * Creates an HttpClientWrapper using the transport settings in the options.
-     * @throws DeepLException If max_retries is negative.
+     * @throws \InvalidArgumentException If max_retries is negative.
      */
     public static function createHttpClient(string $serverUrl, array $headers, array $options): HttpClientWrapper
     {
         $maxRetries = $options[TranslatorOptions::MAX_RETRIES] ?? TranslatorOptions::DEFAULT_MAX_RETRIES;
         if ($maxRetries < 0) {
-            throw new DeepLException(
+            throw new \InvalidArgumentException(
                 'If specified, ' . TranslatorOptions::MAX_RETRIES . ' option must not be negative.'
             );
         }

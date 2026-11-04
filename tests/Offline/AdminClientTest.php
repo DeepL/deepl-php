@@ -49,7 +49,7 @@ class AdminClientTest extends OfflineTestCase
      */
     public function testRejectsABlankAdminKey(string $adminKey): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('adminKey');
         new DeepLAdminClient($adminKey);
     }
@@ -220,7 +220,7 @@ class AdminClientTest extends OfflineTestCase
             try {
                 $client->$method($startDate, $endDate);
                 $this->fail("expected a DeepLException from $method");
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString($message, $exception->getMessage());
             }
         }
@@ -453,7 +453,7 @@ class AdminClientTest extends OfflineTestCase
         try {
             $call($this->makeAdminClient());
             $this->fail('expected a DeepLException');
-        } catch (DeepLException $exception) {
+        } catch (\InvalidArgumentException $exception) {
             $this->assertStringContainsString($message, $exception->getMessage());
         }
         $this->assertRequestCount(0);

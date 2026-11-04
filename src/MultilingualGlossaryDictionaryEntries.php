@@ -26,7 +26,7 @@ class MultilingualGlossaryDictionaryEntries
      * @param array|GlossaryEntries $entries Source-target entry pairs, as an associative array or GlossaryEntries.
      *  Both terms are trimmed of surrounding whitespace, then validated: they must not be empty or contain
      *  control characters.
-     * @throws DeepLException If the entries are empty or a term is invalid.
+     * @throws \InvalidArgumentException If the entries are empty or a term is invalid.
      */
     public function __construct(string $sourceLang, string $targetLang, $entries)
     {
@@ -35,13 +35,13 @@ class MultilingualGlossaryDictionaryEntries
         if ($entries instanceof GlossaryEntries) {
             $entries = $entries->getEntries();
         } elseif (!is_array($entries)) {
-            throw new DeepLException('entries must be an array or GlossaryEntries');
+            throw new \InvalidArgumentException('entries must be an array or GlossaryEntries');
         }
         $this->entries = GlossaryEntries::fromEntries(self::trimAndValidate($entries));
     }
 
     /**
-     * @throws DeepLException If the entries are empty or a term is invalid.
+     * @throws \InvalidArgumentException If the entries are empty or a term is invalid.
      */
     private static function trimAndValidate(array $entries): array
     {
@@ -52,7 +52,7 @@ class MultilingualGlossaryDictionaryEntries
             GlossaryUtils::validateGlossaryTerm($source);
             GlossaryUtils::validateGlossaryTerm($target);
             if (array_key_exists($source, $trimmed)) {
-                throw new DeepLException("Entries duplicate source term \"$source\"");
+                throw new \InvalidArgumentException("Entries duplicate source term \"$source\"");
             }
             $trimmed[$source] = $target;
         }
@@ -131,7 +131,7 @@ class MultilingualGlossaryDictionaryEntries
     /**
      * Returns the dictionary as sent to the API. The entries are trimmed and validated again, as they may have
      * been changed after construction or come from the API.
-     * @throws DeepLException If the entries are empty or a term is invalid.
+     * @throws \InvalidArgumentException If the entries are empty or a term is invalid.
      */
     public function toObject(): array
     {

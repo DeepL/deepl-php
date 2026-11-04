@@ -108,7 +108,7 @@ class LanguagesTest extends OfflineTestCase
 
     public function testThrowsWhenTheIncludeOptionIsNotAnArray(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('include option must be an array of strings');
 
         $this->makeDeepLClient()->getLanguagesForResource(
@@ -146,7 +146,7 @@ class LanguagesTest extends OfflineTestCase
 
     public function testThrowsWhenTheResourceIsEmpty(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('resource must be a non-empty string');
 
         $this->makeDeepLClient()->getLanguagesForResource('');

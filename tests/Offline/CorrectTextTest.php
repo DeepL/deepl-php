@@ -54,7 +54,7 @@ class CorrectTextTest extends OfflineTestCase
 
     public function testThrowsWhenTheTextIsEmpty(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('text must not be empty');
 
         $this->makeDeepLClient()->correctText('');

@@ -56,7 +56,7 @@ echo $result->text; // Bonjour, le monde!
 
 `DeepLClient` accepts options as the second argument, see
 [Configuration](#configuration) for more information. Whitespace around the
-key is removed; an empty key throws a `DeepLException`.
+key is removed; an empty key throws an `InvalidArgumentException`.
 
 `DeepLClient::isFreeAccountAuthKey($authKey)` returns `true` if the key belongs
 to a DeepL API Free account (it ends with `:fx`). Without a `server_url` option,
@@ -64,7 +64,12 @@ such a key is sent to `https://api-free.deepl.com`.
 
 #### Errors
 
-Every exception this library throws is a `DeepL\DeepLException`. Its
+An invalid argument, such as an empty text, language code, name or resource ID,
+or an option key the function does not know, throws PHP's
+`\InvalidArgumentException` before any request is sent. It is not a
+`DeepLException`.
+
+Every other exception this library throws is a `DeepL\DeepLException`. Its
 subclasses tell the cause apart:
 
 - `AuthorizationException`: HTTP 401 or 403, the authentication key is invalid
@@ -325,7 +330,7 @@ response does not contain one improvement with a text per input text.
 
 ### Correcting text
 
-To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string is rejected with a `DeepLException`.
+To fix spelling and grammar with minimal changes, without rewriting the text for style or tone, call `correctText()`. The first argument is a string containing the text you want to correct, or an array of strings if you want to correct multiple texts. An empty string is rejected with an `InvalidArgumentException`.
 
 The second argument is the target language code, which is optional. If not provided, the text is corrected in its original language.
 
@@ -544,7 +549,7 @@ source and target term, then rejects empty terms, terms containing control
 characters, and source terms that are duplicates after trimming. The entries
 are trimmed and checked again when they are sent, so a dictionary whose
 `entries` were changed, or one returned by the API, is sent trimmed; one without
-entries throws a `DeepLException` without sending a request.
+entries throws an `InvalidArgumentException` without sending a request.
 
 The entries can also be given as `GlossaryEntries`, for example
 `new MultilingualGlossaryDictionaryEntries('en', 'de', GlossaryEntries::fromEntries([...]))`;
@@ -726,7 +731,7 @@ spoken terms ID or a `SpokenTerms` object. Terms are passed and returned as
 arrays of strings. `createSpokenTerms()`, `updateSpokenTerms()` and
 `replaceSpokenTermsList()` trim each term and check it like a glossary term
 before sending anything: a term that is blank or contains a control character
-such as a newline throws a `DeepLException`. The trimmed terms are sent.
+such as a newline throws an `InvalidArgumentException`. The trimmed terms are sent.
 
 `updateSpokenTerms()` takes its changes as an options array with the keys of
 `SpokenTermsOptions`: `NAME` (new name) and `TERM_LISTS` (an array of
@@ -1101,7 +1106,7 @@ $deeplClient->translateDocument(
 A style profile is a named set of linked glossaries, style rule lists and
 translation memories, with an optional description and industry. The
 `DeepLClient` methods below accept either the style profile ID or a
-`StyleProfile` object; an empty ID throws a `DeepLException` before any request
+`StyleProfile` object; an empty ID throws an `InvalidArgumentException` before any request
 is sent. Optional fields are passed as an array keyed by the
 `CreateStyleProfileOptions` constants for `createStyleProfile()` and the
 `UpdateStyleProfileOptions` constants for `updateStyleProfile()`; only the
@@ -1241,8 +1246,8 @@ of the file, used for the import job and the upload, default
 `'application/xml'`), `TIMEOUT` (maximum time in seconds to wait) and
 `EXTRA_BODY_PARAMETERS` (added last to the JSON body of the import request). The
 released positional form, a display name and a timeout, is still accepted.
-If no file exists at the input file path, it throws an `InvalidArgumentException`
-before sending any request.
+If no file exists at the input file path, or the file is empty, it throws an
+`InvalidArgumentException` before sending any request.
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', [
@@ -1434,8 +1439,8 @@ UTC calendar days, and both the start and the end day are included. Pass
 the library uses the UTC date of that moment, so local midnight in UTC+2
 (`2026-10-20T00:00+02:00`) is sent as `2026-10-19`; your object is not
 modified. The API requires the end date to be after the start date, so a report
-covers at least two days, and at most 366 days after it. Invalid dates throw a
-`DeepLException` before the request is sent; the API rejects invalid ranges.
+covers at least two days, and at most 366 days after it. Invalid dates throw an
+`InvalidArgumentException` before the request is sent; the API rejects invalid ranges.
 The same rules apply to `getCustomTagUsageAnalytics()`.
 Timestamps in the reports without a time zone are in UTC. Use
 the `groupBy` argument to break the usage down by key
@@ -1507,7 +1512,7 @@ Provide the options as an associative array with the following keys:
 - `max_retries`: the maximum number of retries after the first attempt of an
     HTTP request, per function call. By default, 5 retries are made, so a
     request is sent at most 6 times; `0` disables retries, and a negative value
-    throws a `DeepLException`. See
+    throws an `InvalidArgumentException`. See
     [Request retries](#request-retries).
 - `timeout`: the number of seconds used as connection timeout for each
     HTTP request retry. The default value is `10.0` (10 seconds).

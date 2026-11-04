@@ -276,7 +276,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             try {
                 $call();
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
             }
         }
@@ -285,7 +285,7 @@ class TranslationMemoriesTest extends OfflineTestCase
 
     public function testThrowsForAnUnknownTranslationMemoryOption(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown translation memory option: timeout');
 
         $this->makeDeepLClient()->createTranslationMemoryImport('a.tmx', 42, [TranslationMemoryOptions::TIMEOUT => 1]);
@@ -299,7 +299,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             try {
                 $client->createTranslationMemoryImport($name, $length);
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString($message, $exception->getMessage());
             }
         }
@@ -352,7 +352,7 @@ class TranslationMemoriesTest extends OfflineTestCase
 
     public function testThrowsWhenTheUploadUrlIsEmpty(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('uploadUrl must be a non-empty string');
 
         $this->makeDeepLClient()->uploadTranslationMemoryFile('', '<tmx/>');
@@ -489,7 +489,7 @@ class TranslationMemoriesTest extends OfflineTestCase
 
     public function testThrowsForAnUnknownWaitOption(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown translation memory wait option: display_name');
 
         $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone(
@@ -615,13 +615,16 @@ class TranslationMemoriesTest extends OfflineTestCase
                 TranslationMemoryJob::fromJson(self::job('processing')),
                 Fixtures::tempDir() . '/a.tmx',
                 'no download URL',
+                DeepLException::class,
             ],
-            [$withUrl, $existing, 'File already exists'],
-        ] as list($job, $output, $message)) {
+            [$withUrl, $existing, 'File already exists', DeepLException::class],
+        ] as list($job, $output, $message, $class)) {
             try {
                 $client->downloadTranslationMemoryExport($job, $output);
-                $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+                $this->fail("expected a $class");
+            } catch (\Exception $exception) {
+                $this->assertInstanceOf($class, $exception);
+                $this->assertNotInstanceOf(\InvalidArgumentException::class, $exception);
                 $this->assertStringContainsString($message, $exception->getMessage());
             }
         }
@@ -766,7 +769,7 @@ class TranslationMemoriesTest extends OfflineTestCase
 
     public function testThrowsWhenTheTranslationMemoryIdIsEmpty(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('translationMemoryId must be a non-empty string');
 
         $this->makeDeepLClient()->getTranslationMemory('');

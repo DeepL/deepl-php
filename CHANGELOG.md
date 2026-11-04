@@ -125,6 +125,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repeating the request may create a duplicate. This applies to the functions
   listed above and to `createDeveloperKey()`, and to the
   `DocumentTranslationException` of a failed `translateDocument()` upload.
+- Breaking: every argument check throws PHP's `\InvalidArgumentException`
+  instead of `DeepLException`, before any request is sent: an empty auth or
+  admin key, an invalid `server_url` or negative `max_retries` option, an empty
+  language code, text, name, label, prompt or resource ID, `glossary` together
+  with `glossary_ids`, more than 5 glossary IDs, an invalid
+  `translation_memory_threshold`, an invalid glossary or spoken terms term,
+  empty glossary entries, an empty translation memory import file, a
+  `contentLength` that is not positive, an invalid admin date, and an unknown
+  option key. `InvalidArgumentException` is not a `DeepLException`: to keep
+  handling these errors, also catch `\InvalidArgumentException`. API, I/O and
+  wait failures, and an export job without a download URL passed to
+  `downloadTranslationMemoryExport()`, still throw `DeepLException`;
+  `translateDocument()` still wraps the argument errors of its upload in a
+  `DocumentTranslationException`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

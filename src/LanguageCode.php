@@ -17,12 +17,12 @@ class LanguageCode
      * from ISO 3166-1.
      * @param string $langCode String containing language code to standardize.
      * @return string String containing the standardized language code.
-     * @throws DeepLException If language code is an empty string.
+     * @throws \InvalidArgumentException If language code is an empty string.
      */
     public static function standardizeLanguageCode(string $langCode): string
     {
         if (strlen($langCode) === 0) {
-            throw new DeepLException('langCode must be a non-empty string');
+            throw new \InvalidArgumentException('langCode must be a non-empty string');
         }
 
         $exploded = explode('-', $langCode, 2);
@@ -43,7 +43,7 @@ class LanguageCode
     public static function removeRegionalVariant(string $langCode): string
     {
         if (strlen($langCode) === 0) {
-            throw new DeepLException('langCode must be a non-empty string');
+            throw new \InvalidArgumentException('langCode must be a non-empty string');
         }
 
         $exploded = explode('-', $langCode, 2);

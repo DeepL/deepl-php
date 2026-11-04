@@ -138,7 +138,7 @@ class HttpClientTest extends OfflineTestCase
 
     public function testThrowsWhenMaxRetriesIsNegative(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('max_retries option must not be negative');
 
         $this->makeDeepLClient([TranslatorOptions::MAX_RETRIES => -1]);

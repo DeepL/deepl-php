@@ -76,7 +76,7 @@ class GlossariesTest extends OfflineTestCase
             try {
                 $call();
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString('glossary name must be a non-empty string', $exception->getMessage());
             }
         }
@@ -135,7 +135,7 @@ class GlossariesTest extends OfflineTestCase
      */
     public function testThrowsWhenTsvEntriesAreInvalid(string $tsv, string $message): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($message);
 
         GlossaryEntries::fromTsv($tsv);
@@ -156,7 +156,7 @@ class GlossariesTest extends OfflineTestCase
      */
     public function testThrowsWhenEntriesAreInvalid(array $entries, string $message): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($message);
 
         GlossaryEntries::fromEntries($entries);

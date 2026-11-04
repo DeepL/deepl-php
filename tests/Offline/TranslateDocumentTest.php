@@ -278,7 +278,7 @@ class TranslateDocumentTest extends OfflineTestCase
                 $options
             );
             $this->fail('Expected DeepLException');
-        } catch (DeepLException $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->assertSame($message, $e->getMessage());
         }
         $this->assertRequestCount(0);
@@ -300,7 +300,7 @@ class TranslateDocumentTest extends OfflineTestCase
 
     public function testThrowsWhenThresholdHasNoTranslationMemory(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('requires translation_memory');
 
         $this->makeDeepLClient()->translateDocumentUpload(

@@ -226,7 +226,7 @@ class StyleProfilesTest extends OfflineTestCase
             try {
                 $call();
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertNotInstanceOf(NotFoundException::class, $exception);
             }
         }

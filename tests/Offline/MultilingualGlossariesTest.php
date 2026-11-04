@@ -83,7 +83,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
 
     public function testRejectsUnknownOptions(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown multilingual glossary option: name');
 
         $this->makeDeepLClient()->updateMultilingualGlossaryName('gid', 'n', ['name' => 'x']);
@@ -140,7 +140,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
 
     public function testThrowsForAnUnknownUpdateOption(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown multilingual glossary option: names');
 
         $this->makeDeepLClient()->updateMultilingualGlossary('gid', ['names' => 'x']);
@@ -148,7 +148,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
 
     public function testThrowsWhenTargetLangIsGivenWithADictionaryInfoForDeletion(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('targetLang must not be given with a MultilingualGlossaryDictionaryInfo');
 
         $this->makeDeepLClient()->deleteMultilingualGlossaryDictionary(
@@ -303,7 +303,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
             try {
                 $client->replaceMultilingualGlossaryDictionary('gid', $case[0]);
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString($case[1], $exception->getMessage());
             }
         }
@@ -325,7 +325,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
             try {
                 $call();
                 $this->fail('expected a DeepLException');
-            } catch (DeepLException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString('glossary name must be a non-empty string', $exception->getMessage());
             }
         }
@@ -453,7 +453,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
 
     public function testThrowsWhenNoDictionaryOrLanguagesAreGivenForDeletion(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'must provide a MultilingualGlossaryDictionaryInfo or both sourceLang and targetLang'
         );
@@ -466,7 +466,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
      */
     public function testThrowsWhenDictionaryEntriesAreInvalid(array $entries, string $message): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($message);
 
         new MultilingualGlossaryDictionaryEntries('de', 'en', $entries);

@@ -70,13 +70,13 @@ class StyleProfile
 
     /**
      * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
-     * @throws DeepLException If the ID is empty.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getStyleProfileId($styleProfile): string
     {
         $styleProfileId = is_string($styleProfile) ? $styleProfile : $styleProfile->styleProfileId;
         if (strlen($styleProfileId) === 0) {
-            throw new DeepLException('styleProfileId must be a non-empty string');
+            throw new \InvalidArgumentException('styleProfileId must be a non-empty string');
         }
         return $styleProfileId;
     }

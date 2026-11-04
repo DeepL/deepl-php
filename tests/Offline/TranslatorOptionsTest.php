@@ -104,7 +104,7 @@ class TranslatorOptionsTest extends OfflineTestCase
      */
     public function testThrowsWhenTheAuthKeyIsEmpty(string $authKey): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('authKey must be a non-empty string');
 
         $this->makeDeepLClient([], $authKey);
@@ -164,7 +164,7 @@ class TranslatorOptionsTest extends OfflineTestCase
      */
     public function testThrowsWhenTheServerUrlIsInvalid($serverUrl): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('server_url option must be a non-empty string');
 
         $this->makeDeepLClient([TranslatorOptions::SERVER_URL => $serverUrl]);

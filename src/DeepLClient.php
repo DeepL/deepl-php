@@ -41,7 +41,7 @@ class DeepLClient
     {
         $authKey = trim($authKey);
         if ($authKey === '') {
-            throw new DeepLException('authKey must be a non-empty string');
+            throw new \InvalidArgumentException('authKey must be a non-empty string');
         }
         // Validation is currently only logging warnings
         $_ = TranslatorOptions::isValid($options);
@@ -433,7 +433,7 @@ class DeepLClient
     {
         $timeout = $options[TranslateDocumentOptions::TIMEOUT] ?? null;
         if ($timeout !== null && (!is_numeric($timeout) || $timeout < 0)) {
-            throw new DeepLException('timeout must be a non-negative number of seconds');
+            throw new \InvalidArgumentException('timeout must be a non-negative number of seconds');
         }
         $startTime = microtime(true);
         $status = $this->translateDocumentGetStatus($handle);
@@ -481,7 +481,7 @@ class DeepLClient
         $targetLang = LanguageCode::removeRegionalVariant($targetLang);
 
         if (strlen($name) === 0) {
-            throw new DeepLException('glossary name must be a non-empty string');
+            throw new \InvalidArgumentException('glossary name must be a non-empty string');
         }
 
         $params = [
@@ -529,7 +529,7 @@ class DeepLClient
         $targetLang = LanguageCode::removeRegionalVariant($targetLang);
 
         if (strlen($name) === 0) {
-            throw new DeepLException('glossary name must be a non-empty string');
+            throw new \InvalidArgumentException('glossary name must be a non-empty string');
         }
 
         $params = [
@@ -592,7 +592,11 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff('GET', "/v2/glossaries/$glossaryId/entries");
         $this->checkStatusCode($response);
         list(, $content) = $response;
-        return GlossaryEntries::fromTsv($content);
+        try {
+            return GlossaryEntries::fromTsv($content);
+        } catch (\InvalidArgumentException $error) {
+            throw ParsingUtils::invalidContent($error->getMessage(), $error);
+        }
     }
 
     /**
@@ -685,7 +689,7 @@ class DeepLClient
         }
         if (isset($glossary)) {
             if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
-                throw new DeepLException('sourceLang is required if using a glossary');
+                throw new \InvalidArgumentException('sourceLang is required if using a glossary');
             }
             if (!is_string($glossary)) {
                 $glossary = $glossary->glossaryId;
@@ -694,15 +698,15 @@ class DeepLClient
         }
         if (isset($glossaryIds)) {
             if (isset($glossary)) {
-                throw new DeepLException(
+                throw new \InvalidArgumentException(
                     'The glossary_ids option cannot be used together with the singular glossary option'
                 );
             }
             if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
-                throw new DeepLException('sourceLang is required if using glossary_ids');
+                throw new \InvalidArgumentException('sourceLang is required if using glossary_ids');
             }
             if (count($glossaryIds) > 5) {
-                throw new DeepLException('A maximum of 5 glossary IDs can be specified in glossary_ids');
+                throw new \InvalidArgumentException('A maximum of 5 glossary IDs can be specified in glossary_ids');
             }
             $ids = array_map(
                 function ($glossaryId) {
@@ -712,7 +716,7 @@ class DeepLClient
                     if (is_object($glossaryId) && isset($glossaryId->glossaryId)) {
                         return $glossaryId->glossaryId;
                     }
-                    throw new DeepLException(
+                    throw new \InvalidArgumentException(
                         'Each glossary_ids entry must be a glossary ID string or a ' .
                         'GlossaryInfo/MultilingualGlossaryInfo object'
                     );
@@ -737,7 +741,7 @@ class DeepLClient
         if (is_array($texts)) {
             foreach ($texts as $text) {
                 if (!is_string($text)) {
-                    throw new DeepLException(
+                    throw new \InvalidArgumentException(
                         'texts parameter must be a string or array of strings',
                     );
                 }
@@ -745,7 +749,7 @@ class DeepLClient
             $params['text'] = $texts;
         } else {
             if (!is_string($texts)) {
-                throw new DeepLException(
+                throw new \InvalidArgumentException(
                     'texts parameter must be a string or array of strings',
                 );
             }
@@ -831,7 +835,7 @@ class DeepLClient
             } elseif ($styleRule instanceof StyleRuleInfo) {
                 $params['style_id'] = $styleRule->styleId;
             } else {
-                throw new DeepLException('style_rule must be a string or StyleRuleInfo object');
+                throw new \InvalidArgumentException('style_rule must be a string or StyleRuleInfo object');
             }
         }
         if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
@@ -841,7 +845,7 @@ class DeepLClient
             } elseif ($styleProfile instanceof StyleProfile) {
                 $params['style_profile_id'] = $styleProfile->styleProfileId;
             } else {
-                throw new DeepLException('style_profile must be a string or StyleProfile object');
+                throw new \InvalidArgumentException('style_profile must be a string or StyleProfile object');
             }
         }
         $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY] ?? null;
@@ -851,16 +855,20 @@ class DeepLClient
             } elseif ($tm instanceof TranslationMemoryInfo) {
                 $params['translation_memory_id'] = $tm->translationMemoryId;
             } else {
-                throw new DeepLException('translation_memory must be a string or TranslationMemoryInfo object');
+                throw new \InvalidArgumentException(
+                    'translation_memory must be a string or TranslationMemoryInfo object'
+                );
             }
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD])) {
             if (!isset($tm)) {
-                throw new DeepLException('translation_memory_threshold requires translation_memory');
+                throw new \InvalidArgumentException('translation_memory_threshold requires translation_memory');
             }
             $threshold = $options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD];
             if (!is_int($threshold) || $threshold < 0 || $threshold > 100) {
-                throw new DeepLException('translation_memory_threshold must be an integer between 0 and 100');
+                throw new \InvalidArgumentException(
+                    'translation_memory_threshold must be an integer between 0 and 100'
+                );
             }
             $params['translation_memory_threshold'] = $threshold;
         }
@@ -969,12 +977,13 @@ class DeepLClient
      * @param array $options Correct options to apply, see \DeepL\CorrectTextOptions: only EXTRA_BODY_PARAMETERS.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing corrected texts
-     * @throws DeepLException If a single text is empty or the request fails
+     * @throws \InvalidArgumentException If a text is empty, checked before any request is sent.
+     * @throws DeepLException If the request fails.
      */
     public function correctText($texts, ?string $targetLang = null, array $options = [])
     {
         if ($texts === '') {
-            throw new DeepLException('text must not be empty');
+            throw new \InvalidArgumentException('text must not be empty');
         }
         $params = [];
         if ($targetLang !== null) {
@@ -1054,7 +1063,7 @@ class DeepLClient
     ): MultilingualGlossaryInfo {
         self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
-            throw new DeepLException('glossary name must be a non-empty string');
+            throw new \InvalidArgumentException('glossary name must be a non-empty string');
         }
 
         $params = [
@@ -1087,7 +1096,7 @@ class DeepLClient
     ): MultilingualGlossaryInfo {
         self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
-            throw new DeepLException('glossary name must be a non-empty string');
+            throw new \InvalidArgumentException('glossary name must be a non-empty string');
         }
 
         $params = [
@@ -1375,12 +1384,14 @@ class DeepLClient
     {
         if ($sourceLang instanceof MultilingualGlossaryDictionaryInfo) {
             if ($targetLang !== null) {
-                throw new DeepLException('targetLang must not be given with a MultilingualGlossaryDictionaryInfo');
+                throw new \InvalidArgumentException(
+                    'targetLang must not be given with a MultilingualGlossaryDictionaryInfo'
+                );
             }
             $targetLang = $sourceLang->targetLang;
             $sourceLang = $sourceLang->sourceLang;
         } elseif (!is_string($sourceLang) || $targetLang === null) {
-            throw new DeepLException(
+            throw new \InvalidArgumentException(
                 'must provide a MultilingualGlossaryDictionaryInfo or both sourceLang and targetLang'
             );
         }
@@ -1421,14 +1432,14 @@ class DeepLClient
 
     /**
      * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
-     * @throws DeepLException If an option key is unknown to the method.
+     * @throws \InvalidArgumentException If an option key is unknown to the method.
      */
     private static function checkMultilingualGlossaryOptions(array $options, array $allowed): void
     {
         $allowed[] = MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS;
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
-                throw new DeepLException("Unknown multilingual glossary option: $key");
+                throw new \InvalidArgumentException("Unknown multilingual glossary option: $key");
             }
         }
     }
@@ -1609,14 +1620,14 @@ class DeepLClient
 
     /**
      * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
-     * @throws DeepLException If an option key is unknown to the method.
+     * @throws \InvalidArgumentException If an option key is unknown to the method.
      */
     private static function checkSpokenTermsOptions(array $options, array $allowed): void
     {
         $allowed[] = SpokenTermsOptions::EXTRA_BODY_PARAMETERS;
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
-                throw new DeepLException("Unknown spoken terms option: $key");
+                throw new \InvalidArgumentException("Unknown spoken terms option: $key");
             }
         }
     }
@@ -1749,10 +1760,10 @@ class DeepLClient
     ): StyleRuleInfo {
         self::checkStyleRuleOptions($options);
         if (strlen($name) === 0) {
-            throw new DeepLException('name must be a non-empty string');
+            throw new \InvalidArgumentException('name must be a non-empty string');
         }
         if (strlen($language) === 0) {
-            throw new DeepLException('language must be a non-empty string');
+            throw new \InvalidArgumentException('language must be a non-empty string');
         }
 
         $params = [
@@ -1790,7 +1801,7 @@ class DeepLClient
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $response = $this->client->sendRequestWithBackoff('GET', "/v3/style_rules/" . rawurlencode($styleId));
         $this->checkStatusCode($response);
@@ -1812,10 +1823,10 @@ class DeepLClient
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         if (strlen($name) === 0) {
-            throw new DeepLException('name must be a non-empty string');
+            throw new \InvalidArgumentException('name must be a non-empty string');
         }
         $params = ['name' => $name];
 
@@ -1839,7 +1850,7 @@ class DeepLClient
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $response = $this->client->sendRequestWithBackoff('DELETE', "/v3/style_rules/" . rawurlencode($styleId));
         $this->checkStatusCode($response);
@@ -1863,7 +1874,7 @@ class DeepLClient
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $response = $this->client->sendRequestWithBackoff(
             'PUT',
@@ -1900,13 +1911,13 @@ class DeepLClient
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         if (strlen($label) === 0) {
-            throw new DeepLException('label must be a non-empty string');
+            throw new \InvalidArgumentException('label must be a non-empty string');
         }
         if (strlen($prompt) === 0) {
-            throw new DeepLException('prompt must be a non-empty string');
+            throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
         $params = [
             'label' => $label,
@@ -1941,7 +1952,7 @@ class DeepLClient
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $instructionId = self::getCustomInstructionId($instructionId);
         $response = $this->client->sendRequestWithBackoff(
@@ -1976,14 +1987,14 @@ class DeepLClient
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $instructionId = self::getCustomInstructionId($instructionId);
         if (strlen($label) === 0) {
-            throw new DeepLException('label must be a non-empty string');
+            throw new \InvalidArgumentException('label must be a non-empty string');
         }
         if (strlen($prompt) === 0) {
-            throw new DeepLException('prompt must be a non-empty string');
+            throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
         $params = [
             'label' => $label,
@@ -2014,7 +2025,7 @@ class DeepLClient
     {
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
-            throw new DeepLException('styleId must be a non-empty string');
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
         }
         $instructionId = self::getCustomInstructionId($instructionId);
         $response = $this->client->sendRequestWithBackoff(
@@ -2034,19 +2045,21 @@ class DeepLClient
             $instruction = $instruction->id;
         }
         if (!is_string($instruction) || strlen($instruction) === 0) {
-            throw new DeepLException('instructionId must be a non-empty string or a CustomInstruction with an id');
+            throw new \InvalidArgumentException(
+                'instructionId must be a non-empty string or a CustomInstruction with an id'
+            );
         }
         return $instruction;
     }
 
     /**
-     * @throws DeepLException If an option key is unknown.
+     * @throws \InvalidArgumentException If an option key is unknown.
      */
     private static function checkStyleRuleOptions(array $options): void
     {
         foreach (array_keys($options) as $key) {
             if ($key !== StyleRuleOptions::EXTRA_BODY_PARAMETERS) {
-                throw new DeepLException("Unknown style rule option: $key");
+                throw new \InvalidArgumentException("Unknown style rule option: $key");
             }
         }
     }
@@ -2186,7 +2199,7 @@ class DeepLClient
      * Encodes the JSON body of a style profile request: $params, then the options that are set, then
      * the extra body parameters. An empty body encodes as {}.
      * @param string[] $stringKeys The string option keys the method accepts.
-     * @throws DeepLException If an option key is unknown to the method, or an ID list entry is neither
+     * @throws \InvalidArgumentException If an option key is unknown to the method, or an ID list entry is neither
      *  an ID nor an object of the expected resource class.
      */
     private static function buildStyleProfileBody(array $params, array $options, array $stringKeys): string
@@ -2202,7 +2215,7 @@ class DeepLClient
         foreach ($options as $key => $value) {
             $isIdList = isset($idListClasses[$key]);
             if (!$isIdList && !in_array($key, array_merge($stringKeys, [$boolKey, $extraKey]), true)) {
-                throw new DeepLException("Unknown style profile option: $key");
+                throw new \InvalidArgumentException("Unknown style profile option: $key");
             }
             if (!isset($value) || $key === $extraKey) {
                 continue;
@@ -2226,7 +2239,7 @@ class DeepLClient
     /**
      * @param mixed $ref An ID, or an object of one of $classes.
      * @param string[] $classes Resource classes accepted for the option.
-     * @throws DeepLException If $ref is an object of another class.
+     * @throws \InvalidArgumentException If $ref is an object of another class.
      */
     private static function styleProfileComponentId($ref, string $option, array $classes): string
     {
@@ -2247,7 +2260,7 @@ class DeepLClient
         $names = array_map(function (string $class): string {
             return substr($class, strlen(__NAMESPACE__) + 1);
         }, $classes);
-        throw new DeepLException("$option entries must be IDs or " . implode(' or ', $names) . ' objects');
+        throw new \InvalidArgumentException("$option entries must be IDs or " . implode(' or ', $names) . ' objects');
     }
 
     /**
@@ -2263,14 +2276,14 @@ class DeepLClient
     public function getLanguagesForResource(string $resource, ?array $include = null): array
     {
         if (strlen($resource) === 0) {
-            throw new DeepLException('resource must be a non-empty string');
+            throw new \InvalidArgumentException('resource must be a non-empty string');
         }
 
         // The parameter takes an options array or, as released first, the plain list of include values
         if ($include !== null && $include !== array_values($include)) {
             $include = $include[GetLanguagesForResourceOptions::INCLUDE] ?? null;
             if ($include !== null && !is_array($include)) {
-                throw new DeepLException('include option must be an array of strings');
+                throw new \InvalidArgumentException('include option must be an array of strings');
             }
         }
 
@@ -2448,10 +2461,10 @@ class DeepLClient
         $contentType = $options[TranslationMemoryOptions::CONTENT_TYPE] ?? null;
         $displayName = $options[TranslationMemoryOptions::DISPLAY_NAME] ?? null;
         if (strlen($fileName) === 0) {
-            throw new DeepLException('fileName must be a non-empty string');
+            throw new \InvalidArgumentException('fileName must be a non-empty string');
         }
         if ($contentLength <= 0) {
-            throw new DeepLException('contentLength must be greater than 0');
+            throw new \InvalidArgumentException('contentLength must be greater than 0');
         }
 
         $sourceFile = [
@@ -2503,7 +2516,7 @@ class DeepLClient
             ? $translationMemoryImport
             : $translationMemoryImport->uploadUrl;
         if (strlen($uploadUrl) === 0) {
-            throw new DeepLException('uploadUrl must be a non-empty string');
+            throw new \InvalidArgumentException('uploadUrl must be a non-empty string');
         }
 
         $response = $this->storageClient->sendRequestWithBackoff(
@@ -2558,7 +2571,7 @@ class DeepLClient
     {
         $jobId = TranslationMemoryJob::getJobId($job);
         if (strlen($jobId) === 0) {
-            throw new DeepLException('jobId must be a non-empty string');
+            throw new \InvalidArgumentException('jobId must be a non-empty string');
         }
         $response = $this->client->sendRequestWithBackoff(
             'GET',
@@ -2774,19 +2787,19 @@ class DeepLClient
     ): array {
         if (!is_array($options)) {
             if ($options !== null && !is_string($options)) {
-                throw new DeepLException('options must be an array, a string or null');
+                throw new \InvalidArgumentException('options must be an array, a string or null');
             }
             return array_filter([$scalarKey => $options, $secondKey => $second], function ($value) {
                 return $value !== null;
             });
         }
         if ($second !== null) {
-            throw new DeepLException('pass all options in the options array, not as further arguments');
+            throw new \InvalidArgumentException('pass all options in the options array, not as further arguments');
         }
         $allowed[] = TranslationMemoryOptions::EXTRA_BODY_PARAMETERS;
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
-                throw new DeepLException("Unknown translation memory option: $key");
+                throw new \InvalidArgumentException("Unknown translation memory option: $key");
             }
         }
         return $options;
@@ -2802,7 +2815,7 @@ class DeepLClient
         if (is_array($timeout)) {
             foreach (array_keys($timeout) as $key) {
                 if ($key !== TranslationMemoryOptions::TIMEOUT) {
-                    throw new DeepLException("Unknown translation memory wait option: $key");
+                    throw new \InvalidArgumentException("Unknown translation memory wait option: $key");
                 }
             }
             $timeout = $timeout[TranslationMemoryOptions::TIMEOUT] ?? null;
@@ -2811,7 +2824,7 @@ class DeepLClient
             return null;
         }
         if (!is_numeric($timeout)) {
-            throw new DeepLException('timeout must be a number of seconds');
+            throw new \InvalidArgumentException('timeout must be a number of seconds');
         }
         return (float)$timeout;
     }
@@ -2826,7 +2839,7 @@ class DeepLClient
     {
         $translationMemoryId = TranslationMemoryInfo::getTranslationMemoryId($translationMemory);
         if (strlen($translationMemoryId) === 0) {
-            throw new DeepLException('translationMemoryId must be a non-empty string');
+            throw new \InvalidArgumentException('translationMemoryId must be a non-empty string');
         }
         return $translationMemoryId;
     }

@@ -202,7 +202,7 @@ class StyleRulesTest extends OfflineTestCase
 
     public function testThrowsForACustomInstructionWithoutId(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('instructionId must be a non-empty string or a CustomInstruction with an id');
 
         $this->makeDeepLClient()->deleteStyleRuleCustomInstruction('sid', new CustomInstruction('L', 'P'));
@@ -242,7 +242,7 @@ class StyleRulesTest extends OfflineTestCase
 
     public function testThrowsForAnUnknownStyleRuleOption(): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown style rule option: name');
 
         $this->makeDeepLClient()->updateStyleRuleName('sid', 'New', ['name' => 'x']);
@@ -321,7 +321,7 @@ class StyleRulesTest extends OfflineTestCase
      */
     public function testThrowsWhenAnArgumentIsEmpty(callable $call, string $message): void
     {
-        $this->expectException(DeepLException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($message);
 
         $call($this->makeDeepLClient());
