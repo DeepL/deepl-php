@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\GetLanguagesForResourceOptions;
 use DeepL\InvalidContentException;
@@ -104,6 +105,32 @@ class LanguagesTest extends OfflineTestCase
         );
 
         $this->assertRequest('GET', '/v3/languages', 0, 'resource=glossary&include=beta&include=external');
+    }
+
+    /**
+     * @dataProvider provideUnknownOptionCalls
+     */
+    public function testRejectsAnUnknownOptionKeyBeforeSending(callable $call, string $message): void
+    {
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideUnknownOptionCalls(): array
+    {
+        return [
+            'getLanguagesForResource' => [
+                function (DeepLClient $client) {
+                    $client->getLanguagesForResource(LanguageResourceName::GLOSSARY, ['no_such_option' => 1]);
+                },
+                'Unknown languages option: no_such_option',
+            ],
+        ];
     }
 
     public function testThrowsWhenTheIncludeOptionIsNotAnArray(): void

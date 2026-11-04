@@ -166,6 +166,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request is sent if the input path is a directory or the file cannot be read.
   Before, the built-in cURL transport sent the request and failed with a
   `ConnectionException`.
+- Breaking: `translateText()`, `translateDocumentUpload()`,
+  `translateDocumentWaitUntilDone()`, `rephraseText()`, `correctText()`,
+  `getLanguagesForResource()` (options array form) and
+  `listTranslationMemorySegments()` throw an `\InvalidArgumentException` for an
+  option key that is not a constant of their options class
+  (`TranslateTextOptions`, `TranslateDocumentOptions`, `RephraseTextOptions`,
+  `CorrectTextOptions`, `GetLanguagesForResourceOptions`,
+  `TranslationMemorySegmentsOptions`), before any request is sent; unknown
+  keys were ignored. `translateDocument()` wraps it in a
+  `DocumentTranslationException`. Pass extra request fields with
+  `EXTRA_BODY_PARAMETERS`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

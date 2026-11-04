@@ -159,6 +159,7 @@ class DeepLClient
      */
     public function translateText($texts, ?string $sourceLang, string $targetLang, array $options = [])
     {
+        self::checkOptionKeys($options, TranslateTextOptions::class, 'translate text');
         $params = $this->buildBodyParams(
             $sourceLang,
             $targetLang,
@@ -307,6 +308,7 @@ class DeepLClient
         string $targetLang,
         array $options = []
     ): DocumentHandle {
+        self::checkOptionKeys($options, TranslateDocumentOptions::class, 'translate document');
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
         }
@@ -440,6 +442,7 @@ class DeepLClient
      */
     public function translateDocumentWaitUntilDone(DocumentHandle $handle, array $options = []): DocumentStatus
     {
+        self::checkOptionKeys($options, TranslateDocumentOptions::class, 'translate document');
         $timeout = $options[TranslateDocumentOptions::TIMEOUT] ?? null;
         if ($timeout !== null && (!is_numeric($timeout) || $timeout < 0)) {
             throw new \InvalidArgumentException('timeout must be a non-negative number of seconds');
@@ -958,6 +961,7 @@ class DeepLClient
      */
     public function rephraseText($texts, ?string $targetLang = null, array $options = [])
     {
+        self::checkOptionKeys($options, RephraseTextOptions::class, 'rephrase text');
         $params = $this->buildRephraseBodyParams(
             $targetLang,
             $options[RephraseTextOptions::WRITING_STYLE] ?? null,
@@ -984,6 +988,7 @@ class DeepLClient
      */
     public function correctText($texts, ?string $targetLang = null, array $options = [])
     {
+        self::checkOptionKeys($options, CorrectTextOptions::class, 'correct text');
         $params = [];
         if ($targetLang !== null) {
             $params['target_lang'] = LanguageCode::standardizeLanguageCode($targetLang);
@@ -1436,6 +1441,20 @@ class DeepLClient
             'entries_format' => 'csv',
             'entries' => $csvContent,
         ];
+    }
+
+    /**
+     * @param string $optionsClass Class whose constants are the option keys the method accepts.
+     * @throws \InvalidArgumentException If an option key is not one of them.
+     */
+    private static function checkOptionKeys(array $options, string $optionsClass, string $what): void
+    {
+        $allowed = array_values((new \ReflectionClass($optionsClass))->getConstants());
+        foreach (array_keys($options) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                throw new \InvalidArgumentException("Unknown $what option: $key");
+            }
+        }
     }
 
     /**
@@ -2289,6 +2308,7 @@ class DeepLClient
 
         // The parameter takes an options array or, as released first, the plain list of include values
         if ($include !== null && $include !== array_values($include)) {
+            self::checkOptionKeys($include, GetLanguagesForResourceOptions::class, 'languages');
             $include = $include[GetLanguagesForResourceOptions::INCLUDE] ?? null;
             if ($include !== null && !is_array($include)) {
                 throw new \InvalidArgumentException('include option must be an array of strings');
@@ -2387,6 +2407,7 @@ class DeepLClient
      */
     public function listTranslationMemorySegments($translationMemory, array $options = []): TranslationMemorySegments
     {
+        self::checkOptionKeys($options, TranslationMemorySegmentsOptions::class, 'translation memory segments');
         $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
 
         $queryParams = [];

@@ -183,6 +183,32 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequest('GET', '/v3/translation_memories/tm1/segments', 1);
     }
 
+    /**
+     * @dataProvider provideUnknownOptionCalls
+     */
+    public function testRejectsAnUnknownOptionKeyBeforeSending(callable $call, string $message): void
+    {
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideUnknownOptionCalls(): array
+    {
+        return [
+            'listTranslationMemorySegments' => [
+                function (DeepLClient $client) {
+                    $client->listTranslationMemorySegments('tm1', ['no_such_option' => 1]);
+                },
+                'Unknown translation memory segments option: no_such_option',
+            ],
+        ];
+    }
+
     public function testParsesSegments(): void
     {
         $this->reply([

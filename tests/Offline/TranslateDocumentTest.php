@@ -403,6 +403,57 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertFileDoesNotExist($output);
     }
 
+    public function testWrapsAnUnknownOptionKeyOfTheUploadWithoutRequest(): void
+    {
+        $input = Fixtures::tempFile('in.txt', 'a');
+        try {
+            $this->makeDeepLClient()
+                ->translateDocument($input, Fixtures::tempDir() . '/out.txt', null, 'de', ['no_such_option' => 1]);
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertNull($exception->handle);
+            $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
+            $this->assertSame(
+                'Unknown translate document option: no_such_option',
+                $exception->getPrevious()->getMessage()
+            );
+        }
+        $this->assertRequestCount(0);
+    }
+
+    /**
+     * @dataProvider provideUnknownOptionCalls
+     */
+    public function testRejectsAnUnknownOptionKeyBeforeSending(callable $call, string $message): void
+    {
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideUnknownOptionCalls(): array
+    {
+        return [
+            'translateDocumentUpload' => [
+                function (DeepLClient $client) {
+                    $input = Fixtures::tempFile('in.txt', 'a');
+                    $client->translateDocumentUpload($input, null, 'de', ['no_such_option' => 1]);
+                },
+                'Unknown translate document option: no_such_option',
+            ],
+            'translateDocumentWaitUntilDone' => [
+                function (DeepLClient $client) {
+                    $client->translateDocumentWaitUntilDone(new DocumentHandle('d', 'k'), ['no_such_option' => 1]);
+                },
+                'Unknown translate document option: no_such_option',
+            ],
+        ];
+    }
+
     public function testThrowsWithoutRequestWhenTheOutputFileExists(): void
     {
         $output = Fixtures::tempFile('output.txt', 'old');

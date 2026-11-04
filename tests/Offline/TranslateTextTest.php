@@ -6,6 +6,7 @@
 
 namespace DeepL\Offline;
 
+use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\Formality;
 use DeepL\GlossaryInfo;
@@ -284,6 +285,44 @@ class TranslateTextTest extends OfflineTestCase
             'mixed case' => ['EN-us', 'de-de', ['target_lang' => 'de-DE', 'source_lang' => 'en-US']],
             'bare target' => [null, 'EN', ['target_lang' => 'en']],
             'bare pt target' => [null, 'pt', ['target_lang' => 'pt']],
+        ];
+    }
+
+    /**
+     * @dataProvider provideUnknownOptionCalls
+     */
+    public function testRejectsAnUnknownOptionKeyBeforeSending(callable $call, string $message): void
+    {
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame($message, $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public static function provideUnknownOptionCalls(): array
+    {
+        return [
+            'translateText' => [
+                function (DeepLClient $client) {
+                    $client->translateText('a', null, 'de', ['no_such_option' => 1]);
+                },
+                'Unknown translate text option: no_such_option',
+            ],
+            'rephraseText with a translate option' => [
+                function (DeepLClient $client) {
+                    $client->rephraseText('a', 'de', ['formality' => 'more']);
+                },
+                'Unknown rephrase text option: formality',
+            ],
+            'correctText' => [
+                function (DeepLClient $client) {
+                    $client->correctText('a', null, ['no_such_option' => 1]);
+                },
+                'Unknown correct text option: no_such_option',
+            ],
         ];
     }
 
