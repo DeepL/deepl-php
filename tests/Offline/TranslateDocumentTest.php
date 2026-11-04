@@ -7,6 +7,7 @@
 namespace DeepL\Offline;
 
 use DeepL\DeepLClient;
+use DeepL\ConnectionException;
 use DeepL\DeepLException;
 use DeepL\DocumentHandle;
 use DeepL\DocumentNotReadyException;
@@ -416,6 +417,23 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertSame('old', file_get_contents($output));
     }
 
+    public function testThrowsWithoutRequestWhenTheOutputDirectoryDoesNotExist(): void
+    {
+        try {
+            $this->makeDeepLClient()->translateDocument(
+                Fixtures::tempFile('input.txt', 'Hello'),
+                Fixtures::tempDir() . '/missing-dir/out.txt',
+                null,
+                'de'
+            );
+            $this->fail('expected a DocumentTranslationException');
+        } catch (DocumentTranslationException $exception) {
+            $this->assertStringContainsString('Failed to open output file', $exception->getMessage());
+            $this->assertNull($exception->handle);
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testThrowsAndRemovesTheFileWhenTheDocumentIsNotReady(): void
     {
         $output = Fixtures::tempDir() . '/output.txt';
@@ -479,6 +497,21 @@ class TranslateDocumentTest extends OfflineTestCase
             $this->fail('expected an InvalidArgumentException');
         } catch (\InvalidArgumentException $exception) {
             $this->assertSame("File does not exist at input file path $input", $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testUploadThrowsWithoutRequestWhenTheInputPathIsADirectory(): void
+    {
+        // The PSR-18 client and the built-in cURL transport, whose curl_exec() must not be called.
+        foreach ([$this->makeDeepLClient(), new DeepLClient('k')] as $deeplClient) {
+            try {
+                $deeplClient->translateDocumentUpload(sys_get_temp_dir(), null, 'de');
+                $this->fail('expected a DeepLException');
+            } catch (DeepLException $exception) {
+                $this->assertNotInstanceOf(ConnectionException::class, $exception);
+                $this->assertStringContainsString('Failed to read input file', $exception->getMessage());
+            }
         }
         $this->assertRequestCount(0);
     }

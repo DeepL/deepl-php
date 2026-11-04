@@ -158,6 +158,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `deleteMultilingualGlossaryDictionary()` for an empty source or target
   language, also from a `MultilingualGlossaryDictionaryInfo`, before any
   request is sent.
+- Breaking: `translateDocument()` throws a `DocumentTranslationException` with
+  a `null` handle before uploading if the output file's directory does not
+  exist or is not writable. Before, the document was uploaded and translated
+  and the download failed, with the handle set.
+- Breaking: `translateDocumentUpload()` throws a `DeepLException` before any
+  request is sent if the input path is a directory or the file cannot be read.
+  Before, the built-in cURL transport sent the request and failed with a
+  `ConnectionException`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

@@ -234,9 +234,9 @@ class DeepLClient
      *     property to check how many characters were billed for the document.
      * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
      * sent.
-     * @throws DocumentTranslationException If a file already exists at the output file path, checked before any
-     * request is sent with a null `handle`, or if any error occurs during document upload, translation or
-     * download. The `handle` property of the exception, if not null,
+     * @throws DocumentTranslationException If a file already exists at the output file path, or its directory
+     * does not exist or is not writable, checked before any request is sent with a null `handle`, or if any error
+     * occurs during document upload, translation or download. The `handle` property of the exception, if not null,
      * may be used to recover the document ID and key of an in-progress translation. This includes the expiry of the
      * TranslateDocumentOptions::TIMEOUT option. The exception carries the httpStatusCode and shouldRetry of the
      * DeepLException that caused it, which is also available via getPrevious().
@@ -256,10 +256,13 @@ class DeepLClient
         if (file_exists($outputFile)) {
             throw new DocumentTranslationException("File already exists at output file path $outputFile");
         }
+        $outputDir = dirname($outputFile);
+        if (!is_dir($outputDir) || !is_writable($outputDir)) {
+            throw new DocumentTranslationException(
+                "Failed to open output file $outputFile for writing: the directory does not exist or is not writable"
+            );
+        }
         try {
-            if (!is_readable($inputFile)) {
-                throw new DeepLException("Failed to read input file $inputFile");
-            }
             $handle = $this->translateDocumentUpload($inputFile, $sourceLang, $targetLang, $options);
             $status = $this->translateDocumentWaitUntilDone(
                 $handle,
@@ -295,7 +298,8 @@ class DeepLClient
      * @return DocumentHandle Handle associated with the in-progress document translation.
      * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
      * sent.
-     * @throws DeepLException
+     * @throws DeepLException If the input path is a directory or not readable, checked before any request is
+     * sent, or if the request fails.
      */
     public function translateDocumentUpload(
         string $inputFile,
@@ -305,6 +309,9 @@ class DeepLClient
     ): DocumentHandle {
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
+        }
+        if (is_dir($inputFile) || !is_readable($inputFile)) {
+            throw new DeepLException("Failed to read input file $inputFile: the file is a directory or not readable");
         }
         $params = $this->buildBodyParams(
             $sourceLang,

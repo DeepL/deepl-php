@@ -392,9 +392,12 @@ try {
 
 If no file exists at the input file path, `translateDocument()` and
 `translateDocumentUpload()` throw an `InvalidArgumentException` before any
-request is sent. Every other failure of `translateDocument()` throws a
+request is sent. If the input path is a directory or the file cannot be read,
+`translateDocumentUpload()` throws a `DeepLException` before any request is
+sent. Every other failure of `translateDocument()` throws a
 `DocumentTranslationException`. If a file already exists at the output file
-path, it is thrown before any request is sent, with a `null` handle. For a
+path, or the output directory does not exist or is not writable, it is thrown
+before any request is sent, with a `null` handle. For a
 failure during upload, translation or download, its `httpStatusCode` and `shouldRetry` are those of the
 `DeepLException` that caused it, which `getPrevious()` returns.
 
