@@ -88,6 +88,10 @@ class CorrectTextTest extends OfflineTestCase
             'improvements missing' => ['Helo', []],
             'more improvements than texts' => ['Helo', ['improvements' => [['text' => 'a'], ['text' => 'b']]]],
             'improvement without text' => [['Helo'], ['improvements' => [['target_language' => 'en-US']]]],
+            'improvement without target_language' => [
+                'Helo',
+                ['improvements' => [['text' => 'Hello', 'detected_source_language' => 'en']]],
+            ],
         ];
     }
 

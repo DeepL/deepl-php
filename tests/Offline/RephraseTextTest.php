@@ -116,6 +116,14 @@ class RephraseTextTest extends OfflineTestCase
             'improvements not a list' => ['Hello', ['improvements' => ['a' => ['text' => 'x']]]],
             'fewer improvements than texts' => [['a', 'b'], self::REPLY],
             'improvement without text' => ['Hello', ['improvements' => [['detected_source_language' => 'en']]]],
+            'improvement without target_language' => [
+                'Hello',
+                ['improvements' => [['text' => 'Hi', 'detected_source_language' => 'en']]],
+            ],
+            'improvement without detected_source_language' => [
+                'Hello',
+                ['improvements' => [['text' => 'Hi', 'target_language' => 'en-US']]],
+            ],
         ];
     }
 

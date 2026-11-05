@@ -1040,7 +1040,10 @@ class DeepLClient
             }
             $detectedSourceLanguage = $improvement['detected_source_language'] ?? '';
             $targetLanguage = $improvement['target_language'] ?? '';
-            $output[] = new RephraseTextResult($improvement['text'], $detectedSourceLanguage, $targetLanguage);
+            // A missing or invalid language is a response problem, not an argument error
+            $output[] = ParsingUtils::guard(function () use ($improvement, $detectedSourceLanguage, $targetLanguage) {
+                return new RephraseTextResult($improvement['text'], $detectedSourceLanguage, $targetLanguage);
+            });
         }
 
         return is_array($texts) ? $output : $output[0];

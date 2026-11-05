@@ -197,6 +197,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepLException` still catches it; code that catches a subclass such as
   `NotFoundException` or `\InvalidArgumentException` from these two functions
   must catch `TranslationMemoryJobException` and check `getPrevious()`.
+- `rephraseText()` and `correctText()` throw an `InvalidContentException`
+  (a `DeepLException`) if an improvement in the response lacks
+  `detected_source_language` or `target_language`, instead of a plain
+  `DeepLException`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
