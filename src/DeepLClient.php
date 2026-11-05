@@ -908,7 +908,7 @@ class DeepLClient
 
     /**
      * @param mixed $value
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If an array or object cannot be JSON-encoded.
      */
     private static function toFormValue($value): string
     {
@@ -918,7 +918,7 @@ class DeepLClient
         if (is_array($value) || is_object($value)) {
             $encoded = json_encode($value);
             if ($encoded === false) {
-                throw new DeepLException(
+                throw new \InvalidArgumentException(
                     'Failed to JSON-encode an extra_body_parameters value: ' . json_last_error_msg()
                 );
             }

@@ -403,6 +403,19 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertFileDoesNotExist($output);
     }
 
+    public function testRejectsAnExtraBodyParameterThatCannotBeJsonEncodedWithoutRequest(): void
+    {
+        try {
+            $this->makeDeepLClient()->translateDocumentUpload(Fixtures::tempFile('in.txt', 'a'), null, 'de', [
+                TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => ['invalid' => ["\xB1"]],
+            ]);
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString('Failed to JSON-encode', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testWrapsAnUnknownOptionKeyOfTheUploadWithoutRequest(): void
     {
         $input = Fixtures::tempFile('in.txt', 'a');

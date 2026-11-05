@@ -132,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `glossary_ids`, more than 5 glossary IDs, an invalid
   `translation_memory_threshold`, an invalid glossary or spoken terms term,
   empty glossary entries, a `contentLength` that is not positive, an invalid
-  admin date, and an unknown option key. `InvalidArgumentException` is not a
+  admin date, an `EXTRA_BODY_PARAMETERS` value of a document translation that
+  cannot be JSON-encoded, and an unknown option key. `InvalidArgumentException` is not a
   `DeepLException`: to keep handling these errors, also catch
   `\InvalidArgumentException`. API, I/O and wait failures, and an export job
   without a download URL passed to `downloadTranslationMemoryExport()`, still
