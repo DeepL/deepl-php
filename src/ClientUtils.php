@@ -101,7 +101,7 @@ class ClientUtils
 
     /**
      * Creates an HttpClientWrapper using the transport settings in the options.
-     * @throws \InvalidArgumentException If max_retries is negative or proxy is not a URL with a scheme and host.
+     * @throws \InvalidArgumentException If max_retries is negative or cURL cannot use the proxy.
      */
     public static function createHttpClient(string $serverUrl, array $headers, array $options): HttpClientWrapper
     {
@@ -112,13 +112,11 @@ class ClientUtils
             );
         }
         $proxy = $options[TranslatorOptions::PROXY] ?? null;
-        if ($proxy !== null) {
-            $parts = is_string($proxy) ? parse_url($proxy) : false;
-            if ($parts === false || !isset($parts['scheme']) || !isset($parts['host'])) {
-                throw new \InvalidArgumentException(
-                    'If specified, ' . TranslatorOptions::PROXY . ' option must be a URL with a scheme and host.'
-                );
-            }
+        if ($proxy !== null && !self::isUsableProxy($proxy)) {
+            throw new \InvalidArgumentException(
+                'If specified, ' . TranslatorOptions::PROXY . ' option must be a proxy URL with a host and an ' .
+                'http, https, socks4, socks4a, socks5 or socks5h scheme, or a host[:port] used as http.'
+            );
         }
         return new HttpClientWrapper(
             $serverUrl,
@@ -129,6 +127,23 @@ class ClientUtils
             $proxy,
             $options[TranslatorOptions::HTTP_CLIENT] ?? null
         );
+    }
+
+    private const PROXY_SCHEMES = ['http', 'https', 'socks4', 'socks4a', 'socks5', 'socks5h'];
+
+    /**
+     * True if cURL can use the proxy: a URL with a host and a scheme cURL supports, or, as cURL accepts,
+     * a host[:port] without a scheme, which cURL uses as http.
+     * @param mixed $proxy
+     */
+    private static function isUsableProxy($proxy): bool
+    {
+        if (!is_string($proxy) || $proxy === '' || preg_match('/\s/', $proxy)) {
+            return false;
+        }
+        $parts = parse_url(strpos($proxy, '://') === false ? "http://$proxy" : $proxy);
+        return $parts !== false && ($parts['host'] ?? '') !== ''
+            && in_array(strtolower($parts['scheme'] ?? ''), self::PROXY_SCHEMES, true);
     }
 
     /**

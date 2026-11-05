@@ -177,10 +177,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keys were ignored. `translateDocument()` wraps it in a
   `DocumentTranslationException`. Pass extra request fields with
   `EXTRA_BODY_PARAMETERS`.
-- The `DeepLClient` and `DeepLAdminClient` constructors throw an
-  `\InvalidArgumentException` if the `proxy` option is not a URL string with a
-  scheme and host. Before, it was passed to cURL as given and the first request
-  failed with a `ConnectionException`.
+- Breaking: the `DeepLClient` and `DeepLAdminClient` constructors throw an
+  `\InvalidArgumentException` for a `proxy` option that cURL cannot use: a
+  value that is not a string, an empty string, a value with whitespace, a
+  scheme other than `http`, `https`, `socks4`, `socks4a`, `socks5` and
+  `socks5h`, or a URL without a host. Before, such a value was passed to cURL
+  and every request failed with a `ConnectionException`. A `host:port` without
+  a scheme is still accepted and used as `http`.
 - Breaking: added `TranslationMemoryJobException`, a `DeepLException` with an
   optional `job`. `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in it, except a

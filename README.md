@@ -1544,8 +1544,11 @@ Provide the options as an associative array with the following keys:
     compared case-insensitively, so `user-agent` replaces the default
     `User-Agent`. `Content-Type`, `Content-Length`, `Transfer-Encoding` and
     `Host` are ignored.
-- `proxy`: specify a proxy server URL, with a scheme and host. Any other value
-    throws an `InvalidArgumentException` when the client is constructed.
+- `proxy`: specify a proxy server URL: a host with an `http`, `https`,
+    `socks4`, `socks4a`, `socks5` or `socks5h` scheme, or a `host:port` without
+    a scheme, which is used as `http`. Any other value, such as an empty string,
+    another scheme or a URL without a host, throws an `InvalidArgumentException`
+    when the client is constructed.
 - `logger`: specify a [`PSR-3` compatible logger][PSR-3-logger] that the library
     should log messages to.
 

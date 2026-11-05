@@ -193,14 +193,39 @@ class TranslatorOptionsTest extends OfflineTestCase
                 $construct();
                 $this->fail('expected an InvalidArgumentException');
             } catch (\InvalidArgumentException $exception) {
-                $this->assertStringContainsString('proxy option must be a URL', $exception->getMessage());
+                $this->assertStringContainsString('proxy option must be a proxy URL', $exception->getMessage());
             }
         }
     }
 
     public static function provideInvalidProxies(): array
     {
-        return ['not a URL' => ['not a url'], 'no scheme' => ['proxy.local:3128'], 'not a string' => [42]];
+        return [
+            'empty' => [''],
+            'unsupported scheme' => ['ftp://x'],
+            'no host' => ['http://'],
+            'whitespace' => ['not a url'],
+            'not a string' => [42],
+        ];
+    }
+
+    /**
+     * @dataProvider provideUsableProxies
+     */
+    public function testAcceptsAProxyCurlCanUse(string $proxy): void
+    {
+        $options = [TranslatorOptions::PROXY => $proxy];
+        $this->assertInstanceOf(DeepLClient::class, new DeepLClient('k', $options));
+        $this->assertInstanceOf(DeepLAdminClient::class, new DeepLAdminClient('k', $options));
+    }
+
+    public static function provideUsableProxies(): array
+    {
+        return [
+            'host and port without a scheme, used as http' => ['proxy.local:3128'],
+            'http URL with credentials' => ['http://user:pass@10.10.1.10:3128'],
+            'socks5h URL' => ['socks5h://proxy.local:1080'],
+        ];
     }
 
     public function testLogsRequestAndResponse(): void

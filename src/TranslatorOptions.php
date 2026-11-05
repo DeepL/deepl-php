@@ -71,8 +71,9 @@ class TranslatorOptions
     public const MAX_RETRIES = 'max_retries';
 
     /**
-     * Proxy server URL with a scheme and host, for example 'https://user:pass@10.10.1.10:3128'. Any other
-     * value throws an \InvalidArgumentException when the client is constructed.
+     * Proxy server URL, for example 'https://user:pass@10.10.1.10:3128': a host with an http, https, socks4,
+     * socks4a, socks5 or socks5h scheme, or a host[:port] without a scheme, used as http. Any other value throws
+     * an \InvalidArgumentException when the client is constructed.
      */
     public const PROXY = 'proxy';
 
