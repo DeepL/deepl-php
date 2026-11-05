@@ -16,15 +16,26 @@ namespace DeepL;
 class TranslationMemoryJobException extends DeepLException
 {
     /**
-     * The job, once it was created: the last status fetched, or a job with only its ID and operation if no
-     * status was fetched yet. Null if the failure occurred before the job was created.
+     * ID of the import or export job, set as soon as the job was created; null if the failure occurred before.
+     * @var string|null
+     */
+    public $jobId;
+
+    /**
+     * The last job status the helper fetched; null if the failure occurred before the first status check.
      * @var TranslationMemoryJob|null
      */
     public $job;
 
-    public function __construct($message = "", $code = 0, $previous = null, ?TranslationMemoryJob $job = null)
-    {
+    public function __construct(
+        $message = "",
+        $code = 0,
+        $previous = null,
+        ?string $jobId = null,
+        ?TranslationMemoryJob $job = null
+    ) {
         parent::__construct($message, $code, $previous);
+        $this->jobId = $jobId;
         $this->job = $job;
     }
 }

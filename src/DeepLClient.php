@@ -2736,14 +2736,16 @@ class DeepLClient
      * @throws \InvalidArgumentException If no file exists at the input file path, before any request is
      *  sent; not wrapped.
      * @throws TranslationMemoryJobException For every other failure, with the cause as the previous exception:
-     *  an invalid option or an empty or unreadable input file before any request (job null), or a failure of
-     *  the job creation, the upload or the wait, with job set once the job was created.
+     *  an invalid option or an empty or unreadable input file before any request (jobId and job null), or a
+     *  failure of the job creation, the upload or the wait; jobId is set once the job was created, job once its
+     *  status was fetched.
      */
     public function importTranslationMemoryFromFilepath(
         string $inputFile,
         $options = null,
         ?float $timeout = null
     ): TranslationMemoryJob {
+        $jobId = null;
         $job = null;
         try {
             $options = self::translationMemoryOptions(
@@ -2760,7 +2762,7 @@ class DeepLClient
             $timeout = self::translationMemoryTimeout($options[TranslationMemoryOptions::TIMEOUT] ?? null);
             unset($options[TranslationMemoryOptions::TIMEOUT]);
         } catch (\Throwable $error) {
-            throw self::translationMemoryJobException($error, null);
+            throw self::translationMemoryJobException($error, null, null);
         }
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
@@ -2781,20 +2783,15 @@ class DeepLClient
             }
 
             $created = $this->createTranslationMemoryImport(basename($inputFile), strlen($fileContent), $options);
-            $job = new TranslationMemoryJob($created->jobId, 'import', 'translation_memory', []);
+            $jobId = $created->jobId;
             $this->uploadTranslationMemoryFile(
                 $created,
                 $fileContent,
                 $options[TranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
             );
-            $latest = null;
-            try {
-                return $this->pollTranslationMemoryJob($created->jobId, $timeout, $latest);
-            } finally {
-                $job = $latest ?? $job;
-            }
+            return $this->pollTranslationMemoryJob($jobId, $timeout, $job);
         } catch (\Throwable $error) {
-            throw self::translationMemoryJobException($error, $job);
+            throw self::translationMemoryJobException($error, $jobId, $job);
         }
     }
 
@@ -2809,14 +2806,15 @@ class DeepLClient
      * @return TranslationMemoryJob The completed export job.
      * @throws TranslationMemoryJobException For every failure, with the cause as the previous exception: if a
      *  file already exists at the output file path or its directory does not exist or is not writable, checked
-     *  before the export job is created (job null), or a failure of the job creation, the wait or the download,
-     *  with job set once the job was created.
+     *  before the export job is created (jobId and job null), or a failure of the job creation, the wait or the
+     *  download; jobId is set once the job was created, job once its status was fetched.
      */
     public function exportTranslationMemoryToFilepath(
         $translationMemory,
         string $outputFile,
         $timeout = null
     ): TranslationMemoryJob {
+        $jobId = null;
         $job = null;
         try {
             $timeout = self::translationMemoryTimeout($timeout);
@@ -2830,18 +2828,12 @@ class DeepLClient
                     'writable'
                 );
             }
-            $created = $this->createTranslationMemoryExport($translationMemory);
-            $job = new TranslationMemoryJob($created->jobId, 'export', 'translation_memory', []);
-            $latest = null;
-            try {
-                $job = $this->pollTranslationMemoryJob($created->jobId, $timeout, $latest);
-            } finally {
-                $job = $latest ?? $job;
-            }
-            $this->downloadTranslationMemoryExport($job, $outputFile);
-            return $job;
+            $jobId = $this->createTranslationMemoryExport($translationMemory)->jobId;
+            $completed = $this->pollTranslationMemoryJob($jobId, $timeout, $job);
+            $this->downloadTranslationMemoryExport($completed, $outputFile);
+            return $completed;
         } catch (\Throwable $error) {
-            throw self::translationMemoryJobException($error, $job);
+            throw self::translationMemoryJobException($error, $jobId, $job);
         }
     }
 
@@ -2851,12 +2843,14 @@ class DeepLClient
      */
     private static function translationMemoryJobException(
         \Throwable $error,
+        ?string $jobId,
         ?TranslationMemoryJob $job
     ): TranslationMemoryJobException {
         $exception = new TranslationMemoryJobException(
             $error->getMessage() ?: 'unknown error',
             $error->getCode(),
             $error,
+            $jobId,
             $job
         );
         if ($error instanceof DeepLException) {

@@ -186,18 +186,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and every request failed with a `ConnectionException`. A `host:port` without
   a scheme is still accepted and used as `http`.
 - Breaking: added `TranslationMemoryJobException`, a `DeepLException` with an
-  optional `job`. `importTranslationMemoryFromFilepath()` and
+  optional `jobId` and `job`. `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in it, except a
   missing input file, which still throws `\InvalidArgumentException`
   unwrapped. Wrapped failures include invalid options, an empty or unreadable
   input file, an existing or unwritable output path, a failed job creation,
-  upload or download, and a job that fails, expires or times out. `job` is the
-  `TranslationMemoryJob` once the job was created (the last status fetched),
-  else `null`; `httpStatusCode` and `shouldRetry` are copied from a
-  `DeepLException` cause, which `getPrevious()` returns. Code that catches
-  `DeepLException` still catches it; code that catches a subclass such as
-  `NotFoundException` or `\InvalidArgumentException` from these two functions
-  must catch `TranslationMemoryJobException` and check `getPrevious()`.
+  upload or download, and a job that fails, expires or times out. `jobId` is
+  set as soon as the job was created; `job` is the last `TranslationMemoryJob`
+  status the helper fetched, `null` before the first status check; both are
+  `null` for a failure before the job was created. `httpStatusCode` and
+  `shouldRetry` are copied from a `DeepLException` cause, which `getPrevious()`
+  returns. Code that catches `DeepLException` still catches it; code that
+  catches a subclass such as `NotFoundException` or `\InvalidArgumentException`
+  from these two functions must catch `TranslationMemoryJobException` and check `getPrevious()`.
 - `rephraseText()` and `correctText()` throw an `InvalidContentException`
   (a `DeepLException`) if an improvement in the response lacks
   `detected_source_language` or `target_language`, instead of a plain

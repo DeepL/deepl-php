@@ -302,6 +302,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             $client->importTranslationMemoryFromFilepath($file, [], 60.0);
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->jobId);
             $this->assertNull($exception->job);
             $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
             $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
@@ -731,6 +732,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file);
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->jobId);
             $this->assertNull($exception->job);
             $this->assertStringContainsString('Failed reading input file', $exception->getMessage());
         } finally {
@@ -746,6 +748,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             $this->makeDeepLClient()->importTranslationMemoryFromFilepath(Fixtures::tempFile('empty.tmx', ''));
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->jobId);
             $this->assertNull($exception->job);
             $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
             $this->assertSame('contentLength must be greater than 0', $exception->getMessage());
@@ -765,13 +768,14 @@ class TranslationMemoriesTest extends OfflineTestCase
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
             $this->assertSame('invalid TMX', $exception->getMessage());
+            $this->assertSame('job1', $exception->jobId);
             $this->assertSame('job1', $exception->job->jobId);
             $this->assertSame('failed', $exception->job->status());
             $this->assertInstanceOf(DeepLException::class, $exception->getPrevious());
         }
     }
 
-    public function testWrapsAFailedUploadWithTheJobAndTheCausesStatus(): void
+    public function testWrapsAFailedUploadWithTheJobIdAndTheCausesStatus(): void
     {
         $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
         $this->reply('', 503);
@@ -781,8 +785,8 @@ class TranslationMemoriesTest extends OfflineTestCase
             $this->makeDeepLClient(['max_retries' => 0])->importTranslationMemoryFromFilepath($file);
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
-            $this->assertSame('job1', $exception->job->jobId);
-            $this->assertSame('import', $exception->job->operation);
+            $this->assertSame('job1', $exception->jobId);
+            $this->assertNull($exception->job);
             $this->assertSame(503, $exception->httpStatusCode);
             $this->assertSame($exception->getPrevious()->shouldRetry, $exception->shouldRetry);
             $this->assertSame($exception->getPrevious()->getMessage(), $exception->getMessage());
@@ -800,6 +804,7 @@ class TranslationMemoriesTest extends OfflineTestCase
             $this->fail('expected a TranslationMemoryJobException');
         } catch (TranslationMemoryJobException $exception) {
             $this->assertSame('export failed', $exception->getMessage());
+            $this->assertSame('job2', $exception->jobId);
             $this->assertSame('failed', $exception->job->status());
             $this->assertInstanceOf(DeepLException::class, $exception->getPrevious());
         }
@@ -841,6 +846,7 @@ class TranslationMemoriesTest extends OfflineTestCase
                     $client->exportTranslationMemoryToFilepath('tm1', $output);
                     $this->fail("expected a TranslationMemoryJobException for $output");
                 } catch (TranslationMemoryJobException $exception) {
+                    $this->assertNull($exception->jobId);
                     $this->assertNull($exception->job);
                     $this->assertStringContainsString($message, $exception->getMessage());
                 }

@@ -405,9 +405,10 @@ The translation memory file helpers `importTranslationMemoryFromFilepath()` and
 `exportTranslationMemoryToFilepath()` work the same way with a
 `TranslationMemoryJobException`: every failure except a missing input file is
 wrapped in it, the cause is `getPrevious()`, and its `httpStatusCode` and
-`shouldRetry` are copied from a `DeepLException` cause. Its `job` is the
-`TranslationMemoryJob` once the job was created (the last status fetched), and
-`null` for a failure before that. See
+`shouldRetry` are copied from a `DeepLException` cause. Its `jobId` is the ID
+of the import or export job, set as soon as the job was created, and its `job`
+is the last `TranslationMemoryJob` status the helper fetched, `null` before the
+first status check. Both are `null` for a failure before the job was created. See
 [Importing a translation memory](#importing-a-translation-memory).
 
 `translateDocument()` wraps multiple API calls: uploading, polling status until
@@ -1261,8 +1262,10 @@ released positional form, a display name and a timeout, is still accepted.
 If no file exists at the input file path, it throws an
 `InvalidArgumentException` before sending any request. Every other failure
 throws a `TranslationMemoryJobException`: an empty or unreadable file before any
-request, with a `null` `job`; a failure of the job creation, the upload or the
-wait with `job` set to the created job, so you can inspect or resume it.
+request, with `jobId` and `job` `null`; a failure of the job creation, the
+upload or the wait with `jobId` set once the job was created, so you can poll
+or inspect it, and `job` set to the last status fetched (still `null` if the
+upload fails).
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', [
@@ -1314,10 +1317,11 @@ uploaded does not finish on its own.
 `exportTranslationMemoryToFilepath()` exports a translation memory to a TMX file:
 it creates the export job, waits for it to finish, and writes the result. If a
 file already exists at the output path, or its directory does not exist or is not
-writable, it throws a `TranslationMemoryJobException` with a `null` `job` before
-creating the export job. Every later failure, of the job creation, the wait or
-the download, throws a `TranslationMemoryJobException` with `job` set once the
-job was created.
+writable, it throws a `TranslationMemoryJobException` with `jobId` and `job`
+`null` before creating the export job. Every later failure, of the job
+creation, the wait or the download, throws a `TranslationMemoryJobException`
+with `jobId` set once the job was created and `job` set to the last status
+fetched.
 
 ```php
 $job = $deeplClient->exportTranslationMemoryToFilepath('YOUR_TM_ID', '/path/to/exported.tmx');
