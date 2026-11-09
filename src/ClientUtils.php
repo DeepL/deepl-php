@@ -13,16 +13,20 @@ namespace DeepL;
 class ClientUtils
 {
     /**
-     * Returns the server URL from the given options, or the default if unspecified.
-     * @throws DeepLException
+     * Returns the server URL from the given options, or the default if unspecified, without a trailing slash.
+     * @throws \InvalidArgumentException If the server URL is not an absolute http or https URL with a host.
      */
     public static function resolveServerUrl(array $options, string $defaultServerUrl): string
     {
         $serverUrl = $options[TranslatorOptions::SERVER_URL] ?? $defaultServerUrl;
-        if (!is_string($serverUrl) || strlen($serverUrl) == 0) {
-            throw new \InvalidArgumentException('If specified, ' .
-                TranslatorOptions::SERVER_URL . ' option must be a non-empty string.');
-        } elseif (substr($serverUrl, -1) === "/") { // Remove trailing slash if present
+        $parts = is_string($serverUrl) ? parse_url($serverUrl) : false;
+        $isUsable = is_array($parts) && ($parts['host'] ?? '') !== ''
+            && in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true);
+        if (!$isUsable) {
+            throw new \InvalidArgumentException('If specified, ' . TranslatorOptions::SERVER_URL .
+                ' option must be an absolute http or https URL with a host.');
+        }
+        if (substr($serverUrl, -1) === "/") { // Remove trailing slash if present
             $serverUrl = substr($serverUrl, 0, strlen($serverUrl) - 1);
         }
         return $serverUrl;

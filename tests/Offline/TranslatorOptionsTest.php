@@ -165,15 +165,36 @@ class TranslatorOptionsTest extends OfflineTestCase
      */
     public function testThrowsWhenTheServerUrlIsInvalid($serverUrl): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('server_url option must be a non-empty string');
-
-        $this->makeDeepLClient([TranslatorOptions::SERVER_URL => $serverUrl]);
+        foreach ([
+            function () use ($serverUrl) {
+                new DeepLClient('k', [TranslatorOptions::SERVER_URL => $serverUrl]);
+            },
+            function () use ($serverUrl) {
+                new DeepLAdminClient('k', [TranslatorOptions::SERVER_URL => $serverUrl]);
+            },
+        ] as $construct) {
+            try {
+                $construct();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame(
+                    'If specified, server_url option must be an absolute http or https URL with a host.',
+                    $exception->getMessage()
+                );
+            }
+        }
     }
 
     public static function provideInvalidServerUrls(): array
     {
-        return [[''], [false], [42]];
+        return [
+            'empty' => [''],
+            'false' => [false],
+            'not a string' => [42],
+            'no scheme' => ['api.deepl.com'],
+            'other scheme' => ['ftp://api.deepl.com'],
+            'no host' => ['https://'],
+        ];
     }
 
     /**

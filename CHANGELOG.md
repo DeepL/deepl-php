@@ -265,6 +265,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   throws an `\InvalidArgumentException` (`Failed to JSON-encode the request
   body: ...`) before any request when a value cannot be JSON-encoded (invalid
   UTF-8, INF/NAN), instead of sending an empty body that the API rejects.
+- The `DeepLClient` and `DeepLAdminClient` constructors throw an
+  `\InvalidArgumentException` for a `server_url` option that is not an absolute
+  `http` or `https` URL with a host, such as `api.deepl.com` without a scheme,
+  instead of failing on the first request.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

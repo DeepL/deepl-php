@@ -44,7 +44,9 @@ class TranslatorOptions
     /**
      * Base URL of DeepL API, can be overridden for example for testing purposes. By default, the correct DeepL API URL
      * is selected based on the user account type (free or paid). DeepLAdminClient always uses DEFAULT_SERVER_URL by
-     * default.
+     * default. Must be an absolute http or https URL with a host, such as 'https://api.deepl.com' or
+     * 'http://localhost:3000/base'; a port and a path are allowed and a trailing slash is removed. Any other value
+     * throws an \InvalidArgumentException when the client is constructed.
      * @see DEFAULT_SERVER_URL
      * @see DEFAULT_SERVER_URL_FREE
      */

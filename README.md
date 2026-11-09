@@ -1542,7 +1542,10 @@ Provide the options as an associative array with the following keys:
     HTTP request retry. The default value is `10.0` (10 seconds).
 - `server_url`: `string` containing the URL of the DeepL API, can be overridden
     for example for testing purposes. By default, the URL is selected based on
-    the user account type (free or paid).
+    the user account type (free or paid). It must be an absolute `http` or
+    `https` URL with a host, such as `http://localhost:3000`; a port and a path
+    are allowed. Any other value, such as `api.deepl.com` without a scheme,
+    throws an `InvalidArgumentException` when the client is constructed.
 - `headers`: extra HTTP headers attached to every HTTP request. By default, no
     extra headers are used. Note that Authorization and User-Agent headers are
     added automatically but may be overridden by this option. Header names are
