@@ -2827,8 +2827,8 @@ class DeepLClient
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
      *  TranslationMemoryInfo of the translation memory to export.
      * @param string $outputFile String containing file path to create the exported TMX file.
-     * @param array|float|null $timeout Optional maximum time in seconds to wait for the export to finish, or wait
-     *  options, see \DeepL\WaitOptions: only TIMEOUT.
+     * @param array|float|null $options Wait options, see \DeepL\WaitOptions: only TIMEOUT; or the maximum
+     *  time in seconds to wait for the export to finish, as a number. Unset waits without limit.
      * @return TranslationMemoryJob The completed export job.
      * @throws TranslationMemoryJobException For every failure, with the cause as the previous exception: if a
      *  file already exists at the output file path or its directory does not exist or is not writable, checked
@@ -2838,12 +2838,12 @@ class DeepLClient
     public function exportTranslationMemoryToFilepath(
         $translationMemory,
         string $outputFile,
-        $timeout = null
+        $options = null
     ): TranslationMemoryJob {
         $jobId = null;
         $job = null;
         try {
-            $timeout = self::translationMemoryTimeout($timeout);
+            $timeout = self::translationMemoryTimeout($options);
             if (file_exists($outputFile)) {
                 throw new DeepLException("File already exists at output file path $outputFile");
             }

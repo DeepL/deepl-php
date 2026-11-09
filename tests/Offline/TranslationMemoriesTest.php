@@ -551,6 +551,23 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequestCount(3);
     }
 
+    public function testExportTakesTheWaitOptionsAsTheNamedArgumentOptions(): void
+    {
+        $output = Fixtures::tempDir() . '/export.tmx';
+        $this->reply(['job_id' => 'job2', 'parameters' => ['translation_memory_id' => 'tm1']], 202);
+        $this->reply(self::job('completed', ['download_url' => self::STORAGE_URL]));
+        $this->mock->append(new Response(200, [], '<tmx/>'));
+
+        $job = $this->makeDeepLClient()->exportTranslationMemoryToFilepath(
+            'tm1',
+            $output,
+            options: [WaitOptions::TIMEOUT => 60]
+        );
+
+        $this->assertSame('completed', $job->status());
+        $this->assertSame('<tmx/>', file_get_contents($output));
+    }
+
     public function testThrowsForAnUnknownWaitOption(): void
     {
         $this->expectException(\InvalidArgumentException::class);
