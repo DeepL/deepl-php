@@ -670,7 +670,7 @@ class DeepLClient
         if (is_string($tagList)) {
             return $tagList === '' ? [] : explode(',', $tagList);
         } else {
-            return $tagList;
+            return array_values($tagList);
         }
     }
 
@@ -767,7 +767,7 @@ class DeepLClient
                 throw new \InvalidArgumentException('text must not be empty');
             }
         }
-        $params['text'] = is_array($texts) ? $texts : [$texts];
+        $params['text'] = is_array($texts) ? array_values($texts) : [$texts];
     }
 
     /**
@@ -820,7 +820,9 @@ class DeepLClient
         }
         $this->appendStyleRuleAndTranslationMemoryOptions($params, $options);
         if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
-            $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
+            $customInstructions = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
+            $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] =
+                is_array($customInstructions) ? array_values($customInstructions) : $customInstructions;
         }
         $this->applyExtraBodyParameters(
             $params,
@@ -1796,7 +1798,8 @@ class DeepLClient
      * @param string $name User-defined name to assign to the style rule.
      * @param string $language Language code for the style rule.
      * @param array|null $configuredRules Optional configured rules to apply.
-     * @param array|null $customInstructions Optional custom instructions to include.
+     * @param array|null $customInstructions List of custom instruction objects (`label`, `prompt`, optional
+     *     `source_language`); keys are ignored.
      * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Details about the created style rule.
      * @throws DeepLException
@@ -1824,7 +1827,7 @@ class DeepLClient
             $params['configured_rules'] = empty($configuredRules) ? (object)$configuredRules : $configuredRules;
         }
         if ($customInstructions !== null) {
-            $params['custom_instructions'] = $customInstructions;
+            $params['custom_instructions'] = array_values($customInstructions);
         }
 
         $response = $this->client->sendRequestWithBackoff(

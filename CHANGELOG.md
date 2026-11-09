@@ -292,6 +292,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `replaceMultilingualGlossaryDictionaryFromCsv()` throw an
   `\InvalidArgumentException` (`csvContent must be a non-empty string`) before
   any request for empty or whitespace-only CSV content, instead of sending it.
+- `translateText()`, `rephraseText()` and `correctText()` send an array of texts
+  whose keys are not `0..n-1` (e.g. an `array_filter()` result) as a JSON list
+  instead of a JSON object.
+- The `splitting_tags`, `non_splitting_tags`, `ignore_tags` and
+  `custom_instructions` options of `translateText()` and the custom
+  instructions of `createStyleRule()` are sent as JSON lists when the array
+  keys are not `0..n-1`.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

@@ -57,6 +57,23 @@ class TranslateTextTest extends OfflineTestCase
         );
     }
 
+    public function testSendsTextsWithNonSequentialKeysAsAJsonList(): void
+    {
+        $this->reply(['translations' => [
+            ['text' => 'Hallo', 'detected_source_language' => 'EN', 'billed_characters' => 5],
+            ['text' => 'Welt', 'detected_source_language' => 'EN', 'billed_characters' => 5],
+        ]]);
+
+        $this->makeDeepLClient()->translateText([0 => 'Hello', 2 => 'World'], 'en', 'de');
+
+        $this->assertSame(
+            ['target_lang' => 'de', 'source_lang' => 'en', 'show_billed_characters' => true,
+                'text' => ['Hello', 'World']],
+            $this->jsonBody()
+        );
+        $this->assertStringContainsString('"text":["Hello","World"]', (string)$this->request()->getBody());
+    }
+
     public function testSendsStyleProfileWithoutSourceLanguage(): void
     {
         $this->reply(self::REPLY);
@@ -192,6 +209,14 @@ class TranslateTextTest extends OfflineTestCase
                 [TranslateTextOptions::IGNORE_TAGS => ['x', 'y']],
                 $base + $tail + ['ignore_tags' => ['x', 'y']],
             ],
+            'tag lists from arrays with non-sequential keys' => [
+                [
+                    TranslateTextOptions::NON_SPLITTING_TAGS => [1 => 'a'],
+                    TranslateTextOptions::SPLITTING_TAGS => [2 => 'b', 5 => 'c'],
+                    TranslateTextOptions::IGNORE_TAGS => [3 => 'x'],
+                ],
+                $base + $tail + ['non_splitting_tags' => ['a'], 'splitting_tags' => ['b', 'c'], 'ignore_tags' => ['x']],
+            ],
             'context and model type' => [
                 [TranslateTextOptions::CONTEXT => 'ctx', TranslateTextOptions::MODEL_TYPE => 'latency_optimized'],
                 $base + $tail + ['context' => 'ctx', 'model_type' => 'latency_optimized'],
@@ -203,6 +228,10 @@ class TranslateTextTest extends OfflineTestCase
             'custom instructions' => [
                 [TranslateTextOptions::CUSTOM_INSTRUCTIONS => ['Be brief']],
                 $base + $tail + ['custom_instructions' => ['Be brief']],
+            ],
+            'custom instructions with non-sequential keys' => [
+                [TranslateTextOptions::CUSTOM_INSTRUCTIONS => [1 => 'Be brief', 4 => 'Be formal']],
+                $base + $tail + ['custom_instructions' => ['Be brief', 'Be formal']],
             ],
             'style rule from string' => [
                 [TranslateTextOptions::STYLE_RULE => 'sid'],

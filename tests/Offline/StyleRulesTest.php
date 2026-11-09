@@ -112,6 +112,19 @@ class StyleRulesTest extends OfflineTestCase
         ], $this->jsonBody());
     }
 
+    public function testSendsCustomInstructionsWithNonSequentialKeysAsAJsonList(): void
+    {
+        $this->reply(self::STYLE_RULE, 201);
+
+        $this->makeDeepLClient()->createStyleRule('My rules', 'en', null, [1 => ['label' => 'L', 'prompt' => 'P']]);
+
+        $this->assertSame([
+            'name' => 'My rules',
+            'language' => 'en',
+            'custom_instructions' => [['label' => 'L', 'prompt' => 'P']],
+        ], $this->jsonBody());
+    }
+
     public function testSendsEmptyConfiguredRulesAsJsonObject(): void
     {
         $this->reply(self::STYLE_RULE, 201);

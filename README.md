@@ -101,7 +101,8 @@ try {
 
 To translate text, call `translateText()`. The first argument is a string
 containing the text you want to translate, or an array of strings if you want to
-translate multiple texts.
+translate multiple texts. The array keys are ignored; texts are sent, and results
+returned, in array order. The same applies to `rephraseText()` and `correctText()`.
 
 The second and third arguments are the source and target language codes.
 Language codes are **case-insensitive** strings according to ISO 639-1, for
@@ -189,7 +190,7 @@ using the following keys:
     translated itself. Characters in the `context` parameter are not counted toward billing.
     See the [API documentation][api-docs-context-param] for more information and
     example usage.
--   `custom_instructions`: an array of instructions to customize the translation behavior.
+-   `custom_instructions`: an array of instructions (keys are ignored) to customize the translation behavior.
     Up to 10 custom instructions can be specified, each with a maximum of 300 characters.
     Important: The target language must be `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `zh`
     or any variants of these languages.
@@ -235,8 +236,8 @@ The following options are only used if `tag_handling` is `'xml'`:
     default is `true`.
 -   `splitting_tags`: list of XML tags that should be used to split text into
     sentences. Tags may be specified as an array of strings (`['tag1', 'tag2']`),
-    or a comma-separated list of strings (`'tag1,tag2'`). The default is an empty
-    list.
+    or a comma-separated list of strings (`'tag1,tag2'`). Array keys are ignored.
+    The default is an empty list.
 -   `non_splitting_tags`: list of XML tags that should not be used to split text
     into sentences. Format and default are the same as for `splitting_tags`.
 -   `ignore_tags`: list of XML tags that containing content that should not be
