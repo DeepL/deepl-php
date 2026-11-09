@@ -197,16 +197,29 @@ class DeepLAdminClient
      * Changes the monthly usage limits of a developer key. Only the limits given in $limits are changed;
      * omitted limits keep their current value. A limit of null means unlimited and 0 blocks that usage.
      * @param string|DeveloperKey $key Key ID or DeveloperKey to modify.
-     * @param array $limits Usage limits to change, keyed by the DeveloperKeyUsageLimitsOptions constants. Each
-     * value is an int or null. The limits are sent to the API as given.
+     * @param array $limits Usage limits to change, keyed by the DeveloperKeyUsageLimitsOptions constants; any
+     * other key throws \InvalidArgumentException before the request. Each value is an int or null. The limits are
+     * sent to the API as given. Send other fields with DeveloperKeyOptions::EXTRA_BODY_PARAMETERS.
      * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
      * @return DeveloperKey The modified key.
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If a key of $limits or $options is unknown or the key ID is empty, checked
+     * before any request is sent.
+     * @throws DeepLException If the request fails.
      * @see DeveloperKeyUsageLimitsOptions
      */
     public function setDeveloperKeyUsageLimits($key, array $limits, array $options = []): DeveloperKey
     {
         self::checkOptions($options, []);
+        $knownLimits = [
+            DeveloperKeyUsageLimitsOptions::CHARACTERS,
+            DeveloperKeyUsageLimitsOptions::SPEECH_TO_TEXT_MILLISECONDS,
+            DeveloperKeyUsageLimitsOptions::SPEECH_TO_SPEECH_MILLISECONDS,
+        ];
+        foreach (array_keys($limits) as $limitKey) {
+            if (!in_array($limitKey, $knownLimits, true)) {
+                throw new \InvalidArgumentException("Unknown developer key usage limit: $limitKey");
+            }
+        }
         $keyId = self::keyId($key);
         return $this->sendDeveloperKeyRequest(
             'PUT',

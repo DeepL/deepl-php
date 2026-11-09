@@ -1439,7 +1439,10 @@ $adminClient->deactivateDeveloperKey($key);
 `renameDeveloperKey()`, `setDeveloperKeyUsageLimits()` and
 `deactivateDeveloperKey()` accept either a key ID or a `DeveloperKey` object,
 and return the updated `DeveloperKey`. The usage limits are also available for
-speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`).
+speech-to-speech (`SPEECH_TO_SPEECH_MILLISECONDS`). Any other key in the limits
+array of `setDeveloperKeyUsageLimits()` throws an `InvalidArgumentException`
+before the request; send other fields with
+`DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`.
 
 `createDeveloperKey()` takes an options array with the `CreateDeveloperKeyOptions`
 keys: `LABEL`, the label of the new key (the API uses "DeepL API Key" if it is

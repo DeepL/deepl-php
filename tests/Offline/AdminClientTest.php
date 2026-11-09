@@ -471,6 +471,9 @@ class AdminClientTest extends OfflineTestCase
             'label option on rename' => [function (DeepLAdminClient $client) {
                 $client->renameDeveloperKey(self::KEY_ID, 'renamed', [CreateDeveloperKeyOptions::LABEL => 'other']);
             }, 'Unknown developer key option: label'],
+            'unknown usage limit' => [function (DeepLAdminClient $client) {
+                $client->setDeveloperKeyUsageLimits(self::KEY_ID, ['minutes' => 5]);
+            }, 'Unknown developer key usage limit: minutes'],
         ];
     }
 
@@ -506,14 +509,14 @@ class AdminClientTest extends OfflineTestCase
         $client = $this->makeAdminClient();
 
         try {
-            $client->setDeveloperKeyUsageLimits(self::KEY_ID, ['minutes' => '5']);
+            $client->setDeveloperKeyUsageLimits(self::KEY_ID, [DeveloperKeyUsageLimitsOptions::CHARACTERS => '5']);
             $this->fail('expected a DeepLException');
         } catch (DeepLException $exception) {
             $this->assertStringContainsString('invalid limit', $exception->getMessage());
         }
         $client->renameDeveloperKey(self::KEY_ID, '');
 
-        $this->assertSame(['key_id' => self::KEY_ID, 'minutes' => '5'], $this->jsonBody(0));
+        $this->assertSame(['key_id' => self::KEY_ID, 'characters' => '5'], $this->jsonBody(0));
         $this->assertSame(['key_id' => self::KEY_ID, 'label' => ''], $this->jsonBody(1));
     }
 

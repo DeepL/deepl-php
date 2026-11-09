@@ -207,6 +207,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException` (`Unknown client option: <key>`) for an option
   key that is not a `TranslatorOptions` constant, instead of logging a warning
   and ignoring it.
+- Breaking: `DeepLAdminClient::setDeveloperKeyUsageLimits()` throws an
+  `\InvalidArgumentException` (`Unknown developer key usage limit: <key>`)
+  before the request for a key of the limits array other than the
+  `DeveloperKeyUsageLimitsOptions` constants, `'key_id'` included, instead of
+  sending it as given (or dropping `'key_id'`). Send other fields with
+  `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
