@@ -233,6 +233,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   named `$options` instead of `$timeout`. It still takes the timeout in seconds
   or `[WaitOptions::TIMEOUT => seconds]`. Replace the named argument
   `timeout: 300` with `options: 300`, or pass it positionally.
+- Breaking: `importTranslationMemoryFromFilepath()` no longer has the third
+  parameter `$timeout`. Replace
+  `importTranslationMemoryFromFilepath($file, 'Legal TM', 300)` with
+  `importTranslationMemoryFromFilepath($file, [ImportTranslationMemoryOptions::DISPLAY_NAME => 'Legal TM', ImportTranslationMemoryOptions::TIMEOUT => 300])`.
+  A third argument throws a `TranslationMemoryJobException` whose previous
+  exception is an `\InvalidArgumentException`, before any request.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

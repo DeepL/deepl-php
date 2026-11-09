@@ -312,6 +312,21 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
+    public function testThrowsWithoutRequestForAPositionalTimeoutAfterTheDisplayName(): void
+    {
+        $file = Fixtures::tempFile('example.tmx', '<tmx/>');
+        try {
+            $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file, 'My TM', 60.0);
+            $this->fail('expected a TranslationMemoryJobException');
+        } catch (TranslationMemoryJobException $exception) {
+            $this->assertNull($exception->jobId);
+            $this->assertNull($exception->job);
+            $this->assertInstanceOf(\InvalidArgumentException::class, $exception->getPrevious());
+            $this->assertStringContainsString('pass all options in the options array', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testThrowsForAnUnknownTranslationMemoryOption(): void
     {
         $this->expectException(\InvalidArgumentException::class);

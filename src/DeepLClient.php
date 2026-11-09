@@ -2756,30 +2756,29 @@ class DeepLClient
      *  (used for the import job and the upload, default 'application/xml'), DISPLAY_NAME, TIMEOUT and
      *  EXTRA_BODY_PARAMETERS. A string is the name for the resulting translation memory, as DISPLAY_NAME; it
      *  defaults to the file name.
-     * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish. Only with a
-     *  string or null $options; with an array, use TIMEOUT.
      * @return TranslationMemoryJob The completed import job; its result carries the ID of the new
      *  translation memory.
      * @throws \InvalidArgumentException If no file exists at the input file path, before any request is
      *  sent; not wrapped.
      * @throws TranslationMemoryJobException For every other failure, with the cause as the previous exception:
-     *  an invalid option or an empty or unreadable input file before any request (jobId and job null), or a
-     *  failure of the job creation, the upload or the wait; jobId is set once the job was created, job once its
-     *  status was fetched.
+     *  an invalid option, a third argument or an empty or unreadable input file before any request (jobId and
+     *  job null), or a failure of the job creation, the upload or the wait; jobId is set once the job was
+     *  created, job once its status was fetched.
      */
-    public function importTranslationMemoryFromFilepath(
-        string $inputFile,
-        $options = null,
-        ?float $timeout = null
-    ): TranslationMemoryJob {
+    public function importTranslationMemoryFromFilepath(string $inputFile, $options = null): TranslationMemoryJob
+    {
         $jobId = null;
         $job = null;
         try {
+            // The released third parameter $timeout was removed; PHP would silently ignore a third argument.
+            if (func_num_args() > 2) {
+                throw new \InvalidArgumentException('pass all options in the options array, not as further arguments');
+            }
             $options = self::translationMemoryOptions(
                 $options,
                 ImportTranslationMemoryOptions::DISPLAY_NAME,
                 ImportTranslationMemoryOptions::TIMEOUT,
-                $timeout,
+                null,
                 [
                     ImportTranslationMemoryOptions::CONTENT_TYPE,
                     ImportTranslationMemoryOptions::DISPLAY_NAME,

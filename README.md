@@ -1269,8 +1269,9 @@ options array with the `ImportTranslationMemoryOptions` keys `DISPLAY_NAME` (nam
 the new translation memory, defaults to the file name), `CONTENT_TYPE` (MIME type
 of the file, used for the import job and the upload, default
 `'application/xml'`), `TIMEOUT` (maximum time in seconds to wait) and
-`EXTRA_BODY_PARAMETERS` (added last to the JSON body of the import request). The
-released positional form, a display name and a timeout, is still accepted.
+`EXTRA_BODY_PARAMETERS` (added last to the JSON body of the import request). A
+string as the second argument is the display name, as in the released form;
+pass the timeout as `TIMEOUT`.
 If no file exists at the input file path, it throws an
 `InvalidArgumentException` before sending any request. Every other failure
 throws a `TranslationMemoryJobException`: an empty or unreadable file before any
