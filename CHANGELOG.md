@@ -213,6 +213,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeveloperKeyUsageLimitsOptions` constants, `'key_id'` included, instead of
   sending it as given (or dropping `'key_id'`). Send other fields with
   `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`.
+- Breaking: `translateDocumentWaitUntilDone()` accepts only
+  `TranslateDocumentOptions::TIMEOUT` and throws an `\InvalidArgumentException`
+  (`Unknown translate document wait option: <key>`) for any other key, such as
+  `FORMALITY`, instead of accepting and ignoring every
+  `TranslateDocumentOptions` key.
+- Breaking: `translateDocumentWaitUntilDone()` treats a negative `timeout` as
+  expired: it requests the status once and throws the timeout `DeepLException`
+  if the translation is not done, instead of throwing an
+  `\InvalidArgumentException` before any request. Through `translateDocument()`
+  this is a `DocumentTranslationException` with the handle set.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

@@ -39,8 +39,9 @@ final class TranslateDocumentOptions
 
     /** Maximum time in seconds (float) that translateDocument() waits for the translation to complete after the
      *  upload. When it expires, translateDocument() throws a DocumentTranslationException carrying the document
-     *  handle, so the translation can be resumed. If unspecified, it waits without limit. Not sent to the API.
-     *  Also accepted by DeepLClient::translateDocumentWaitUntilDone().
+     *  handle, so the translation can be resumed. If unspecified, it waits without limit. Zero or negative: the
+     *  status is requested once and the wait times out if the translation is not done. Not sent to the API.
+     *  Also accepted by DeepLClient::translateDocumentWaitUntilDone(), which accepts no other option.
      */
     public const TIMEOUT = 'timeout';
 

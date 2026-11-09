@@ -431,10 +431,13 @@ echo "Billed characters: {$status->billedCharacters}";
 ```
 
 `translateDocumentWaitUntilDone()` accepts an optional `timeout` (in seconds,
-`TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. The
-status is polled every 5 seconds; the last sleep is cut short to the deadline, so
-the wait does not run past the timeout. A status this library does not know keeps
-polling, so pass `timeout` to bound the wait.
+`TranslateDocumentOptions::TIMEOUT`); without it, it waits without limit. With a
+zero or negative timeout, the status is requested once and the wait times out if
+the translation is not done. The status is polled every 5 seconds; the last sleep
+is cut short to the deadline, so the wait does not run past the timeout. A status
+this library does not know keeps polling, so pass `timeout` to bound the wait.
+`timeout` is the only option it accepts; any other key throws an
+`InvalidArgumentException` before any request is sent.
 
 `translateDocumentGetStatus()` returns a `DocumentStatus` with the `documentId`,
 `status`, `secondsRemaining`, `billedCharacters` and `errorMessage` of the
@@ -473,7 +476,8 @@ using the following keys:
 -   `timeout`: the maximum time in seconds (`float`) that `translateDocument()` waits for the
     translation to complete after the upload. When it expires, `translateDocument()` throws a
     `DocumentTranslationException` whose `handle` can be used to resume. If
-    unspecified, it waits without limit. Not sent to the API.
+    unspecified, it waits without limit. Zero or negative: the status is requested
+    once and the wait times out if the translation is not done. Not sent to the API.
 -   `output_format`: a string containing the file extension of the desired format of the
     translated document, for example `'docx'`. If unspecified, the translated document is in
     the same format as the input file.

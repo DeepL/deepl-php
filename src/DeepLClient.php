@@ -435,19 +435,26 @@ class DeepLClient
      * Returns when the given document translation completes, or throws an exception if there was an error
      * communicating with the DeepL API, the document translation failed, or the timeout expired.
      * @param DocumentHandle $handle Handle to the document translation.
-     * @param array $options Wait options: TranslateDocumentOptions::TIMEOUT, the maximum time to wait in seconds
-     *     (float). Unset or null waits without limit. The status is polled every 5 seconds; the last sleep is cut
-     *     short to the deadline, so the wait does not run past the timeout.
+     * @param array $options Wait options: only TranslateDocumentOptions::TIMEOUT, the maximum time to wait in
+     *     seconds (float). Unset or null waits without limit. Zero or negative: the status is requested once and the
+     *     wait times out if the translation is not done. The status is polled every 5 seconds; the last sleep is
+     *     cut short to the deadline, so the wait does not run past the timeout.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If an option key other than TIMEOUT is given or the timeout is not a
+     *     number, checked before any request is sent.
+     * @throws DeepLException If a request fails, the translation fails or the timeout expires.
      */
     public function translateDocumentWaitUntilDone(DocumentHandle $handle, array $options = []): DocumentStatus
     {
-        self::checkOptionKeys($options, TranslateDocumentOptions::class, 'translate document');
+        foreach (array_keys($options) as $key) {
+            if ($key !== TranslateDocumentOptions::TIMEOUT) {
+                throw new \InvalidArgumentException("Unknown translate document wait option: $key");
+            }
+        }
         $timeout = $options[TranslateDocumentOptions::TIMEOUT] ?? null;
-        if ($timeout !== null && (!is_numeric($timeout) || $timeout < 0)) {
-            throw new \InvalidArgumentException('timeout must be a non-negative number of seconds');
+        if ($timeout !== null && !is_numeric($timeout)) {
+            throw new \InvalidArgumentException('timeout must be a number of seconds');
         }
         $startTime = microtime(true);
         $status = $this->translateDocumentGetStatus($handle);

@@ -234,6 +234,23 @@ class TranslateDocumentTest extends OfflineTestCase
         $this->assertFileDoesNotExist($output);
     }
 
+    public function testWaitTreatsANegativeTimeoutAsExpired(): void
+    {
+        $this->useFakeClock();
+        $this->reply(['document_id' => 'doc1', 'status' => 'translating']);
+
+        try {
+            $this->makeDeepLClient()->translateDocumentWaitUntilDone(
+                new DocumentHandle('doc1', 'k'),
+                [TranslateDocumentOptions::TIMEOUT => -1]
+            );
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Timeout of -1s exceeded', $exception->getMessage());
+        }
+        $this->assertRequestCount(1);
+    }
+
     public function testTranslateDocumentSendsWatermarkWithOutputFormat(): void
     {
         $input = Fixtures::tempFile('input.txt', 'Hello');
@@ -469,7 +486,16 @@ class TranslateDocumentTest extends OfflineTestCase
                 function (DeepLClient $client) {
                     $client->translateDocumentWaitUntilDone(new DocumentHandle('d', 'k'), ['no_such_option' => 1]);
                 },
-                'Unknown translate document option: no_such_option',
+                'Unknown translate document wait option: no_such_option',
+            ],
+            'translateDocumentWaitUntilDone with a translation option' => [
+                function (DeepLClient $client) {
+                    $client->translateDocumentWaitUntilDone(
+                        new DocumentHandle('d', 'k'),
+                        [TranslateDocumentOptions::FORMALITY => 'more']
+                    );
+                },
+                'Unknown translate document wait option: formality',
             ],
         ];
     }
