@@ -229,6 +229,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   if the translation is not done, instead of throwing an
   `\InvalidArgumentException` before any request. Through `translateDocument()`
   this is a `DocumentTranslationException` with the handle set.
+- Breaking: the second parameter of `waitUntilTranslationMemoryJobDone()` is
+  named `$options` instead of `$timeout`. It still takes the timeout in seconds
+  or `[WaitOptions::TIMEOUT => seconds]`. Replace the named argument
+  `timeout: 300` with `options: 300`, or pass it positionally.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

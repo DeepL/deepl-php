@@ -486,7 +486,7 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertEqualsWithDelta(7.0, \DeepL\microtime(true) - $start, 0.01);
     }
 
-    public function testAcceptsWaitOptionsInTheTimeoutParameter(): void
+    public function testAcceptsWaitOptionsInPlaceOfTheTimeout(): void
     {
         $this->useFakeClock();
         foreach (range(1, 6) as $_) {
@@ -518,6 +518,22 @@ class TranslationMemoriesTest extends OfflineTestCase
             }
         }
         $this->assertFileDoesNotExist($output);
+    }
+
+    public function testTakesTheWaitOptionsAsTheNamedArgumentOptions(): void
+    {
+        $this->useFakeClock();
+        foreach (range(1, 3) as $_) {
+            $this->reply(self::job('processing'));
+        }
+
+        try {
+            $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone('job1', options: [WaitOptions::TIMEOUT => 7]);
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertStringContainsString('Manual timeout of 7s exceeded', $exception->getMessage());
+        }
+        $this->assertRequestCount(3);
     }
 
     public function testThrowsForAnUnknownWaitOption(): void

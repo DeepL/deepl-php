@@ -2652,15 +2652,15 @@ class DeepLClient
      * because the API detects the upload asynchronously. A job whose file is never uploaded does
      * not finish on its own, so pass a timeout when that is a possibility.
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
-     * @param array|float|null $timeout Optional maximum time in seconds to wait before throwing an
-     *  exception, or wait options, see \DeepL\WaitOptions: only TIMEOUT. The last sleep
-     *  between polls is shortened so the wait does not run past it.
+     * @param array|float|null $options Wait options, see \DeepL\WaitOptions: only TIMEOUT; or the maximum
+     *  time in seconds to wait, as a number. Unset waits without limit. The last sleep between polls is
+     *  shortened so the wait does not run past it.
      * @return TranslationMemoryJob The completed job.
      * @throws DeepLException
      */
-    public function waitUntilTranslationMemoryJobDone($job, $timeout = null): TranslationMemoryJob
+    public function waitUntilTranslationMemoryJobDone($job, $options = null): TranslationMemoryJob
     {
-        $timeout = self::translationMemoryTimeout($timeout);
+        $timeout = self::translationMemoryTimeout($options);
         $latest = null;
         return $this->pollTranslationMemoryJob(TranslationMemoryJob::getJobId($job), $timeout, $latest);
     }
