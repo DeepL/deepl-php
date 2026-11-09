@@ -6,9 +6,11 @@
 
 namespace DeepL\Offline;
 
+use DeepL\CreateTranslationMemoryImportOptions;
 use DeepL\DeepLClient;
 use DeepL\DeepLException;
 use DeepL\Fixtures;
+use DeepL\ImportTranslationMemoryOptions;
 use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\TranslationMemoryImport;
@@ -16,8 +18,8 @@ use DeepL\TranslationMemoryInfo;
 use DeepL\TranslationMemoryJob;
 use DeepL\TranslationMemoryJobException;
 use DeepL\TranslationMemoryJobResult;
-use DeepL\TranslationMemoryOptions;
 use DeepL\TranslationMemorySegmentsOptions;
+use DeepL\WaitOptions;
 use GuzzleHttp\Psr7\Response;
 
 class TranslationMemoriesTest extends OfflineTestCase
@@ -272,9 +274,9 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->reply(['job_id' => 'job1', 'upload_url' => self::STORAGE_URL]);
 
         $this->makeDeepLClient()->createTranslationMemoryImport('a.tmx', 42, [
-            TranslationMemoryOptions::CONTENT_TYPE => 'text/xml',
-            TranslationMemoryOptions::DISPLAY_NAME => 'My TM',
-            TranslationMemoryOptions::EXTRA_BODY_PARAMETERS => [
+            CreateTranslationMemoryImportOptions::CONTENT_TYPE => 'text/xml',
+            CreateTranslationMemoryImportOptions::DISPLAY_NAME => 'My TM',
+            CreateTranslationMemoryImportOptions::EXTRA_BODY_PARAMETERS => [
                 'parameters' => ['display_name' => 'X'],
                 'flag' => true,
             ],
@@ -315,7 +317,11 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown translation memory option: timeout');
 
-        $this->makeDeepLClient()->createTranslationMemoryImport('a.tmx', 42, [TranslationMemoryOptions::TIMEOUT => 1]);
+        $this->makeDeepLClient()->createTranslationMemoryImport(
+            'a.tmx',
+            42,
+            [ImportTranslationMemoryOptions::TIMEOUT => 1]
+        );
     }
 
     public function testThrowsWhenTheImportFileIsInvalid(): void
@@ -495,13 +501,13 @@ class TranslationMemoriesTest extends OfflineTestCase
 
         foreach ([
             function () use ($client) {
-                $client->waitUntilTranslationMemoryJobDone('job1', [TranslationMemoryOptions::TIMEOUT => 7]);
+                $client->waitUntilTranslationMemoryJobDone('job1', [WaitOptions::TIMEOUT => 7]);
             },
             function () use ($client) {
-                $client->waitUntilTranslationMemoryJobDone('job1', [TranslationMemoryOptions::TIMEOUT => 7.0]);
+                $client->waitUntilTranslationMemoryJobDone('job1', [WaitOptions::TIMEOUT => 7.0]);
             },
             function () use ($client, $output) {
-                $client->exportTranslationMemoryToFilepath('tm1', $output, [TranslationMemoryOptions::TIMEOUT => 7]);
+                $client->exportTranslationMemoryToFilepath('tm1', $output, [WaitOptions::TIMEOUT => 7]);
             },
         ] as $call) {
             try {
@@ -521,7 +527,7 @@ class TranslationMemoriesTest extends OfflineTestCase
 
         $this->makeDeepLClient()->waitUntilTranslationMemoryJobDone(
             'job1',
-            [TranslationMemoryOptions::DISPLAY_NAME => 'x']
+            [ImportTranslationMemoryOptions::DISPLAY_NAME => 'x']
         );
     }
 
@@ -687,10 +693,10 @@ class TranslationMemoriesTest extends OfflineTestCase
         $file = Fixtures::tempFile('example.tmx', '<tmx>hello</tmx>');
 
         $this->makeDeepLClient()->importTranslationMemoryFromFilepath($file, [
-            TranslationMemoryOptions::CONTENT_TYPE => 'text/xml',
-            TranslationMemoryOptions::DISPLAY_NAME => 'My TM',
-            TranslationMemoryOptions::TIMEOUT => 60,
-            TranslationMemoryOptions::EXTRA_BODY_PARAMETERS => ['flag' => true],
+            ImportTranslationMemoryOptions::CONTENT_TYPE => 'text/xml',
+            ImportTranslationMemoryOptions::DISPLAY_NAME => 'My TM',
+            ImportTranslationMemoryOptions::TIMEOUT => 60,
+            ImportTranslationMemoryOptions::EXTRA_BODY_PARAMETERS => ['flag' => true],
         ]);
 
         $this->assertSame([

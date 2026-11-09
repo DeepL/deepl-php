@@ -21,14 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `getStyleRuleCustomInstruction()`, `updateStyleRuleCustomInstruction()` and
   `deleteStyleRuleCustomInstruction()` accept a `CustomInstruction` as well as
   its ID.
-- Added `TranslationMemoryOptions`. `createTranslationMemoryImport()` accepts an
-  options array (`CONTENT_TYPE`, `DISPLAY_NAME`, `EXTRA_BODY_PARAMETERS`) as its
-  third argument and `importTranslationMemoryFromFilepath()` as its second
-  (`CONTENT_TYPE`, `DISPLAY_NAME`, `TIMEOUT`, `EXTRA_BODY_PARAMETERS`); the
-  positional forms remain. `CONTENT_TYPE` is used for both the import job and
-  the upload. `waitUntilTranslationMemoryJobDone()` and
-  `exportTranslationMemoryToFilepath()` accept `[TranslationMemoryOptions::TIMEOUT => seconds]`
-  in place of the timeout.
+- Added `CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`
+  and `WaitOptions`. `createTranslationMemoryImport()` accepts a
+  `CreateTranslationMemoryImportOptions` array (`CONTENT_TYPE`, `DISPLAY_NAME`,
+  `EXTRA_BODY_PARAMETERS`) as its third argument; the positional form remains.
+  `importTranslationMemoryFromFilepath()` accepts an
+  `ImportTranslationMemoryOptions` array (`CONTENT_TYPE`, `DISPLAY_NAME`,
+  `TIMEOUT`, `EXTRA_BODY_PARAMETERS`) as its second; a string there is still the
+  display name. `CONTENT_TYPE` is used for both the import job and the upload.
+  `waitUntilTranslationMemoryJobDone()` and `exportTranslationMemoryToFilepath()`
+  accept `[WaitOptions::TIMEOUT => seconds]` in place of the timeout.
 - The `MultilingualGlossaryDictionaryEntries` constructor accepts
   `GlossaryEntries` as well as an array.
 

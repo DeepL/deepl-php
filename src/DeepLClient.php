@@ -2496,9 +2496,9 @@ class DeepLClient
      * response body cut off mid-read.
      * @param string $fileName Name of the TMX file to import, for example 'legal.tmx'.
      * @param int $contentLength Size of the TMX file in bytes.
-     * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE,
-     *  DISPLAY_NAME and EXTRA_BODY_PARAMETERS. A string is the MIME type of the file, as CONTENT_TYPE; the API
-     *  defaults it to 'application/xml'.
+     * @param array|string|null $options Request options, see \DeepL\CreateTranslationMemoryImportOptions:
+     *  CONTENT_TYPE, DISPLAY_NAME and EXTRA_BODY_PARAMETERS. A string is the MIME type of the file, as
+     *  CONTENT_TYPE; the API defaults it to 'application/xml'.
      * @param string|null $displayName Optional name for the resulting translation memory, defaults
      *  to the file name. Only with a string or null $options; with an array, use DISPLAY_NAME.
      * @return TranslationMemoryImport The job ID and upload URL.
@@ -2512,13 +2512,13 @@ class DeepLClient
     ): TranslationMemoryImport {
         $options = self::translationMemoryOptions(
             $options,
-            TranslationMemoryOptions::CONTENT_TYPE,
-            TranslationMemoryOptions::DISPLAY_NAME,
+            CreateTranslationMemoryImportOptions::CONTENT_TYPE,
+            CreateTranslationMemoryImportOptions::DISPLAY_NAME,
             $displayName,
-            [TranslationMemoryOptions::CONTENT_TYPE, TranslationMemoryOptions::DISPLAY_NAME]
+            [CreateTranslationMemoryImportOptions::CONTENT_TYPE, CreateTranslationMemoryImportOptions::DISPLAY_NAME]
         );
-        $contentType = $options[TranslationMemoryOptions::CONTENT_TYPE] ?? null;
-        $displayName = $options[TranslationMemoryOptions::DISPLAY_NAME] ?? null;
+        $contentType = $options[CreateTranslationMemoryImportOptions::CONTENT_TYPE] ?? null;
+        $displayName = $options[CreateTranslationMemoryImportOptions::DISPLAY_NAME] ?? null;
         if (strlen($fileName) === 0) {
             throw new \InvalidArgumentException('fileName must be a non-empty string');
         }
@@ -2537,7 +2537,7 @@ class DeepLClient
         if ($displayName !== null) {
             $params['parameters'] = ['display_name' => $displayName];
         }
-        foreach ($options[TranslationMemoryOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+        foreach ($options[CreateTranslationMemoryImportOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
 
@@ -2653,7 +2653,7 @@ class DeepLClient
      * not finish on its own, so pass a timeout when that is a possibility.
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob of the job to wait for.
      * @param array|float|null $timeout Optional maximum time in seconds to wait before throwing an
-     *  exception, or wait options, see \DeepL\TranslationMemoryOptions: only TIMEOUT. The last sleep
+     *  exception, or wait options, see \DeepL\WaitOptions: only TIMEOUT. The last sleep
      *  between polls is shortened so the wait does not run past it.
      * @return TranslationMemoryJob The completed job.
      * @throws DeepLException
@@ -2752,8 +2752,8 @@ class DeepLClient
      * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
      * waits for processing to finish.
      * @param string $inputFile String containing file path of the TMX file to import.
-     * @param array|string|null $options Request options, see \DeepL\TranslationMemoryOptions: CONTENT_TYPE (used
-     *  for the import job and the upload, default 'application/xml'), DISPLAY_NAME, TIMEOUT and
+     * @param array|string|null $options Request options, see \DeepL\ImportTranslationMemoryOptions: CONTENT_TYPE
+     *  (used for the import job and the upload, default 'application/xml'), DISPLAY_NAME, TIMEOUT and
      *  EXTRA_BODY_PARAMETERS. A string is the name for the resulting translation memory, as DISPLAY_NAME; it
      *  defaults to the file name.
      * @param float|null $timeout Optional maximum time in seconds to wait for the import to finish. Only with a
@@ -2777,17 +2777,17 @@ class DeepLClient
         try {
             $options = self::translationMemoryOptions(
                 $options,
-                TranslationMemoryOptions::DISPLAY_NAME,
-                TranslationMemoryOptions::TIMEOUT,
+                ImportTranslationMemoryOptions::DISPLAY_NAME,
+                ImportTranslationMemoryOptions::TIMEOUT,
                 $timeout,
                 [
-                    TranslationMemoryOptions::CONTENT_TYPE,
-                    TranslationMemoryOptions::DISPLAY_NAME,
-                    TranslationMemoryOptions::TIMEOUT,
+                    ImportTranslationMemoryOptions::CONTENT_TYPE,
+                    ImportTranslationMemoryOptions::DISPLAY_NAME,
+                    ImportTranslationMemoryOptions::TIMEOUT,
                 ]
             );
-            $timeout = self::translationMemoryTimeout($options[TranslationMemoryOptions::TIMEOUT] ?? null);
-            unset($options[TranslationMemoryOptions::TIMEOUT]);
+            $timeout = self::translationMemoryTimeout($options[ImportTranslationMemoryOptions::TIMEOUT] ?? null);
+            unset($options[ImportTranslationMemoryOptions::TIMEOUT]);
         } catch (\Throwable $error) {
             throw self::translationMemoryJobException($error, null, null);
         }
@@ -2814,7 +2814,7 @@ class DeepLClient
             $this->uploadTranslationMemoryFile(
                 $created,
                 $fileContent,
-                $options[TranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
+                $options[ImportTranslationMemoryOptions::CONTENT_TYPE] ?? 'application/xml'
             );
             return $this->pollTranslationMemoryJob($jobId, $timeout, $job);
         } catch (\Throwable $error) {
@@ -2829,7 +2829,7 @@ class DeepLClient
      *  TranslationMemoryInfo of the translation memory to export.
      * @param string $outputFile String containing file path to create the exported TMX file.
      * @param array|float|null $timeout Optional maximum time in seconds to wait for the export to finish, or wait
-     *  options, see \DeepL\TranslationMemoryOptions: only TIMEOUT.
+     *  options, see \DeepL\WaitOptions: only TIMEOUT.
      * @return TranslationMemoryJob The completed export job.
      * @throws TranslationMemoryJobException For every failure, with the cause as the previous exception: if a
      *  file already exists at the output file path or its directory does not exist or is not writable, checked
@@ -2913,7 +2913,8 @@ class DeepLClient
         if ($second !== null) {
             throw new \InvalidArgumentException('pass all options in the options array, not as further arguments');
         }
-        $allowed[] = TranslationMemoryOptions::EXTRA_BODY_PARAMETERS;
+        // Both import options classes use this key.
+        $allowed[] = CreateTranslationMemoryImportOptions::EXTRA_BODY_PARAMETERS;
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
                 throw new \InvalidArgumentException("Unknown translation memory option: $key");
@@ -2923,7 +2924,7 @@ class DeepLClient
     }
 
     /**
-     * Returns the timeout in seconds of a wait helper, from a number or a TranslationMemoryOptions array.
+     * Returns the timeout in seconds of a wait helper, from a number or a WaitOptions array.
      * @param array|float|int|null $timeout
      * @throws DeepLException
      */
@@ -2931,11 +2932,11 @@ class DeepLClient
     {
         if (is_array($timeout)) {
             foreach (array_keys($timeout) as $key) {
-                if ($key !== TranslationMemoryOptions::TIMEOUT) {
+                if ($key !== WaitOptions::TIMEOUT) {
                     throw new \InvalidArgumentException("Unknown translation memory wait option: $key");
                 }
             }
-            $timeout = $timeout[TranslationMemoryOptions::TIMEOUT] ?? null;
+            $timeout = $timeout[WaitOptions::TIMEOUT] ?? null;
         }
         if ($timeout === null) {
             return null;

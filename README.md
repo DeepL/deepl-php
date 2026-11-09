@@ -1265,7 +1265,7 @@ do {
 memory: it creates the import job, uploads the file, and waits for processing to
 finish. The returned `TranslationMemoryJob` carries the ID of the new translation
 memory. An import usually takes under a minute. The second argument is an
-options array with the `TranslationMemoryOptions` keys `DISPLAY_NAME` (name of
+options array with the `ImportTranslationMemoryOptions` keys `DISPLAY_NAME` (name of
 the new translation memory, defaults to the file name), `CONTENT_TYPE` (MIME type
 of the file, used for the import job and the upload, default
 `'application/xml'`), `TIMEOUT` (maximum time in seconds to wait) and
@@ -1281,8 +1281,8 @@ upload fails).
 
 ```php
 $job = $deeplClient->importTranslationMemoryFromFilepath('/path/to/legal.tmx', [
-    TranslationMemoryOptions::DISPLAY_NAME => 'Legal TM',
-    TranslationMemoryOptions::TIMEOUT => 300,
+    ImportTranslationMemoryOptions::DISPLAY_NAME => 'Legal TM',
+    ImportTranslationMemoryOptions::TIMEOUT => 300,
 ]);
 echo "Created translation memory {$job->result()->translationMemoryId}\n";
 echo "Skipped segments: {$job->result()->skippedSegmentCount}\n";
@@ -1298,16 +1298,17 @@ sent to it.
 ```php
 $fileContent = file_get_contents('/path/to/legal.tmx');
 $created = $deeplClient->createTranslationMemoryImport('legal.tmx', strlen($fileContent), [
-    TranslationMemoryOptions::DISPLAY_NAME => 'Legal TM',
+    CreateTranslationMemoryImportOptions::DISPLAY_NAME => 'Legal TM',
 ]);
 // Until the file is uploaded, the job status is 'awaiting_input'
 $deeplClient->uploadTranslationMemoryFile($created, $fileContent);
 
-$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, [TranslationMemoryOptions::TIMEOUT => 300]);
+$job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, [WaitOptions::TIMEOUT => 300]);
 ```
 
-`createTranslationMemoryImport()` takes an options array with
-`CONTENT_TYPE`, `DISPLAY_NAME` and `EXTRA_BODY_PARAMETERS` as its third argument;
+`createTranslationMemoryImport()` takes an options array with the
+`CreateTranslationMemoryImportOptions` keys `CONTENT_TYPE`, `DISPLAY_NAME` and
+`EXTRA_BODY_PARAMETERS` as its third argument;
 the released positional form, a content type and a display name, is still
 accepted.
 
@@ -1316,7 +1317,7 @@ status is `completed`, and throws a `DeepLException` with the
 API's error message if it is `failed` or `expired` (the file helpers wrap it in a
 `TranslationMemoryJobException`). Any other status, including
 one this library does not know, keeps polling, so pass a timeout in seconds, or
-`[TranslationMemoryOptions::TIMEOUT => seconds]`, as the second argument to bound
+`[WaitOptions::TIMEOUT => seconds]`, as the second argument to bound
 the wait; the wait never runs past it. `exportTranslationMemoryToFilepath()`
 takes the same timeout as its third argument. The known
 values are the `TranslationMemoryJobStatus` constants. Note that the job keeps

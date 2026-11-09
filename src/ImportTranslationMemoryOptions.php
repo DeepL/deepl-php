@@ -7,16 +7,13 @@
 namespace DeepL;
 
 /**
- * Option keys for the translation memory methods of DeepLClient:
- * - createTranslationMemoryImport(): CONTENT_TYPE, DISPLAY_NAME and EXTRA_BODY_PARAMETERS.
- * - importTranslationMemoryFromFilepath(): CONTENT_TYPE, DISPLAY_NAME, TIMEOUT and EXTRA_BODY_PARAMETERS.
- * - waitUntilTranslationMemoryJobDone() and exportTranslationMemoryToFilepath(): TIMEOUT.
+ * Option keys for DeepLClient::importTranslationMemoryFromFilepath().
  */
-class TranslationMemoryOptions
+class ImportTranslationMemoryOptions
 {
     /**
-     * MIME type of the TMX file (string), sent as source_file.content_type. Unset, the API assumes
-     * 'application/xml'. importTranslationMemoryFromFilepath() also uploads the file with it.
+     * MIME type of the TMX file (string), sent as source_file.content_type. Unset, 'application/xml'.
+     * Used for the import job and the upload.
      */
     public const CONTENT_TYPE = 'content_type';
 
