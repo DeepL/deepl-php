@@ -882,7 +882,8 @@ class DeepLClient
 
     /**
      * Adds extra body parameters to the params array. Extra parameters can override existing keys.
-     * Values are kept as given, for a JSON body. For a form body, booleans become "true"/"false", arrays and
+     * Values are kept as given, for a JSON body, null included. For a form body, a null value removes the key,
+     * including a parameter of the same name set by the library; booleans become "true"/"false", arrays and
      * objects their JSON encoding, and other values strings. Objects with __toString that are not
      * JsonSerializable are sent as their string in both cases.
      */
@@ -890,7 +891,9 @@ class DeepLClient
     {
         if ($extraParams !== null) {
             foreach ($extraParams as $key => $value) {
-                if (self::isStringableObject($value)) {
+                if ($formBody && $value === null) {
+                    unset($params[$key]);
+                } elseif (self::isStringableObject($value)) {
                     // Objects with __toString were sent as their string before values kept their JSON type
                     $params[$key] = (string)$value;
                 } else {

@@ -81,7 +81,8 @@ final class TranslateDocumentOptions
     /** Dictionary of extra parameters to pass in the body of the HTTP request.
      * Can be used to access beta features, override built-in parameters, or for testing purposes.
      * Keys in this array will be added to the request body and can override existing keys.
-     * Values must be of string type.
+     * The request is a multipart form: booleans are sent as "true"/"false", arrays and objects as their JSON
+     * encoding, and other values as strings. A null value removes the field, including one set by the library.
      */
     public const EXTRA_BODY_PARAMETERS = 'extra_body_parameters';
 }

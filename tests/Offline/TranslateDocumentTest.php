@@ -119,6 +119,13 @@ class TranslateDocumentTest extends OfflineTestCase
                 ]],
                 ['flag_on' => 'true', 'flag_off' => 'false', 'list' => '["a","b"]'],
             ],
+            'null extra body parameter removes the field' => [
+                [
+                    TranslateDocumentOptions::FORMALITY => 'more',
+                    TranslateDocumentOptions::EXTRA_BODY_PARAMETERS => ['formality' => null, 'custom' => null],
+                ],
+                [],
+            ],
         ];
     }
 

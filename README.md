@@ -227,7 +227,7 @@ using the following keys:
 -   `extra_body_parameters`: an associative array of additional parameters to send in
     the request body, for example API parameters this library does not support yet.
     They are added last and replace a parameter of the same name. Values may be any
-    JSON value (string, number, boolean, array or object) and are sent as given.
+    JSON value (string, number, boolean, array, object or `null`) and are sent as given.
 
 The following options are only used if `tag_handling` is `'xml'`:
 
@@ -482,7 +482,8 @@ using the following keys:
     output formats the API ignores it. If unset, the parameter is not sent.
 -   `extra_body_parameters`: same as in [Text translation options](#text-translation-options).
     The document request is a multipart form, so booleans are sent as `'true'`/`'false'`,
-    arrays and objects as their JSON encoding, and other values as strings.
+    arrays and objects as their JSON encoding, and other values as strings; a `null`
+    value removes the field, including one this library would send.
 
 The `translateDocumentUpload` function also supports these options, except `timeout`.
 

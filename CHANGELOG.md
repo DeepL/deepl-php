@@ -269,6 +269,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException` for a `server_url` option that is not an absolute
   `http` or `https` URL with a host, such as `api.deepl.com` without a scheme,
   instead of failing on the first request.
+- `translateDocumentUpload()` and `translateDocument()` remove the field for a
+  `null` value in `extra_body_parameters`, including a field of the same name
+  the library sets, instead of sending it as an empty string.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

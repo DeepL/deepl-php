@@ -109,7 +109,7 @@ class TranslateTextOptions
     /** Dictionary of extra parameters to pass in the body of the HTTP request.
      * Can be used to access beta features, override built-in parameters, or for testing purposes.
      * Keys in this array will be added to the request body and can override existing keys.
-     * Values must be of string type.
+     * Values are any JSON value, sent as given, null included.
      */
     public const EXTRA_BODY_PARAMETERS = 'extra_body_parameters';
 
