@@ -299,6 +299,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `custom_instructions` options of `translateText()` and the custom
   instructions of `createStyleRule()` are sent as JSON lists when the array
   keys are not `0..n-1`.
+- `createTranslationMemoryExport()` (and `exportTranslationMemoryToFilepath()`)
+  send the export request with an empty body and no `Content-Type` over the
+  built-in cURL transport, instead of an empty chunked body with
+  `Content-Type: application/x-www-form-urlencoded` and `Expect: 100-continue`.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

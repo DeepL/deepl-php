@@ -407,6 +407,10 @@ class HttpClientWrapper
         } elseif (!is_null($rawBody)) {
             // The Content-Type of a raw body is specified by the caller
             $curlOptions[\CURLOPT_POSTFIELDS] = $rawBody;
+        } elseif ($method === 'POST') {
+            // Without POSTFIELDS cURL streams a chunked body; the empty header line drops the form Content-Type.
+            $curlOptions[\CURLOPT_POSTFIELDS] = '';
+            $curlOptions[\CURLOPT_HTTPHEADER][] = 'Content-Type:';
         }
 
         if ($outFile) {

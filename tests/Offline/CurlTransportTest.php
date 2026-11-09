@@ -177,6 +177,23 @@ class CurlTransportTest extends OfflineTestCase
         $this->assertArrayNotHasKey(CURLOPT_POSTFIELDS, $options);
     }
 
+    public function testSendsABodilessPostWithAnEmptyBodyAndNoContentType(): void
+    {
+        $options = $this->captureCurlOptions(function (DeepLClient $client) {
+            $client->createTranslationMemoryExport('tm1');
+        }, '{"job_id":"job2","parameters":{"translation_memory_id":"tm1"}}');
+
+        $this->assertTrue($options[CURLOPT_POST]);
+        $this->assertSame('https://api.deepl.com/v3/translation_memories/tm1/export', $options[CURLOPT_URL]);
+        $this->assertArrayHasKey(CURLOPT_POSTFIELDS, $options);
+        $this->assertSame('', $options[CURLOPT_POSTFIELDS]);
+        $headers = $this->headers($options);
+        $this->assertCount(3, $headers);
+        $this->assertSame('Authorization: DeepL-Auth-Key k', $headers[0]);
+        $this->assertStringStartsWith('User-Agent: deepl-php/', $headers[1]);
+        $this->assertSame('Content-Type:', $headers[2]);
+    }
+
     public function testStreamsDownloadsToTheOutputFile(): void
     {
         $output = Fixtures::tempDir() . '/output.txt';
