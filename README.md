@@ -659,7 +659,8 @@ Functions to edit stored glossaries are also provided:
   dictionary of that language pair, like `updateMultilingualGlossary()`.
 - `updateMultilingualGlossaryDictionaryFromCsv()` does the same with source and
   target language codes and CSV data, as for
-  `createMultilingualGlossaryFromCsv()`.
+  `createMultilingualGlossaryFromCsv()`. Empty or whitespace-only CSV data
+  throws an `InvalidArgumentException` before any request is sent.
 - `replaceMultilingualGlossaryDictionary()` takes a glossary ID or 
   `MultilingualGlossaryInfo` object, plus a 
   `MultilingualGlossaryDictionaryEntries` object representing the updated
@@ -667,7 +668,8 @@ Functions to edit stored glossaries are also provided:
   passed in as a parameter, completely replacing any pre-existing entries for 
   that language pair.
 - `replaceMultilingualGlossaryDictionaryFromCsv()` does the same with source and
-  target language codes and CSV data.
+  target language codes and CSV data. Empty or whitespace-only CSV data throws
+  an `InvalidArgumentException` before any request is sent.
 
 ```php
 // Update glossary

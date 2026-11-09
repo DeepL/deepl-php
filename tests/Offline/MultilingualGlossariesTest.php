@@ -254,6 +254,18 @@ class MultilingualGlossariesTest extends OfflineTestCase
                 },
                 $languages,
             ],
+            'empty CSV on dictionary update' => [
+                function (DeepLClient $client) {
+                    $client->updateMultilingualGlossaryDictionaryFromCsv('id', 'en', 'de', '');
+                },
+                'csvContent must be a non-empty string',
+            ],
+            'empty CSV on dictionary replace' => [
+                function (DeepLClient $client) {
+                    $client->replaceMultilingualGlossaryDictionaryFromCsv('id', 'en', 'de', '');
+                },
+                'csvContent must be a non-empty string',
+            ],
         ];
     }
 

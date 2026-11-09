@@ -288,6 +288,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateDocumentUpload()` and `translateDocument()` remove the field for a
   `null` value in `extra_body_parameters`, including a field of the same name
   the library sets, instead of sending it as an empty string.
+- `updateMultilingualGlossaryDictionaryFromCsv()` and
+  `replaceMultilingualGlossaryDictionaryFromCsv()` throw an
+  `\InvalidArgumentException` (`csvContent must be a non-empty string`) before
+  any request for empty or whitespace-only CSV content, instead of sending it.
 
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

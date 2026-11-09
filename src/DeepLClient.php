@@ -1224,6 +1224,7 @@ class DeepLClient
      * @param string $csvContent String containing CSV content.
      * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
+     * @throws \InvalidArgumentException If the CSV content is empty, checked before any request is sent.
      * @throws DeepLException
      */
     public function updateMultilingualGlossaryDictionaryFromCsv(
@@ -1234,6 +1235,9 @@ class DeepLClient
         array $options = []
     ): MultilingualGlossaryInfo {
         self::checkMultilingualGlossaryOptions($options, []);
+        if (trim($csvContent) === '') {
+            throw new \InvalidArgumentException('csvContent must be a non-empty string');
+        }
         $params = ['dictionaries' => [self::csvDictionaryObject($sourceLang, $targetLang, $csvContent)]];
         return $this->patchMultilingualGlossary($glossary, $params, $options);
     }
@@ -1284,6 +1288,7 @@ class DeepLClient
      * @param string $csvContent String containing CSV content.
      * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
+     * @throws \InvalidArgumentException If the CSV content is empty, checked before any request is sent.
      * @throws DeepLException
      */
     public function replaceMultilingualGlossaryDictionaryFromCsv(
@@ -1293,6 +1298,9 @@ class DeepLClient
         string $csvContent,
         array $options = []
     ): MultilingualGlossaryDictionaryInfo {
+        if (trim($csvContent) === '') {
+            throw new \InvalidArgumentException('csvContent must be a non-empty string');
+        }
         $params = self::csvDictionaryObject($sourceLang, $targetLang, $csvContent);
         return $this->putMultilingualGlossaryDictionary($glossary, $params, $options);
     }
