@@ -34,7 +34,8 @@ class DeepLClient
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
      * @param array $options Additional options controlling DeepLClient behaviour.
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If the auth key is empty or an option is invalid, including an unknown
+     * option key.
      * @see TranslatorOptions for a list of available request options.
      */
     public function __construct(string $authKey, array $options = [])
@@ -43,7 +44,8 @@ class DeepLClient
         if ($authKey === '') {
             throw new \InvalidArgumentException('authKey must be a non-empty string');
         }
-        // Validation is currently only logging warnings
+        TranslatorOptions::checkOptionKeys($options);
+        // Logs a warning for options that are ignored with a custom HTTP client
         $_ = TranslatorOptions::isValid($options);
 
         $serverUrl = ClientUtils::resolveServerUrl(

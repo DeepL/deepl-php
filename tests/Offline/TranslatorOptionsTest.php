@@ -242,7 +242,7 @@ class TranslatorOptionsTest extends OfflineTestCase
         );
     }
 
-    public function testWarnsAboutIgnoredAndUnknownOptions(): void
+    public function testWarnsAboutOptionsIgnoredWithACustomHttpClient(): void
     {
         $this->reply(self::USAGE);
         $logger = new TestLogger();
@@ -251,7 +251,6 @@ class TranslatorOptionsTest extends OfflineTestCase
             TranslatorOptions::LOGGER => $logger,
             TranslatorOptions::TIMEOUT => 3.0,
             TranslatorOptions::PROXY => 'http://proxy.local',
-            'unknown_option' => true,
         ])->getUsage();
 
         $this->assertStringContainsString(
@@ -259,10 +258,25 @@ class TranslatorOptionsTest extends OfflineTestCase
             $logger->content
         );
         $this->assertStringContainsString('Option proxy is ignored as a custom HTTP client is used.', $logger->content);
-        $this->assertStringContainsString(
-            'Option unknown_option is not recognized and thus ignored.',
-            $logger->content
-        );
+    }
+
+    public function testThrowsForAnUnknownOptionKey(): void
+    {
+        foreach ([
+            function () {
+                $this->makeDeepLClient(['no_such_option' => 1]);
+            },
+            function () {
+                $this->makeAdminClient(['no_such_option' => 1]);
+            },
+        ] as $construct) {
+            try {
+                $construct();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('Unknown client option: no_such_option', $exception->getMessage());
+            }
+        }
     }
 
     public function testIsFreeAccountAuthKey(): void

@@ -65,7 +65,7 @@ such a key is sent to `https://api-free.deepl.com`.
 #### Errors
 
 An invalid argument, such as an empty text, language code, name or resource ID,
-or an option key the function does not know, throws PHP's
+or an option key the function or the client constructor does not know, throws PHP's
 `\InvalidArgumentException` before any request is sent. It is not a
 `DeepLException`.
 
@@ -1556,7 +1556,9 @@ Provide the options as an associative array with the following keys:
 - `logger`: specify a [`PSR-3` compatible logger][PSR-3-logger] that the library
     should log messages to.
 
-The `DeepLClientOptions` class defines constants for the options above.
+The `DeepLClientOptions` class defines constants for the options above. An
+option key that is not one of them throws an `InvalidArgumentException` when
+the client is constructed.
 
 #### Proxy configuration
 

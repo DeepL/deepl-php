@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
  * Options that can be specified when constructing a DeepLClient or DeepLAdminClient.
  * Please note that using any options from TranslatorOptions::IGNORED_OPTIONS_WITH_CUSTOM_HTTP_CLIENT,
  * such as proxy or timeout, are ignored when using a custom HTTP client.
+ * An option key that is not one of the constants below makes the constructor throw an \InvalidArgumentException.
  * @see DeepLClient::__construct
  * @see DeepLAdminClient::__construct
  */
@@ -113,7 +114,22 @@ class TranslatorOptions
     public const APP_INFO = 'app_info';
 
     /**
-     * Validates the options array passed to the client constructor.
+     * Throws if the options array passed to the client constructor contains an option key that is not one of the
+     * constants of this class.
+     * @throws \InvalidArgumentException For an unknown option key.
+     */
+    public static function checkOptionKeys(array $options): void
+    {
+        foreach (array_keys($options) as $option_key) {
+            if (!array_key_exists($option_key, TranslatorOptions::OPTIONS_KEYS)) {
+                throw new \InvalidArgumentException("Unknown client option: $option_key");
+            }
+        }
+    }
+
+    /**
+     * Validates the options array passed to the client constructor, logging a warning for options that are ignored
+     * with a custom HTTP client.
      */
     public static function isValid(array $options): bool
     {
@@ -124,15 +140,7 @@ class TranslatorOptions
                 $is_valid &= !TranslatorOptions::isIgnoredHttpOptionSet($ignored_option, $options, $maybe_logger);
             }
         }
-        foreach ($options as $option_key => $option_value) {
-            if (!array_key_exists($option_key, TranslatorOptions::OPTIONS_KEYS)) {
-                if ($maybe_logger !== null) {
-                    $maybe_logger->warning("Option $option_key is not recognized and thus ignored.");
-                }
-                $is_valid = false;
-            }
-        }
-        return $is_valid;
+        return (bool)$is_valid;
     }
 
     private static function isIgnoredHttpOptionSet(

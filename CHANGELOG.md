@@ -203,6 +203,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (a `DeepLException`) if an improvement in the response lacks
   `detected_source_language` or `target_language`, instead of a plain
   `DeepLException`.
+- Breaking: the `DeepLClient` and `DeepLAdminClient` constructors throw an
+  `\InvalidArgumentException` (`Unknown client option: <key>`) for an option
+  key that is not a `TranslatorOptions` constant, instead of logging a warning
+  and ignoring it.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

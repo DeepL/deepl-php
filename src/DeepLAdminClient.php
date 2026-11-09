@@ -28,7 +28,8 @@ class DeepLAdminClient
      * @param string $adminKey Admin API key as found in your DeepL account.
      * @param array $options Additional options controlling client behaviour, see TranslatorOptions. The
      * server URL defaults to TranslatorOptions::DEFAULT_SERVER_URL for all admin keys.
-     * @throws \InvalidArgumentException If the admin key is empty.
+     * @throws \InvalidArgumentException If the admin key is empty or an option is invalid, including an unknown
+     * option key.
      * @see TranslatorOptions for a list of available request options.
      */
     public function __construct(string $adminKey, array $options = [])
@@ -36,7 +37,8 @@ class DeepLAdminClient
         if (trim($adminKey) === '') {
             throw new \InvalidArgumentException('adminKey must be a non-empty string');
         }
-        // Validation is currently only logging warnings
+        TranslatorOptions::checkOptionKeys($options);
+        // Logs a warning for options that are ignored with a custom HTTP client
         $_ = TranslatorOptions::isValid($options);
 
         $serverUrl = ClientUtils::resolveServerUrl($options, TranslatorOptions::DEFAULT_SERVER_URL);
