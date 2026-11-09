@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS` to
   `createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`,
   `updateMultilingualGlossary()` and `replaceMultilingualGlossaryDictionary()`.
-- Added a trailing options array with `StyleRuleOptions::EXTRA_BODY_PARAMETERS`
-  to `createStyleRule()`, `updateStyleRuleName()`,
-  `updateStyleRuleConfiguredRules()` (as further keys of the configured rules),
-  `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`.
+- Added a trailing options array to `createStyleRule()`
+  (`CreateStyleRuleOptions`), `updateStyleRuleName()`
+  (`UpdateStyleRuleNameOptions`), `updateStyleRuleConfiguredRules()`
+  (`UpdateStyleRuleConfiguredRulesOptions`, as further keys of the configured
+  rules), `createStyleRuleCustomInstruction()`
+  (`CreateStyleRuleCustomInstructionOptions`) and
+  `updateStyleRuleCustomInstruction()`
+  (`UpdateStyleRuleCustomInstructionOptions`), each with `EXTRA_BODY_PARAMETERS`.
 - `getStyleRuleCustomInstruction()`, `updateStyleRuleCustomInstruction()` and
   `deleteStyleRuleCustomInstruction()` accept a `CustomInstruction` as well as
   its ID.

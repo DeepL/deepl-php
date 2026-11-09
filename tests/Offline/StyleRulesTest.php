@@ -12,7 +12,11 @@ use DeepL\DeepLException;
 use DeepL\InvalidContentException;
 use DeepL\NotFoundException;
 use DeepL\StyleRuleInfo;
-use DeepL\StyleRuleOptions;
+use DeepL\CreateStyleRuleOptions;
+use DeepL\UpdateStyleRuleNameOptions;
+use DeepL\UpdateStyleRuleConfiguredRulesOptions;
+use DeepL\CreateStyleRuleCustomInstructionOptions;
+use DeepL\UpdateStyleRuleCustomInstructionOptions;
 
 class StyleRulesTest extends OfflineTestCase
 {
@@ -229,16 +233,24 @@ class StyleRulesTest extends OfflineTestCase
         $this->reply(self::INSTRUCTION, 201);
         $this->reply(self::INSTRUCTION);
         $client = $this->makeDeepLClient();
-        $extra = [StyleRuleOptions::EXTRA_BODY_PARAMETERS => ['label' => 'X', 'flag' => true]];
+        $extra = ['label' => 'X', 'flag' => true];
         $rules = ['numbers' => ['number_format' => 'use_comma']];
 
-        $client->createStyleRule('My rules', 'en', null, null, $extra);
-        $client->updateStyleRuleName('sid', 'New', $extra);
-        $client->updateStyleRuleConfiguredRules('sid', $rules, [
-            StyleRuleOptions::EXTRA_BODY_PARAMETERS => ['punctuation' => ['quotation_mark' => 'use_guillemets']],
+        $client->createStyleRule('My rules', 'en', null, null, [
+            CreateStyleRuleOptions::EXTRA_BODY_PARAMETERS => $extra,
         ]);
-        $client->createStyleRuleCustomInstruction('sid', 'L', 'P', null, $extra);
-        $client->updateStyleRuleCustomInstruction('sid', 'i1', 'L2', 'P2', null, $extra);
+        $client->updateStyleRuleName('sid', 'New', [UpdateStyleRuleNameOptions::EXTRA_BODY_PARAMETERS => $extra]);
+        $client->updateStyleRuleConfiguredRules('sid', $rules, [
+            UpdateStyleRuleConfiguredRulesOptions::EXTRA_BODY_PARAMETERS => [
+                'punctuation' => ['quotation_mark' => 'use_guillemets'],
+            ],
+        ]);
+        $client->createStyleRuleCustomInstruction('sid', 'L', 'P', null, [
+            CreateStyleRuleCustomInstructionOptions::EXTRA_BODY_PARAMETERS => $extra,
+        ]);
+        $client->updateStyleRuleCustomInstruction('sid', 'i1', 'L2', 'P2', null, [
+            UpdateStyleRuleCustomInstructionOptions::EXTRA_BODY_PARAMETERS => $extra,
+        ]);
 
         $this->assertSame(
             ['name' => 'My rules', 'language' => 'en', 'label' => 'X', 'flag' => true],

@@ -1800,7 +1800,7 @@ class DeepLClient
      * @param array|null $configuredRules Optional configured rules to apply.
      * @param array|null $customInstructions List of custom instruction objects (`label`, `prompt`, optional
      *     `source_language`); keys are ignored.
-     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array $options Request options, see \DeepL\CreateStyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Details about the created style rule.
      * @throws DeepLException
      */
@@ -1866,7 +1866,7 @@ class DeepLClient
      * Updates the name of an existing style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param string $name New name for the style rule.
-     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array $options Request options, see \DeepL\UpdateStyleRuleNameOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
@@ -1913,8 +1913,8 @@ class DeepLClient
      * Replaces the configured rules for a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param array $configuredRules The new configured rules to set.
-     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS, added as
-     *  further keys of the configured rules object.
+     * @param array $options Request options, see \DeepL\UpdateStyleRuleConfiguredRulesOptions: only
+     *  EXTRA_BODY_PARAMETERS, added as further keys of the configured rules object.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
@@ -1949,7 +1949,8 @@ class DeepLClient
      * @param string $label Label for the custom instruction.
      * @param string $prompt Prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
-     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array $options Request options, see \DeepL\CreateStyleRuleCustomInstructionOptions: only
+     *  EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The created custom instruction.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
@@ -2024,7 +2025,8 @@ class DeepLClient
      * @param string $label New label for the custom instruction.
      * @param string $prompt New prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
-     * @param array $options Request options, see \DeepL\StyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array $options Request options, see \DeepL\UpdateStyleRuleCustomInstructionOptions: only
+     *  EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The updated custom instruction.
      * @throws DeepLException
      * @throws NotFoundException If the style rule or custom instruction is not found.
@@ -2111,7 +2113,8 @@ class DeepLClient
     private static function checkStyleRuleOptions(array $options): void
     {
         foreach (array_keys($options) as $key) {
-            if ($key !== StyleRuleOptions::EXTRA_BODY_PARAMETERS) {
+            // All five style rule options classes use this key.
+            if ($key !== CreateStyleRuleOptions::EXTRA_BODY_PARAMETERS) {
                 throw new \InvalidArgumentException("Unknown style rule option: $key");
             }
         }
@@ -2123,7 +2126,8 @@ class DeepLClient
      */
     private static function styleRuleJsonBody(array $params, array $options): string
     {
-        foreach ($options[StyleRuleOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
+        // All five style rule options classes use this key.
+        foreach ($options[CreateStyleRuleOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
         return ClientUtils::encodeJson((object)$params);

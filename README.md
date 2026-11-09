@@ -1080,9 +1080,12 @@ $deeplClient->deleteStyleRuleCustomInstruction($styleRule, $instruction);
 
 `createStyleRule()`, `updateStyleRuleName()`, `updateStyleRuleConfiguredRules()`,
 `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
-take an optional trailing options array. `StyleRuleOptions::EXTRA_BODY_PARAMETERS`
-is an associative array of additional parameters added to the JSON body last,
-replacing a field the library sets with the same key; for
+take an optional trailing options array, with the keys of
+`CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
+`UpdateStyleRuleConfiguredRulesOptions`, `CreateStyleRuleCustomInstructionOptions`
+and `UpdateStyleRuleCustomInstructionOptions`. Their only key,
+`EXTRA_BODY_PARAMETERS`, is an associative array of additional parameters added
+to the JSON body last, replacing a field the library sets with the same key; for
 `updateStyleRuleConfiguredRules()` they are further keys of the configured rules
 object.
 
