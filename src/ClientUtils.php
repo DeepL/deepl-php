@@ -29,6 +29,20 @@ class ClientUtils
     }
 
     /**
+     * Returns the JSON encoding of a request body.
+     * @param mixed $value
+     * @throws \InvalidArgumentException If the value cannot be JSON-encoded, for example invalid UTF-8 or INF/NAN.
+     */
+    public static function encodeJson($value): string
+    {
+        try {
+            return json_encode($value, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new \InvalidArgumentException('Failed to JSON-encode the request body: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
      * Header names describing the request the library builds or the response it parses; custom headers with
      * these names are dropped so the library's values are always used.
      */

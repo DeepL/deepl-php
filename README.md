@@ -65,7 +65,8 @@ such a key is sent to `https://api-free.deepl.com`.
 #### Errors
 
 An invalid argument, such as an empty text, language code, name or resource ID,
-or an option key the function or the client constructor does not know, throws PHP's
+an option key the function or the client constructor does not know, or a value
+that cannot be JSON-encoded (invalid UTF-8, INF/NAN), throws PHP's
 `\InvalidArgumentException` before any request is sent. It is not a
 `DeepLException`.
 

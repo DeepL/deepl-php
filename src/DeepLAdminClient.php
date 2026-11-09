@@ -231,7 +231,7 @@ class DeepLAdminClient
         foreach ($options[DeveloperKeyOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
-        $requestOptions[HttpClientWrapper::OPTION_JSON] = json_encode((object)$params);
+        $requestOptions[HttpClientWrapper::OPTION_JSON] = ClientUtils::encodeJson((object)$params);
         $content = $this->sendRequest($method, $url, $requestOptions);
         return self::parse($content, function (array $json): DeveloperKey {
             if (!self::hasKeyId($json)) {

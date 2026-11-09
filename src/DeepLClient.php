@@ -178,7 +178,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/translate',
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => ClientUtils::encodeJson($params)]
         );
         $this->checkStatusCode($response);
 
@@ -510,7 +510,7 @@ class DeepLClient
             'POST',
             '/v2/glossaries',
             [
-                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_JSON => ClientUtils::encodeJson($params),
                 HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
             ]
         );
@@ -558,7 +558,7 @@ class DeepLClient
             'POST',
             '/v2/glossaries',
             [
-                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_JSON => ClientUtils::encodeJson($params),
                 HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
             ]
         );
@@ -1019,7 +1019,7 @@ class DeepLClient
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             $path,
-            [HttpClientWrapper::OPTION_JSON => json_encode($params)]
+            [HttpClientWrapper::OPTION_JSON => ClientUtils::encodeJson($params)]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -1485,7 +1485,7 @@ class DeepLClient
         foreach ($options[MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
-        return json_encode((object)$params);
+        return ClientUtils::encodeJson((object)$params);
     }
 
     /**
@@ -1673,7 +1673,7 @@ class DeepLClient
         foreach ($options[SpokenTermsOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
-        return json_encode((object)$params);
+        return ClientUtils::encodeJson((object)$params);
     }
 
     /**
@@ -2105,7 +2105,7 @@ class DeepLClient
         foreach ($options[StyleRuleOptions::EXTRA_BODY_PARAMETERS] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
-        return json_encode((object)$params);
+        return ClientUtils::encodeJson((object)$params);
     }
 
     /**
@@ -2265,7 +2265,7 @@ class DeepLClient
         foreach ($options[$extraKey] ?? [] as $key => $value) {
             $params[$key] = $value;
         }
-        return json_encode((object)$params);
+        return ClientUtils::encodeJson((object)$params);
     }
 
     /**
@@ -2520,7 +2520,7 @@ class DeepLClient
             'POST',
             '/v3/translation_memories/import',
             [
-                HttpClientWrapper::OPTION_JSON => json_encode($params),
+                HttpClientWrapper::OPTION_JSON => ClientUtils::encodeJson($params),
                 HttpClientWrapper::OPTION_RETRY_ONLY_UNPROCESSED => true,
             ]
         );

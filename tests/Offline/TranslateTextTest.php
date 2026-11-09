@@ -394,6 +394,17 @@ class TranslateTextTest extends OfflineTestCase
         ];
     }
 
+    public function testRejectsATextThatCannotBeJsonEncodedWithoutRequest(): void
+    {
+        try {
+            $this->makeDeepLClient()->translateText("\xB1", null, 'de');
+            $this->fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString('Failed to JSON-encode', $exception->getMessage());
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testParsesTranslationResults(): void
     {
         $this->reply(['translations' => [[

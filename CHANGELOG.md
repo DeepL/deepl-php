@@ -260,6 +260,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LanguageCode::standardizeLanguageCode()` and `removeRegionalVariant()`
   remain.
 
+### Fixed
+- Every function that sends a JSON request body, such as `translateText()`,
+  throws an `\InvalidArgumentException` (`Failed to JSON-encode the request
+  body: ...`) before any request when a value cannot be JSON-encoded (invalid
+  UTF-8, INF/NAN), instead of sending an empty body that the API rejects.
+
 ## [1.21.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
 Translation memories, style rules and multilingual glossaries gained many options and fixes.
