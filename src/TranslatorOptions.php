@@ -118,6 +118,8 @@ class TranslatorOptions
     /**
      * Throws if the options array passed to the client constructor contains an option key that is not one of the
      * constants of this class.
+     * @internal Not part of the public API; may change without notice. The DeepLClient and DeepLAdminClient
+     * constructors call it.
      * @throws \InvalidArgumentException For an unknown option key.
      */
     public static function checkOptionKeys(array $options): void
