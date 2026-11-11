@@ -18,21 +18,25 @@ For the full list of changes, see the [CHANGELOG](CHANGELOG.md).
 ## Quick checklist
 
 1. Upgrade to PHP 8.0 or later ([Requirements](#requirements)).
-2. Replace `Translator` with `DeepLClient` ([section](#translator-is-removed)).
+2. Replace `Translator` with `DeepLClient`, and `isAuthKeyFreeAccount()` with `isFreeAccountAuthKey()`
+   ([section](#translator-is-removed)).
 3. Replace `LanguageCode::GERMAN` and the other language constants with strings
    ([section](#language-code-constants-are-removed)).
-4. Rename the document step methods ([section](#document-step-methods-are-renamed)).
-5. Replace `STYLE_ID` and `TRANSLATION_MEMORY_ID` with `STYLE_RULE` and `TRANSLATION_MEMORY`
-   ([section](#option-constants)).
-6. Catch `\InvalidArgumentException` as well as `DeepLException`
-   ([section](#argument-errors-throw-invalidargumentexception)).
-7. Remove unknown keys from option arrays; they now throw
-   ([section](#unknown-option-keys-throw)).
-8. Check code that depends on retries of create functions
-   ([section](#retries-of-functions-that-create-resources)).
-9. Update calls to `updateMultilingualGlossary()` and
+4. Rename the document step methods, and drop the document minification option and classes
+   ([documents](#document-step-methods-are-renamed)).
+5. Replace the removed option and resource constants (`STYLE_ID`, `TRANSLATION_MEMORY_ID`,
+   `LanguageResource::RESOURCE_*`, `LanguageSupport::INCLUDE_*`, translate constants on
+   `RephraseTextOptions`) ([options](#option-constants), [rephrase](#rephrasetext-options)).
+6. Replace removed glossary APIs: `getMultilingualGlossaryEntries()`,
+   `GlossaryNotFoundException`, and the changed `updateMultilingualGlossary()` and
    `deleteMultilingualGlossaryDictionary()` ([section](#glossaries)).
-10. Update uses of `Usage`, `StyleRuleInfo::$configuredRules` and translation memory helpers
+7. Catch `\InvalidArgumentException` as well as `DeepLException`
+   ([section](#argument-errors-throw-invalidargumentexception)).
+8. Remove unknown keys from option arrays and send `formality` and `split_sentences` in lower case
+   ([unknown keys](#unknown-option-keys-throw), [values](#formality-and-split_sentences-are-sent-as-given)).
+9. Check code that depends on retries of create functions
+   ([section](#retries-of-functions-that-create-resources)).
+10. Update uses of `Usage`, `StyleRuleInfo::$configuredRules` and the translation memory helpers
     ([usage](#usage), [style rules](#style-rules), [translation memories](#translation-memories)).
 
 ## Client and options
@@ -300,6 +304,12 @@ The parameters of `waitUntilTranslationMemoryJobDone()` and `exportTranslationMe
 are named `$options` and take seconds or `[WaitOptions::TIMEOUT => seconds]`. Named arguments need
 the new name: `timeout: 300` becomes `options: 300`.
 
+Two further parameters were renamed to `$options`, so PHP 8 named arguments break too:
+`importTranslationMemoryFromFilepath($f, displayName: 'TM')` becomes
+`importTranslationMemoryFromFilepath($f, options: 'TM')` (or pass the options array), and
+`createTranslationMemoryImport($n, $len, contentType: 'text/csv')` becomes
+`createTranslationMemoryImport($n, $len, options: 'text/csv')`.
+
 ### Job status
 
 - `TranslationMemoryJob::done()` and `TranslationMemoryJobResult::done()` are true only for
@@ -370,7 +380,8 @@ Functions that create a resource retry only when the request was not processed: 
 failure, a refused connection or a connect timeout. A 5xx response, a read timeout or a reset
 connection is no longer retried, and `shouldRetry` on the exception is `false` in those cases.
 This covers `translateDocumentUpload()`, the `create*` glossary, spoken terms, style rule, style
-profile and translation memory functions, and `createDeveloperKey()`. With a custom HTTP client
+profile and translation memory functions. `createDeveloperKey()` already retried this way in
+1.21.0; for it only `shouldRetry` changes: it is now `false` after a 5xx, a timeout after connecting or a reset connection. With a custom HTTP client
 only HTTP 429 is retried. After such an error, check whether the resource exists before creating
 it again.
 
@@ -381,8 +392,8 @@ create functions. If every attempt fails, `ConnectionException::$shouldRetry` is
 
 ## Types and signatures
 
-These changes only matter if you subclass `DeepLClient` and override the methods, or call them
-with unusual arguments.
+Unless noted, these changes only matter if you subclass `DeepLClient` and override the methods,
+or call them with unusual arguments.
 
 - A trailing `array $options = []` was added to `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `replaceMultilingualGlossaryDictionary()`,
@@ -395,7 +406,8 @@ with unusual arguments.
 - `createTranslationMemoryImport()` takes `$options` as its third parameter: an array
   (`CreateTranslationMemoryImportOptions`) or, as before, the content type string.
 - The protected `DeepLClient::checkStatusCode()` no longer has the `$usingGlossary` parameter.
-- `DeepLClient::buildRephraseBodyParams()` is private.
+- `DeepLClient::buildRephraseBodyParams()` was public and is now private; any direct call fails.
+  Call `rephraseText()` instead.
 - `GlossaryUtils` is `@internal`. Use `GlossaryEntries::fromTsv()`, `fromEntries()` and
   `convertToTsv()`.
 
@@ -405,8 +417,7 @@ These were public by accident and are not part of the API. They changed or were 
 notice in this release:
 
 - `ClientUtils::checkStatusCode()` lost its `$usingGlossary` parameter.
-- `HttpClientWrapper`: the destructor was removed and the constant `OPTION_RETRY_ONLY_UNPROCESSED`
-  was added.
+- `HttpClientWrapper`: the destructor was removed.
 - `TranslatorOptions::isValid()` no longer returns false for unknown keys; the constructor throws
   earlier through `TranslatorOptions::checkOptionKeys()`.
 - `GlossaryUtils` is marked `@internal`; see [Types and signatures](#types-and-signatures).
