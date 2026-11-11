@@ -35,6 +35,9 @@ composer require deeplcom/deepl-php
 
 The library officially supports PHP 8.0 and later.
 
+If you are upgrading from 1.x, see [Upgrading to 2.0.0](upgrading_to_v2.md) for the
+breaking changes.
+
 Starting in 2024, we will drop support for older PHP versions that have reached
 official end-of-life. You can find the PHP versions and support timelines 
 [here][php-version-list].

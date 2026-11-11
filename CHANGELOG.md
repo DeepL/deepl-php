@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes since 1.21.0.
+
 ### Added
 - Added a trailing options array with
   `MultilingualGlossaryOptions::EXTRA_BODY_PARAMETERS` to
@@ -87,6 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The protected `DeepLClient::checkStatusCode()` no longer has the third
   parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
   receive `$usingGlossary`; the SDK calls it with two arguments.
+- The internal `ClientUtils::checkStatusCode()` no longer has the third
+  parameter `$usingGlossary` either. `ClientUtils` and `HttpClientWrapper` are
+  not part of the public API.
 - `StyleRuleInfo::$configuredRules` is the `configured_rules` array as the
   API returns it (category => rule => value, snake_case keys) instead of a
   `ConfiguredRules` object; categories the SDK did not know are no longer
