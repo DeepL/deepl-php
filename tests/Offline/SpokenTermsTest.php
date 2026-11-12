@@ -72,6 +72,44 @@ class SpokenTermsTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
+    public function testRejectsAnEmptyLanguageCodeBeforeSending(): void
+    {
+        $client = $this->makeDeepLClient();
+        $noLang = new SpokenTermsEntries('en', ['a']);
+        $noLang->lang = '';
+        $nullLang = new SpokenTermsEntries('en', ['a']);
+        $nullLang->lang = null;
+
+        foreach ([
+            function () {
+                new SpokenTermsEntries('', ['a']);
+            },
+            function () use ($client, $noLang) {
+                $client->createSpokenTerms('My terms', [$noLang]);
+            },
+            function () use ($client, $noLang) {
+                $client->updateSpokenTerms('sid', [SpokenTermsOptions::TERM_LISTS => [$noLang]]);
+            },
+            function () use ($client, $nullLang) {
+                $client->replaceSpokenTermsList('sid', $nullLang);
+            },
+            function () use ($client) {
+                $client->getSpokenTermsEntries('sid', '');
+            },
+            function () use ($client) {
+                $client->deleteSpokenTermsList('sid', '');
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('lang must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testUrlEncodesTheSpokenTermsIdInEveryPath(): void
     {
         $this->reply(self::INFO);
@@ -240,6 +278,7 @@ class SpokenTermsTest extends OfflineTestCase
             'id is not a string' => ['get', ['spoken_terms_id' => 5] + $info],
             'term list is not an object' => ['get', ['term_lists' => ['en']] + $info],
             'entries is not a string' => ['entries', ['lang' => 'en', 'entries' => ['a']]],
+            'lang is empty' => ['entries', ['lang' => '', 'entries' => 'a']],
             'entries body is not an object' => ['entries', '"a"'],
             'term list body is not an object' => ['replace', '"a"'],
         ];

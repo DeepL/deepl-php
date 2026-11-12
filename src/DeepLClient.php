@@ -1611,10 +1611,12 @@ class DeepLClient
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
      * @param string $lang Language code of the term list, e.g. "en".
      * @return SpokenTermsEntries The terms of the list.
+     * @throws \InvalidArgumentException If the language code is empty.
      * @throws DeepLException
      */
     public function getSpokenTermsEntries($spokenTerms, string $lang): SpokenTermsEntries
     {
+        ClientUtils::checkLanguageCode($lang, 'lang');
         $query = ClientUtils::buildQuery(['lang' => $lang]);
         $url = self::spokenTermsPath($spokenTerms) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
@@ -1664,10 +1666,12 @@ class DeepLClient
      * Deletes the term list of one language from a spoken terms collection.
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
      * @param string $lang Language code of the term list to delete, e.g. "en".
+     * @throws \InvalidArgumentException If the language code is empty.
      * @throws DeepLException
      */
     public function deleteSpokenTermsList($spokenTerms, string $lang): void
     {
+        ClientUtils::checkLanguageCode($lang, 'lang');
         $query = ClientUtils::buildQuery(['lang' => $lang]);
         $url = self::spokenTermsPath($spokenTerms) . "/term-lists?$query";
         $response = $this->client->sendRequestWithBackoff('DELETE', $url);
@@ -1726,6 +1730,7 @@ class DeepLClient
      */
     private static function spokenTermsEntriesToObject(SpokenTermsEntries $entries): array
     {
+        ClientUtils::checkLanguageCode($entries->lang, 'lang');
         $terms = [];
         foreach ($entries->entries as $term) {
             $trimmed = trim($term);

@@ -20,9 +20,11 @@ class SpokenTermsEntries
     /**
      * @param string $lang Language code of the terms, e.g. "en".
      * @param string[] $entries The terms, one string per term.
+     * @throws \InvalidArgumentException If the language code is empty.
      */
     public function __construct(string $lang, array $entries)
     {
+        ClientUtils::checkLanguageCode($lang, 'lang');
         $this->lang = $lang;
         $this->entries = $entries;
     }
@@ -35,8 +37,8 @@ class SpokenTermsEntries
         $object = ParsingUtils::decodeJson($content);
         $lang = $object['lang'] ?? '';
         $entries = $object['entries'] ?? '';
-        if (!is_string($lang) || !is_string($entries)) {
-            throw ParsingUtils::invalidContent('Expected lang and entries to be strings in the response');
+        if (!is_string($lang) || $lang === '' || !is_string($entries)) {
+            throw ParsingUtils::invalidContent('Expected a non-empty lang and string entries in the response');
         }
         $terms = array_values(array_filter(explode("\n", $entries), function (string $line) {
             return $line !== '';

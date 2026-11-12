@@ -762,6 +762,8 @@ arrays of strings. `createSpokenTerms()`, `updateSpokenTerms()` and
 `replaceSpokenTermsList()` trim each term and check it like a glossary term
 before sending anything: a term that is blank or contains a control character
 such as a newline throws an `InvalidArgumentException`. The trimmed terms are sent.
+An empty language code, also for `getSpokenTermsEntries()` and
+`deleteSpokenTermsList()`, throws an `InvalidArgumentException`.
 
 `updateSpokenTerms()` takes its changes as an options array with the keys of
 `SpokenTermsOptions`: `NAME` (new name) and `TERM_LISTS` (an array of
