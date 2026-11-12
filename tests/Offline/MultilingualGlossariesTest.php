@@ -13,6 +13,8 @@ use DeepL\MultilingualGlossaryDictionaryEntries;
 use DeepL\MultilingualGlossaryDictionaryInfo;
 use DeepL\MultilingualGlossaryInfo;
 use DeepL\MultilingualGlossaryOptions;
+use DeepL\SpokenTerms;
+use DeepL\StyleProfile;
 use DeepL\DeepLClient;
 
 class MultilingualGlossariesTest extends OfflineTestCase
@@ -617,5 +619,37 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->assertNotRetriedAfterAServerError(function (DeepLClient $client) {
             $client->createMultilingualGlossaryFromCsv('name', 'en', 'de', "a,b\n");
         });
+    }
+
+    public function testRaisesNoPhpWarningForANullResourceObject(): void
+    {
+        $messages = [];
+        set_error_handler(function (int $errno, string $message) use (&$messages): bool {
+            $messages[] = $message;
+            return true;
+        });
+        try {
+            foreach ([
+                function () {
+                    MultilingualGlossaryInfo::getGlossaryId(null);
+                },
+                function () {
+                    SpokenTerms::getSpokenTermsId(null);
+                },
+                function () {
+                    StyleProfile::getStyleProfileId(null);
+                },
+            ] as $call) {
+                try {
+                    $call();
+                    $this->fail('expected an InvalidArgumentException');
+                } catch (\InvalidArgumentException $exception) {
+                    $this->assertStringContainsString('must be a non-empty string', $exception->getMessage());
+                }
+            }
+        } finally {
+            restore_error_handler();
+        }
+        $this->assertSame([], $messages);
     }
 }

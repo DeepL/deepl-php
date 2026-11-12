@@ -247,7 +247,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\TypeError` before. The `GLOSSARY`, `GLOSSARY_IDS`, `STYLE_RULE`,
   `STYLE_PROFILE` and `TRANSLATION_MEMORY` options of the translate and
   document functions throw it for an empty ID or an object without an ID
-  instead of sending it. `exportTranslationMemoryToFilepath()` throws a
+  instead of sending it. `getGlossaryId()`, `getSpokenTermsId()` and
+  `getStyleProfileId()` no longer raise a PHP warning for `null`.
+  `exportTranslationMemoryToFilepath()` throws a
   `TranslationMemoryJobException` whose previous exception is the
   `\InvalidArgumentException`. Catch `\InvalidArgumentException` instead of
   `\TypeError`.

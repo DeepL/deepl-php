@@ -44,7 +44,7 @@ class MultilingualGlossaryInfo
      */
     public static function getGlossaryId($glossary): string
     {
-        $glossaryId = is_string($glossary) ? $glossary : $glossary->glossaryId;
+        $glossaryId = is_string($glossary) ? $glossary : ($glossary->glossaryId ?? null);
         if (!is_string($glossaryId) || $glossaryId === '') {
             throw new \InvalidArgumentException('glossaryId must be a non-empty string');
         }

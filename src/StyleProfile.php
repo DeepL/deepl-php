@@ -74,8 +74,8 @@ class StyleProfile
      */
     public static function getStyleProfileId($styleProfile): string
     {
-        $styleProfileId = is_string($styleProfile) ? $styleProfile : $styleProfile->styleProfileId;
-        if (strlen($styleProfileId) === 0) {
+        $styleProfileId = is_string($styleProfile) ? $styleProfile : ($styleProfile->styleProfileId ?? null);
+        if (!is_string($styleProfileId) || $styleProfileId === '') {
             throw new \InvalidArgumentException('styleProfileId must be a non-empty string');
         }
         return $styleProfileId;

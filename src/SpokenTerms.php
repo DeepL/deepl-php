@@ -39,7 +39,7 @@ class SpokenTerms
      */
     public static function getSpokenTermsId($spokenTerms): string
     {
-        $spokenTermsId = is_string($spokenTerms) ? $spokenTerms : $spokenTerms->spokenTermsId;
+        $spokenTermsId = is_string($spokenTerms) ? $spokenTerms : ($spokenTerms->spokenTermsId ?? null);
         if (!is_string($spokenTermsId) || $spokenTermsId === '') {
             throw new \InvalidArgumentException('spokenTermsId must be a non-empty string');
         }
