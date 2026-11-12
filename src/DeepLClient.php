@@ -1113,6 +1113,7 @@ class DeepLClient
      * @param string $csvContent String containing CSV content.
      * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Details about the created glossary.
+     * @throws \InvalidArgumentException If a language code is empty.
      * @throws DeepLException
      */
     public function createMultilingualGlossaryFromCsv(
@@ -1230,7 +1231,8 @@ class DeepLClient
      * @param string $csvContent String containing CSV content.
      * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
-     * @throws \InvalidArgumentException If the CSV content is empty, checked before any request is sent.
+     * @throws \InvalidArgumentException If a language code or the CSV content is empty, checked before any request
+     *  is sent.
      * @throws DeepLException
      */
     public function updateMultilingualGlossaryDictionaryFromCsv(
@@ -1294,7 +1296,8 @@ class DeepLClient
      * @param string $csvContent String containing CSV content.
      * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
-     * @throws \InvalidArgumentException If the CSV content is empty, checked before any request is sent.
+     * @throws \InvalidArgumentException If a language code or the CSV content is empty, checked before any request
+     *  is sent.
      * @throws DeepLException
      */
     public function replaceMultilingualGlossaryDictionaryFromCsv(
@@ -1368,6 +1371,7 @@ class DeepLClient
      * @param string $targetLang Language code of the glossary target terms.
      * @return MultilingualGlossaryDictionaryEntries The language pair and entries of the dictionary.
      * @throws NotFoundException If the glossary or the dictionary does not exist.
+     * @throws \InvalidArgumentException If a language code is empty.
      * @throws DeepLException
      */
     public function getMultilingualGlossaryDictionaryEntries(
@@ -1389,6 +1393,8 @@ class DeepLClient
      */
     private function requestMultilingualGlossaryEntries($glossary, string $sourceLang, string $targetLang): array
     {
+        ClientUtils::checkLanguageCode($sourceLang, 'sourceLang');
+        ClientUtils::checkLanguageCode($targetLang, 'targetLang');
         $query = ClientUtils::buildQuery(['source_lang' => $sourceLang, 'target_lang' => $targetLang]);
         $url = self::multilingualGlossaryPath($glossary) . "/entries?$query";
         $response = $this->client->sendRequestWithBackoff('GET', $url);
@@ -1464,6 +1470,8 @@ class DeepLClient
 
     private static function csvDictionaryObject(string $sourceLang, string $targetLang, string $csvContent): array
     {
+        ClientUtils::checkLanguageCode($sourceLang, 'sourceLang');
+        ClientUtils::checkLanguageCode($targetLang, 'targetLang');
         return [
             'source_lang' => $sourceLang,
             'target_lang' => $targetLang,

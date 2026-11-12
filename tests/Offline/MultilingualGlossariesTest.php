@@ -457,6 +457,50 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $this->assertRequestCount(0);
     }
 
+    public function testThrowsForAnEmptyLanguageCodeBeforeSending(): void
+    {
+        $client = $this->makeDeepLClient();
+        $noTarget = $this->dictionary();
+        $noTarget->targetLang = '';
+        $noSource = $this->dictionary();
+        $noSource->sourceLang = null;
+
+        foreach ([
+            ['sourceLang', function () {
+                new MultilingualGlossaryDictionaryEntries('', 'de', ['Hello' => 'Hallo']);
+            }],
+            ['targetLang', function () {
+                new MultilingualGlossaryDictionaryEntries('en', '', ['Hello' => 'Hallo']);
+            }],
+            ['targetLang', function () use ($client, $noTarget) {
+                $client->replaceMultilingualGlossaryDictionary('gid', $noTarget);
+            }],
+            ['sourceLang', function () use ($client, $noSource) {
+                $client->createMultilingualGlossary('name', [$noSource]);
+            }],
+            ['sourceLang', function () use ($client) {
+                $client->createMultilingualGlossaryFromCsv('name', '', 'de', "Hello,Hallo\n");
+            }],
+            ['targetLang', function () use ($client) {
+                $client->updateMultilingualGlossaryDictionaryFromCsv('gid', 'en', '', "Hello,Hallo\n");
+            }],
+            ['sourceLang', function () use ($client) {
+                $client->replaceMultilingualGlossaryDictionaryFromCsv('gid', '', 'de', "Hello,Hallo\n");
+            }],
+            ['targetLang', function () use ($client) {
+                $client->getMultilingualGlossaryDictionaryEntries('gid', 'en', '');
+            }],
+        ] as [$name, $call]) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame("$name must be a non-empty string", $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testSendsOnlyTheNameWhenRenaming(): void
     {
         $this->reply(self::GLOSSARY);

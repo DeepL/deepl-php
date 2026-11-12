@@ -89,6 +89,18 @@ class ClientUtils
     }
 
     /**
+     * @param mixed $lang
+     * @param bool $nullable True for an optional language code, where null means unset.
+     * @throws \InvalidArgumentException If $lang is an empty string, or null and not $nullable.
+     */
+    public static function checkLanguageCode($lang, string $name, bool $nullable = false): void
+    {
+        if ($lang === '' || ($lang === null && !$nullable)) {
+            throw new \InvalidArgumentException("$name must be a non-empty string");
+        }
+    }
+
+    /**
      * Returns the value of the header with the given name, compared case-insensitively, or null if absent.
      */
     public static function findHeader(array $headers, string $name): ?string

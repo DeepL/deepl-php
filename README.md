@@ -562,14 +562,17 @@ $myCsvGlossary = $deeplClient->createMultilingualGlossaryFromCsv(
 ```
 
 The [API documentation][api-docs-csv-format] explains the expected CSV format in
-detail.
+detail. An empty language code throws an `InvalidArgumentException` before any
+request is sent.
 
 `MultilingualGlossaryDictionaryEntries` trims surrounding whitespace from every
 source and target term, then rejects empty terms, terms containing control
 characters, and source terms that are duplicates after trimming. The entries
 are trimmed and checked again when they are sent, so a dictionary whose
 `entries` were changed, or one returned by the API, is sent trimmed; one without
-entries throws an `InvalidArgumentException` without sending a request.
+entries throws an `InvalidArgumentException` without sending a request. An
+empty source or target language code throws an `InvalidArgumentException` too,
+when the object is created and when it is sent.
 
 The entries can also be given as `GlossaryEntries`, for example
 `new MultilingualGlossaryDictionaryEntries('en', 'de', GlossaryEntries::fromEntries([...]))`;
@@ -638,6 +641,9 @@ $glossaryDict = $deeplClient->getMultilingualGlossaryDictionaryEntries($myGlossa
 print_r($glossaryDict->entries->getEntries()); // Array ( [artist] => Maler, [prize] => Gewinn)
 ```
 
+An empty language code throws an `InvalidArgumentException` before any request
+is sent.
+
 #### Editing a glossary
 
 Functions to edit stored glossaries are also provided:
@@ -660,8 +666,9 @@ Functions to edit stored glossaries are also provided:
   dictionary of that language pair, like `updateMultilingualGlossary()`.
 - `updateMultilingualGlossaryDictionaryFromCsv()` does the same with source and
   target language codes and CSV data, as for
-  `createMultilingualGlossaryFromCsv()`. Empty or whitespace-only CSV data
-  throws an `InvalidArgumentException` before any request is sent.
+  `createMultilingualGlossaryFromCsv()`. An empty language code, or empty or
+  whitespace-only CSV data, throws an `InvalidArgumentException` before any
+  request is sent.
 - `replaceMultilingualGlossaryDictionary()` takes a glossary ID or 
   `MultilingualGlossaryInfo` object, plus a 
   `MultilingualGlossaryDictionaryEntries` object representing the updated
@@ -669,8 +676,9 @@ Functions to edit stored glossaries are also provided:
   passed in as a parameter, completely replacing any pre-existing entries for 
   that language pair.
 - `replaceMultilingualGlossaryDictionaryFromCsv()` does the same with source and
-  target language codes and CSV data. Empty or whitespace-only CSV data throws
-  an `InvalidArgumentException` before any request is sent.
+  target language codes and CSV data. An empty language code, or empty or
+  whitespace-only CSV data, throws an `InvalidArgumentException` before any
+  request is sent.
 
 ```php
 // Update glossary

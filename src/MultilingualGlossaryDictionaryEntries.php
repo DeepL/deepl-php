@@ -26,10 +26,12 @@ class MultilingualGlossaryDictionaryEntries
      * @param array|GlossaryEntries $entries Source-target entry pairs, as an associative array or GlossaryEntries.
      *  Both terms are trimmed of surrounding whitespace, then validated: they must not be empty or contain
      *  control characters.
-     * @throws \InvalidArgumentException If the entries are empty or a term is invalid.
+     * @throws \InvalidArgumentException If a language code is empty, the entries are empty or a term is invalid.
      */
     public function __construct(string $sourceLang, string $targetLang, $entries)
     {
+        ClientUtils::checkLanguageCode($sourceLang, 'sourceLang');
+        ClientUtils::checkLanguageCode($targetLang, 'targetLang');
         $this->sourceLang = $sourceLang;
         $this->targetLang = $targetLang;
         if ($entries instanceof GlossaryEntries) {
@@ -130,11 +132,13 @@ class MultilingualGlossaryDictionaryEntries
 
     /**
      * Returns the dictionary as sent to the API. The entries are trimmed and validated again, as they may have
-     * been changed after construction or come from the API.
-     * @throws \InvalidArgumentException If the entries are empty or a term is invalid.
+     * been changed after construction or come from the API. The language codes are checked again too.
+     * @throws \InvalidArgumentException If a language code is empty, the entries are empty or a term is invalid.
      */
     public function toObject(): array
     {
+        ClientUtils::checkLanguageCode($this->sourceLang, 'sourceLang');
+        ClientUtils::checkLanguageCode($this->targetLang, 'targetLang');
         return [
             "source_lang" => $this->sourceLang,
             "target_lang" => $this->targetLang,
