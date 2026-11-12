@@ -240,6 +240,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `importTranslationMemoryFromFilepath($file, [ImportTranslationMemoryOptions::DISPLAY_NAME => 'Legal TM', ImportTranslationMemoryOptions::TIMEOUT => 300])`.
   A third argument throws a `TranslationMemoryJobException` whose previous
   exception is an `\InvalidArgumentException`, before any request.
+- Breaking: the style rule functions that take a `StyleRuleInfo`, the
+  translation memory functions that take a `TranslationMemoryInfo` or
+  `TranslationMemoryJob`, throw an `\InvalidArgumentException` for an object,
+  or `null`, without an ID, before any request is sent. They threw a
+  `\TypeError` before. The `GLOSSARY`, `GLOSSARY_IDS`, `STYLE_RULE`,
+  `STYLE_PROFILE` and `TRANSLATION_MEMORY` options of the translate and
+  document functions throw it for an empty ID or an object without an ID
+  instead of sending it. `exportTranslationMemoryToFilepath()` throws a
+  `TranslationMemoryJobException` whose previous exception is the
+  `\InvalidArgumentException`. Catch `\InvalidArgumentException` instead of
+  `\TypeError`.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

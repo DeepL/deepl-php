@@ -69,10 +69,15 @@ class TranslationMemoryJob
 
     /**
      * @param string|TranslationMemoryJob $job Job ID or TranslationMemoryJob.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getJobId($job): string
     {
-        return is_string($job) ? $job : $job->jobId;
+        $jobId = is_string($job) ? $job : ($job->jobId ?? null);
+        if (!is_string($jobId) || $jobId === '') {
+            throw new \InvalidArgumentException('jobId must be a non-empty string');
+        }
+        return $jobId;
     }
 
     /**

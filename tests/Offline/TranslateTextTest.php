@@ -377,6 +377,17 @@ class TranslateTextTest extends OfflineTestCase
     public static function provideRejectedArguments(): array
     {
         $glossary = new GlossaryInfo('gid', 'name', true, 'en', 'de', new \DateTime(), 1);
+        $noIdGlossary = new GlossaryInfo('gid', 'name', true, 'en', 'de', new \DateTime(), 1);
+        $noIdGlossary->glossaryId = null;
+        $emptyIdGlossary = new MultilingualGlossaryInfo('gid', 'name', new \DateTime(), []);
+        $emptyIdGlossary->glossaryId = '';
+        $noIdStyleRule = new StyleRuleInfo('sid', 'n', new \DateTime(), new \DateTime(), 'en', 1);
+        $noIdStyleRule->styleId = null;
+        $now = new \DateTime();
+        $emptyIdStyleProfile = new StyleProfile('pid', 'n', null, null, [], [], [], false, $now, $now);
+        $emptyIdStyleProfile->styleProfileId = '';
+        $noIdTranslationMemory = new TranslationMemoryInfo('tmid', 'n', 'en', [], 0);
+        $noIdTranslationMemory->translationMemoryId = null;
         return [
             'empty target language' => ['a', null, [], 'langCode must be a non-empty string', ''],
             'empty source language' => ['a', '', [], 'langCode must be a non-empty string'],
@@ -405,6 +416,44 @@ class TranslateTextTest extends OfflineTestCase
             ],
             'translation_memory of the wrong type' => [
                 'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY => 5], 'translation_memory must be',
+            ],
+            'glossary object without ID' => [
+                'Hello', 'en', [TranslateTextOptions::GLOSSARY => $noIdGlossary],
+                'glossaryId must be a non-empty string',
+            ],
+            'glossary_ids entry with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::GLOSSARY_IDS => ['a', $emptyIdGlossary]],
+                'glossaryId must be a non-empty string',
+            ],
+            'style_rule object without ID' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_RULE => $noIdStyleRule],
+                'styleId must be a non-empty string',
+            ],
+            'style_profile object with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE => $emptyIdStyleProfile],
+                'styleProfileId must be a non-empty string',
+            ],
+            'translation_memory object without ID' => [
+                'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY => $noIdTranslationMemory],
+                'translationMemoryId must be a non-empty string',
+            ],
+            'glossary with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::GLOSSARY => ''], 'glossaryId must be a non-empty string',
+            ],
+            'glossary_ids entry with an empty string' => [
+                'Hello', 'en', [TranslateTextOptions::GLOSSARY_IDS => ['a', '']],
+                'glossaryId must be a non-empty string',
+            ],
+            'style_rule with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_RULE => ''], 'styleId must be a non-empty string',
+            ],
+            'style_profile with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE => ''],
+                'styleProfileId must be a non-empty string',
+            ],
+            'translation_memory with an empty ID' => [
+                'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY => ''],
+                'translationMemoryId must be a non-empty string',
             ],
             'threshold without translation memory' => [
                 'Hello',

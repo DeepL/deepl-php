@@ -62,10 +62,15 @@ class StyleRuleInfo
 
     /**
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getStyleId($styleRule): string
     {
-        return is_string($styleRule) ? $styleRule : $styleRule->styleId;
+        $styleId = is_string($styleRule) ? $styleRule : ($styleRule->styleId ?? null);
+        if (!is_string($styleId) || $styleId === '') {
+            throw new \InvalidArgumentException('styleId must be a non-empty string');
+        }
+        return $styleId;
     }
 
     /**

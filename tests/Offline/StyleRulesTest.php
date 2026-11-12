@@ -225,6 +225,33 @@ class StyleRulesTest extends OfflineTestCase
         $this->makeDeepLClient()->deleteStyleRuleCustomInstruction('sid', new CustomInstruction('L', 'P'));
     }
 
+    public function testThrowsForAStyleRuleObjectWithoutId(): void
+    {
+        $client = $this->makeDeepLClient();
+        $info = new StyleRuleInfo('sid', 'n', new \DateTime(), new \DateTime(), 'en', 1);
+        $info->styleId = null;
+
+        foreach ([
+            function () use ($client, $info) {
+                $client->getStyleRule($info);
+            },
+            function () use ($client, $info) {
+                $client->createStyleRuleCustomInstruction($info, 'L', 'P');
+            },
+            function () use ($client) {
+                $client->getStyleRule(null);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('styleId must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testAddsExtraBodyParametersLastToStyleRuleBodies(): void
     {
         $this->reply(self::STYLE_RULE, 201);

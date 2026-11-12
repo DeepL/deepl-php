@@ -163,6 +163,60 @@ class TranslationMemoriesTest extends OfflineTestCase
         $this->assertRequest('DELETE', '/v3/translation_memories/tm%2F1', 1);
     }
 
+    public function testThrowsForATranslationMemoryObjectWithoutId(): void
+    {
+        $client = $this->makeDeepLClient();
+        $info = new TranslationMemoryInfo('tm1', 'n', 'en', [], 0);
+        $info->translationMemoryId = null;
+
+        foreach ([
+            function () use ($client, $info) {
+                $client->getTranslationMemory($info);
+            },
+            function () use ($client, $info) {
+                $client->deleteTranslationMemory($info);
+            },
+            function () use ($client) {
+                $client->getTranslationMemory(null);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('translationMemoryId must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
+    public function testThrowsForATranslationMemoryJobObjectWithoutId(): void
+    {
+        $client = $this->makeDeepLClient();
+        $job = new TranslationMemoryJob('job1', 'import', 'translation_memory', []);
+        $job->jobId = null;
+
+        foreach ([
+            function () use ($client, $job) {
+                $client->getTranslationMemoryJob($job);
+            },
+            function () use ($client, $job) {
+                $client->waitUntilTranslationMemoryJobDone($job);
+            },
+            function () use ($client) {
+                $client->getTranslationMemoryJob(null);
+            },
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame('jobId must be a non-empty string', $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testSendsSegmentQueryWithPercentEncodedValues(): void
     {
         $this->reply(['segments' => [], 'segment_count' => 0]);

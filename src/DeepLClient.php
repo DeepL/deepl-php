@@ -687,6 +687,7 @@ class DeepLClient
      *  (document translation); text translation lets the API detect the source language.
      * @return array Associative array of HTTP parameters.
      * @throws DeepLException
+     * @throws \InvalidArgumentException If an ID is empty or an object has none.
      */
     private function buildBodyParams(
         ?string $sourceLang,
@@ -712,9 +713,7 @@ class DeepLClient
             if ($glossaryRequiresSourceLang && !isset($sourceLang)) {
                 throw new \InvalidArgumentException('sourceLang is required if using a glossary');
             }
-            if (!is_string($glossary)) {
-                $glossary = $glossary->glossaryId;
-            }
+            $glossary = self::glossaryReferenceId($glossary);
             $params['glossary_id'] = $glossary;
         }
         if (isset($glossaryIds)) {
@@ -731,11 +730,8 @@ class DeepLClient
             }
             $ids = array_map(
                 function ($glossaryId) {
-                    if (is_string($glossaryId)) {
-                        return $glossaryId;
-                    }
-                    if (is_object($glossaryId) && isset($glossaryId->glossaryId)) {
-                        return $glossaryId->glossaryId;
+                    if (is_string($glossaryId) || is_object($glossaryId)) {
+                        return self::glossaryReferenceId($glossaryId);
                     }
                     throw new \InvalidArgumentException(
                         'Each glossary_ids entry must be a glossary ID string or a ' .
@@ -749,6 +745,19 @@ class DeepLClient
             $params['glossary_ids'] = array_values($ids);
         }
         return $params;
+    }
+
+    /**
+     * @param string|GlossaryInfo|MultilingualGlossaryInfo $glossary
+     * @throws \InvalidArgumentException If the glossary ID is empty or the object has none.
+     */
+    private static function glossaryReferenceId($glossary): string
+    {
+        $glossaryId = is_string($glossary) ? $glossary : ($glossary->glossaryId ?? null);
+        if (!is_string($glossaryId) || $glossaryId === '') {
+            throw new \InvalidArgumentException('glossaryId must be a non-empty string');
+        }
+        return $glossaryId;
     }
 
     /**
@@ -837,6 +846,7 @@ class DeepLClient
      * @param array $params Parameters for HTTP request.
      * @param array|null $options Options for the translate request.
      * @throws DeepLException
+     * @throws \InvalidArgumentException If an ID is empty or an object has none.
      */
     private function appendStyleRuleAndTranslationMemoryOptions(array &$params, ?array $options): void
     {
@@ -845,30 +855,24 @@ class DeepLClient
         }
         $styleRule = $options[TranslateTextOptions::STYLE_RULE] ?? null;
         if (isset($styleRule)) {
-            if (is_string($styleRule)) {
-                $params['style_id'] = $styleRule;
-            } elseif ($styleRule instanceof StyleRuleInfo) {
-                $params['style_id'] = $styleRule->styleId;
+            if (is_string($styleRule) || $styleRule instanceof StyleRuleInfo) {
+                $params['style_id'] = StyleRuleInfo::getStyleId($styleRule);
             } else {
                 throw new \InvalidArgumentException('style_rule must be a string or StyleRuleInfo object');
             }
         }
         if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
             $styleProfile = $options[TranslateTextOptions::STYLE_PROFILE];
-            if (is_string($styleProfile)) {
-                $params['style_profile_id'] = $styleProfile;
-            } elseif ($styleProfile instanceof StyleProfile) {
-                $params['style_profile_id'] = $styleProfile->styleProfileId;
+            if (is_string($styleProfile) || $styleProfile instanceof StyleProfile) {
+                $params['style_profile_id'] = StyleProfile::getStyleProfileId($styleProfile);
             } else {
                 throw new \InvalidArgumentException('style_profile must be a string or StyleProfile object');
             }
         }
         $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY] ?? null;
         if (isset($tm)) {
-            if (is_string($tm)) {
-                $params['translation_memory_id'] = $tm;
-            } elseif ($tm instanceof TranslationMemoryInfo) {
-                $params['translation_memory_id'] = $tm->translationMemoryId;
+            if (is_string($tm) || $tm instanceof TranslationMemoryInfo) {
+                $params['translation_memory_id'] = TranslationMemoryInfo::getTranslationMemoryId($tm);
             } else {
                 throw new \InvalidArgumentException(
                     'translation_memory must be a string or TranslationMemoryInfo object'

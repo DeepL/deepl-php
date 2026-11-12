@@ -54,10 +54,15 @@ class TranslationMemoryInfo
 
     /**
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or TranslationMemoryInfo.
+     * @throws \InvalidArgumentException If the ID is empty.
      */
     public static function getTranslationMemoryId($translationMemory): string
     {
-        return is_string($translationMemory) ? $translationMemory : $translationMemory->translationMemoryId;
+        $translationMemoryId = is_string($translationMemory) ? $translationMemory : ($translationMemory->translationMemoryId ?? null);
+        if (!is_string($translationMemoryId) || $translationMemoryId === '') {
+            throw new \InvalidArgumentException('translationMemoryId must be a non-empty string');
+        }
+        return $translationMemoryId;
     }
 
     /**
