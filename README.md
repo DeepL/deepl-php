@@ -1088,6 +1088,11 @@ $deeplClient->deleteStyleRuleCustomInstruction($styleRule, $instruction);
 `deleteStyleRuleCustomInstruction()` take the instruction ID or the
 `CustomInstruction` object.
 
+The optional source language of `createStyleRule()` custom instructions
+(`source_language`), `createStyleRuleCustomInstruction()` and
+`updateStyleRuleCustomInstruction()` is not sent when it is `null`; an empty
+string throws an `InvalidArgumentException` before any request is sent.
+
 `createStyleRule()`, `updateStyleRuleName()`, `updateStyleRuleConfiguredRules()`,
 `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
 take an optional trailing options array, with the keys of

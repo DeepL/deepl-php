@@ -1819,6 +1819,7 @@ class DeepLClient
      *     `source_language`); keys are ignored.
      * @param array $options Request options, see \DeepL\CreateStyleRuleOptions: only EXTRA_BODY_PARAMETERS.
      * @return StyleRuleInfo Details about the created style rule.
+     * @throws \InvalidArgumentException If a custom instruction has an empty source_language.
      * @throws DeepLException
      */
     public function createStyleRule(
@@ -1844,6 +1845,11 @@ class DeepLClient
             $params['configured_rules'] = empty($configuredRules) ? (object)$configuredRules : $configuredRules;
         }
         if ($customInstructions !== null) {
+            foreach ($customInstructions as $instruction) {
+                if (is_array($instruction)) {
+                    ClientUtils::checkLanguageCode($instruction['source_language'] ?? null, 'source_language', true);
+                }
+            }
             $params['custom_instructions'] = array_values($customInstructions);
         }
 
@@ -1969,6 +1975,7 @@ class DeepLClient
      * @param array $options Request options, see \DeepL\CreateStyleRuleCustomInstructionOptions: only
      *  EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The created custom instruction.
+     * @throws \InvalidArgumentException If sourceLanguage is an empty string.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
      */
@@ -1990,6 +1997,7 @@ class DeepLClient
         if (strlen($prompt) === 0) {
             throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
+        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage', true);
         $params = [
             'label' => $label,
             'prompt' => $prompt,
@@ -2045,6 +2053,7 @@ class DeepLClient
      * @param array $options Request options, see \DeepL\UpdateStyleRuleCustomInstructionOptions: only
      *  EXTRA_BODY_PARAMETERS.
      * @return CustomInstruction The updated custom instruction.
+     * @throws \InvalidArgumentException If sourceLanguage is an empty string.
      * @throws DeepLException
      * @throws NotFoundException If the style rule or custom instruction is not found.
      */
@@ -2068,6 +2077,7 @@ class DeepLClient
         if (strlen($prompt) === 0) {
             throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
+        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage', true);
         $params = [
             'label' => $label,
             'prompt' => $prompt,

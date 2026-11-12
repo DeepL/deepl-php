@@ -225,6 +225,34 @@ class StyleRulesTest extends OfflineTestCase
         $this->makeDeepLClient()->deleteStyleRuleCustomInstruction('sid', new CustomInstruction('L', 'P'));
     }
 
+    public function testThrowsForAnEmptySourceLanguageBeforeSending(): void
+    {
+        $client = $this->makeDeepLClient();
+
+        foreach ([
+            ['source_language', function () use ($client) {
+                $client->createStyleRule('My rules', 'en', null, [
+                    ['label' => 'L', 'prompt' => 'P', 'source_language' => 'de'],
+                    ['label' => 'L2', 'prompt' => 'P2', 'source_language' => ''],
+                ]);
+            }],
+            ['sourceLanguage', function () use ($client) {
+                $client->createStyleRuleCustomInstruction('sid', 'L', 'P', '');
+            }],
+            ['sourceLanguage', function () use ($client) {
+                $client->updateStyleRuleCustomInstruction('sid', 'i1', 'L', 'P', '');
+            }],
+        ] as [$name, $call]) {
+            try {
+                $call();
+                $this->fail('expected an InvalidArgumentException');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertSame("$name must be a non-empty string", $exception->getMessage());
+            }
+        }
+        $this->assertRequestCount(0);
+    }
+
     public function testThrowsForAStyleRuleObjectWithoutId(): void
     {
         $client = $this->makeDeepLClient();

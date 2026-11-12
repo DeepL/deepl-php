@@ -253,6 +253,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TranslationMemoryJobException` whose previous exception is the
   `\InvalidArgumentException`. Catch `\InvalidArgumentException` instead of
   `\TypeError`.
+- Breaking: an empty language code throws an `\InvalidArgumentException` before
+  any request is sent, instead of being sent to the API: the `sourceLang` and
+  `targetLang` of `MultilingualGlossaryDictionaryEntries` (when it is created
+  and when it is sent), `createMultilingualGlossaryFromCsv()`,
+  `updateMultilingualGlossaryDictionaryFromCsv()`,
+  `replaceMultilingualGlossaryDictionaryFromCsv()` and
+  `getMultilingualGlossaryDictionaryEntries()`; the `lang` of
+  `SpokenTermsEntries`, `getSpokenTermsEntries()` and `deleteSpokenTermsList()`;
+  the `source_language` of the custom instructions passed to
+  `createStyleRule()`, and the `$sourceLanguage` of
+  `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
+  (`null` still means not set). A spoken terms response without `lang` throws an
+  `InvalidContentException`. Catch `\InvalidArgumentException` where you handled
+  the API's error for an empty language code.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
