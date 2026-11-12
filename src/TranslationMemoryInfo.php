@@ -58,7 +58,9 @@ class TranslationMemoryInfo
      */
     public static function getTranslationMemoryId($translationMemory): string
     {
-        $translationMemoryId = is_string($translationMemory) ? $translationMemory : ($translationMemory->translationMemoryId ?? null);
+        $translationMemoryId = is_string($translationMemory)
+            ? $translationMemory
+            : ($translationMemory->translationMemoryId ?? null);
         if (!is_string($translationMemoryId) || $translationMemoryId === '') {
             throw new \InvalidArgumentException('translationMemoryId must be a non-empty string');
         }
