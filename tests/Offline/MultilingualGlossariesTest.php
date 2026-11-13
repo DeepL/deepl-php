@@ -463,7 +463,7 @@ class MultilingualGlossariesTest extends OfflineTestCase
         $noTarget = $this->dictionary();
         $noTarget->targetLang = '';
         $noSource = $this->dictionary();
-        $noSource->sourceLang = null;
+        $noSource->sourceLang = '';
 
         foreach ([
             ['sourceLang', function () {

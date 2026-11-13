@@ -36,8 +36,6 @@ class MultilingualGlossaryDictionaryEntries
         $this->targetLang = $targetLang;
         if ($entries instanceof GlossaryEntries) {
             $entries = $entries->getEntries();
-        } elseif (!is_array($entries)) {
-            throw new \InvalidArgumentException('entries must be an array or GlossaryEntries');
         }
         $this->entries = GlossaryEntries::fromEntries(self::trimAndValidate($entries));
     }

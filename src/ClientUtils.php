@@ -90,12 +90,11 @@ class ClientUtils
 
     /**
      * @param mixed $lang
-     * @param bool $nullable True for an optional language code, where null means unset.
-     * @throws \InvalidArgumentException If $lang is an empty string, or null and not $nullable.
+     * @throws \InvalidArgumentException If $lang is an empty string.
      */
-    public static function checkLanguageCode($lang, string $name, bool $nullable = false): void
+    public static function checkLanguageCode($lang, string $name): void
     {
-        if ($lang === '' || ($lang === null && !$nullable)) {
+        if ($lang === '') {
             throw new \InvalidArgumentException("$name must be a non-empty string");
         }
     }

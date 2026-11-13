@@ -288,6 +288,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cannot be converted). `getUsageAnalytics()` and `getCustomTagUsageAnalytics()`
   raise PHP's `TypeError` for a date that is neither a `DateTimeInterface` nor a
   string.
+- The `MultilingualGlossaryDictionaryEntries` constructor raises PHP's
+  `TypeError` for entries that are neither an array nor a `GlossaryEntries`.
+  `deleteMultilingualGlossaryDictionary()` no longer checks the type of
+  `$sourceLang`. A language code set to `null` on a
+  `MultilingualGlossaryDictionaryEntries` or `SpokenTermsEntries` is no longer
+  rejected by the library; an empty one still is.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

@@ -77,8 +77,6 @@ class SpokenTermsTest extends OfflineTestCase
         $client = $this->makeDeepLClient();
         $noLang = new SpokenTermsEntries('en', ['a']);
         $noLang->lang = '';
-        $nullLang = new SpokenTermsEntries('en', ['a']);
-        $nullLang->lang = null;
 
         foreach ([
             function () {
@@ -89,9 +87,6 @@ class SpokenTermsTest extends OfflineTestCase
             },
             function () use ($client, $noLang) {
                 $client->updateSpokenTerms('sid', [SpokenTermsOptions::TERM_LISTS => [$noLang]]);
-            },
-            function () use ($client, $nullLang) {
-                $client->replaceSpokenTermsList('sid', $nullLang);
             },
             function () use ($client) {
                 $client->getSpokenTermsEntries('sid', '');

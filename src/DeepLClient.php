@@ -1395,6 +1395,8 @@ class DeepLClient
      *  or the MultilingualGlossaryDictionaryInfo of the dictionary, which identifies both languages.
      * @param string|null $targetLang Language code of the dictionary's target terms; required with a source
      *  language code, not allowed with a MultilingualGlossaryDictionaryInfo.
+     * @throws \InvalidArgumentException If targetLang is missing with a language code or given with a
+     *  MultilingualGlossaryDictionaryInfo, or a language code is empty.
      * @throws DeepLException
      */
     public function deleteMultilingualGlossaryDictionary($glossary, $sourceLang, ?string $targetLang = null): void
@@ -1407,7 +1409,7 @@ class DeepLClient
             }
             $targetLang = $sourceLang->targetLang;
             $sourceLang = $sourceLang->sourceLang;
-        } elseif (!is_string($sourceLang) || $targetLang === null) {
+        } elseif ($targetLang === null) {
             throw new \InvalidArgumentException(
                 'must provide a MultilingualGlossaryDictionaryInfo or both sourceLang and targetLang'
             );
@@ -1819,7 +1821,7 @@ class DeepLClient
         if ($customInstructions !== null) {
             foreach ($customInstructions as $instruction) {
                 if (is_array($instruction)) {
-                    ClientUtils::checkLanguageCode($instruction['source_language'] ?? null, 'source_language', true);
+                    ClientUtils::checkLanguageCode($instruction['source_language'] ?? null, 'source_language');
                 }
             }
             $params['custom_instructions'] = array_values($customInstructions);
@@ -1969,7 +1971,7 @@ class DeepLClient
         if (strlen($prompt) === 0) {
             throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
-        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage', true);
+        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage');
         $params = [
             'label' => $label,
             'prompt' => $prompt,
@@ -2049,7 +2051,7 @@ class DeepLClient
         if (strlen($prompt) === 0) {
             throw new \InvalidArgumentException('prompt must be a non-empty string');
         }
-        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage', true);
+        ClientUtils::checkLanguageCode($sourceLanguage, 'sourceLanguage');
         $params = [
             'label' => $label,
             'prompt' => $prompt,
