@@ -281,6 +281,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TranslationMemoryJobException` by the file helpers).
   `createTranslationMemoryImport()` and `importTranslationMemoryFromFilepath()`
   take any options value that is not an array as the positional form.
+- Breaking: `getLanguagesForResource()` no longer checks that the `INCLUDE`
+  option is an array before the request; pass an array of include values. The
+  style profile ID lists convert an entry that is not an ID or one of the
+  expected objects to a string instead of throwing (PHP raises an `Error` if it
+  cannot be converted). `getUsageAnalytics()` and `getCustomTagUsageAnalytics()`
+  raise PHP's `TypeError` for a date that is neither a `DateTimeInterface` nor a
+  string.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

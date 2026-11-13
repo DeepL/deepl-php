@@ -2255,8 +2255,7 @@ class DeepLClient
      * Encodes the JSON body of a style profile request: $params, then the options that are set, then
      * the extra body parameters. An empty body encodes as {}.
      * @param string[] $stringKeys The string option keys the method accepts.
-     * @throws \InvalidArgumentException If an option key is unknown to the method, or an ID list entry is neither
-     *  an ID nor an object of the expected resource class.
+     * @throws \InvalidArgumentException If an option key is unknown to the method.
      */
     private static function buildStyleProfileBody(array $params, array $options, array $stringKeys): string
     {
@@ -2278,7 +2277,7 @@ class DeepLClient
             }
             if ($isIdList) {
                 $params[$key] = array_values(array_map(function ($ref) use ($key, $idListClasses) {
-                    return self::styleProfileComponentId($ref, $key, $idListClasses[$key]);
+                    return self::styleProfileComponentId($ref, $idListClasses[$key]);
                 }, (array)$value));
             } elseif ($key === $boolKey) {
                 $params[$key] = (bool)$value;
@@ -2295,13 +2294,9 @@ class DeepLClient
     /**
      * @param mixed $ref An ID, or an object of one of $classes.
      * @param string[] $classes Resource classes accepted for the option.
-     * @throws \InvalidArgumentException If $ref is an object of another class.
      */
-    private static function styleProfileComponentId($ref, string $option, array $classes): string
+    private static function styleProfileComponentId($ref, array $classes): string
     {
-        if (!is_object($ref)) {
-            return (string)$ref;
-        }
         $idProperties = [
             GlossaryInfo::class => 'glossaryId',
             MultilingualGlossaryInfo::class => 'glossaryId',
@@ -2313,10 +2308,7 @@ class DeepLClient
                 return $ref->{$idProperties[$class]};
             }
         }
-        $names = array_map(function (string $class): string {
-            return substr($class, strlen(__NAMESPACE__) + 1);
-        }, $classes);
-        throw new \InvalidArgumentException("$option entries must be IDs or " . implode(' or ', $names) . ' objects');
+        return (string)$ref;
     }
 
     /**
@@ -2327,6 +2319,7 @@ class DeepLClient
      *  include values, for example [{@see LanguageInclude::BETA}, {@see LanguageInclude::EXTERNAL}]. By default
      *  only stable languages and features are returned.
      * @return LanguageSupport[] Array of LanguageSupport objects containing per-feature support information.
+     * @throws \InvalidArgumentException If the resource is empty or an option key is unknown.
      * @throws DeepLException
      */
     public function getLanguagesForResource(string $resource, ?array $include = null): array
@@ -2339,9 +2332,6 @@ class DeepLClient
         if ($include !== null && $include !== array_values($include)) {
             self::checkOptionKeys($include, GetLanguagesForResourceOptions::class, 'languages');
             $include = $include[GetLanguagesForResourceOptions::INCLUDE] ?? null;
-            if ($include !== null && !is_array($include)) {
-                throw new \InvalidArgumentException('include option must be an array of strings');
-            }
         }
 
         $queryString = '?' . ClientUtils::buildQuery(['resource' => $resource]);

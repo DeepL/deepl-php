@@ -133,17 +133,6 @@ class LanguagesTest extends OfflineTestCase
         ];
     }
 
-    public function testThrowsWhenTheIncludeOptionIsNotAnArray(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('include option must be an array of strings');
-
-        $this->makeDeepLClient()->getLanguagesForResource(
-            LanguageResourceName::GLOSSARY,
-            [GetLanguagesForResourceOptions::INCLUDE => LanguageInclude::BETA]
-        );
-    }
-
     public function testParsesLanguageSupportAndFeatures(): void
     {
         $this->reply(self::LANGUAGES);

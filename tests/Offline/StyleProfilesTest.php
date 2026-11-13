@@ -215,13 +215,6 @@ class StyleProfilesTest extends OfflineTestCase
             function () use ($client) {
                 $client->createStyleProfile('n', [UpdateStyleProfileOptions::NAME => 'other']);
             },
-            function () use ($client) {
-                $client->createStyleProfile('n', [CreateStyleProfileOptions::GLOSSARY_IDS => [new \stdClass()]]);
-            },
-            function () use ($client) {
-                $style = new StyleRuleInfo('s1', 'n', new DateTime(), new DateTime(), 'de', 1);
-                $client->updateStyleProfile('pid', [UpdateStyleProfileOptions::TRANSLATION_MEMORY_IDS => [$style]]);
-            },
         ] as $call) {
             try {
                 $call();

@@ -925,8 +925,9 @@ $languages = $deeplClient->getLanguagesForResource(
 ```
 
 The second parameter is an options array with the `include` option
-(`GetLanguagesForResourceOptions::INCLUDE`). The plain list of include values,
-for example `[LanguageInclude::BETA]`, is also accepted.
+(`GetLanguagesForResourceOptions::INCLUDE`), an array of include values. The
+plain list of include values, for example `[LanguageInclude::BETA]`, is also
+accepted.
 
 The `LanguageResourceName` constants define the resource values
 (`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`, `GLOSSARY`, `VOICE`, `WRITE`,
@@ -1494,8 +1495,9 @@ UTC calendar days, and both the start and the end day are included. Pass
 the library uses the UTC date of that moment, so local midnight in UTC+2
 (`2026-10-20T00:00+02:00`) is sent as `2026-10-19`; your object is not
 modified. The API requires the end date to be after the start date, so a report
-covers at least two days, and at most 366 days after it. Invalid dates throw an
-`InvalidArgumentException` before the request is sent; the API rejects invalid ranges.
+covers at least two days, and at most 366 days after it. A date string that is
+not a valid `YYYY-MM-DD` date throws an `InvalidArgumentException` before the
+request is sent; the API rejects invalid ranges.
 The same rules apply to `getCustomTagUsageAnalytics()`.
 Timestamps in the reports without a time zone are in UTC. Use
 the `groupBy` argument to break the usage down by key

@@ -348,24 +348,19 @@ class DeepLAdminClient
 
     /**
      * @param DateTimeInterface|string $date
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If a date string is not a YYYY-MM-DD date.
      */
     private static function formatDate($date, string $name): string
     {
         if ($date instanceof DateTimeInterface) {
             return (new DateTime('@' . $date->getTimestamp()))->format('Y-m-d');
         }
-        if (is_string($date)) {
-            $parsed = self::parseDate($date);
-            if ($parsed !== false && $parsed->format('Y-m-d') === $date) {
-                return $date;
-            }
-            $actual = "\"$date\"";
-        } else {
-            $actual = gettype($date);
+        $parsed = self::parseDate($date);
+        if ($parsed !== false && $parsed->format('Y-m-d') === $date) {
+            return $date;
         }
         throw new \InvalidArgumentException(
-            "$name must be a DateTimeInterface or a date string in the format YYYY-MM-DD, got $actual"
+            "$name must be a DateTimeInterface or a date string in the format YYYY-MM-DD, got \"$date\""
         );
     }
 }
