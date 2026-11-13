@@ -441,8 +441,8 @@ class DeepLClient
      *     cut short to the deadline, so the wait does not run past the timeout.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
-     * @throws \InvalidArgumentException If an option key other than TIMEOUT is given or the timeout is not a
-     *     number, checked before any request is sent.
+     * @throws \InvalidArgumentException If an option key other than TIMEOUT is given, checked before any request
+     *     is sent.
      * @throws DeepLException If a request fails, the translation fails or the timeout expires.
      */
     public function translateDocumentWaitUntilDone(DocumentHandle $handle, array $options = []): DocumentStatus
@@ -453,9 +453,6 @@ class DeepLClient
             }
         }
         $timeout = $options[TranslateDocumentOptions::TIMEOUT] ?? null;
-        if ($timeout !== null && !is_numeric($timeout)) {
-            throw new \InvalidArgumentException('timeout must be a number of seconds');
-        }
         $startTime = microtime(true);
         $status = $this->translateDocumentGetStatus($handle);
         while (!$status->done() && $status->ok()) {
@@ -730,13 +727,7 @@ class DeepLClient
             }
             $ids = array_map(
                 function ($glossaryId) {
-                    if (is_string($glossaryId) || is_object($glossaryId)) {
-                        return self::glossaryReferenceId($glossaryId);
-                    }
-                    throw new \InvalidArgumentException(
-                        'Each glossary_ids entry must be a glossary ID string or a ' .
-                        'GlossaryInfo/MultilingualGlossaryInfo object'
-                    );
+                    return self::glossaryReferenceId($glossaryId);
                 },
                 $glossaryIds
             );
@@ -764,14 +755,11 @@ class DeepLClient
      * Validates and appends texts to HTTP request parameters.
      * @param array $params Parameters for HTTP request.
      * @param string|string[] $texts User-supplied texts to be checked.
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If a text is empty.
      */
     protected function validateAndAppendTexts(array &$params, $texts)
     {
         foreach (is_array($texts) ? $texts : [$texts] as $text) {
-            if (!is_string($text)) {
-                throw new \InvalidArgumentException('texts parameter must be a string or array of strings');
-            }
             if ($text === '') {
                 throw new \InvalidArgumentException('text must not be empty');
             }
@@ -855,39 +843,23 @@ class DeepLClient
         }
         $styleRule = $options[TranslateTextOptions::STYLE_RULE] ?? null;
         if (isset($styleRule)) {
-            if (is_string($styleRule) || $styleRule instanceof StyleRuleInfo) {
-                $params['style_id'] = StyleRuleInfo::getStyleId($styleRule);
-            } else {
-                throw new \InvalidArgumentException('style_rule must be a string or StyleRuleInfo object');
-            }
+            $params['style_id'] = StyleRuleInfo::getStyleId($styleRule);
         }
         if (isset($options[TranslateTextOptions::STYLE_PROFILE])) {
             $styleProfile = $options[TranslateTextOptions::STYLE_PROFILE];
-            if (is_string($styleProfile) || $styleProfile instanceof StyleProfile) {
-                $params['style_profile_id'] = StyleProfile::getStyleProfileId($styleProfile);
-            } else {
-                throw new \InvalidArgumentException('style_profile must be a string or StyleProfile object');
-            }
+            $params['style_profile_id'] = StyleProfile::getStyleProfileId($styleProfile);
         }
         $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY] ?? null;
         if (isset($tm)) {
-            if (is_string($tm) || $tm instanceof TranslationMemoryInfo) {
-                $params['translation_memory_id'] = TranslationMemoryInfo::getTranslationMemoryId($tm);
-            } else {
-                throw new \InvalidArgumentException(
-                    'translation_memory must be a string or TranslationMemoryInfo object'
-                );
-            }
+            $params['translation_memory_id'] = TranslationMemoryInfo::getTranslationMemoryId($tm);
         }
         if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD])) {
             if (!isset($tm)) {
                 throw new \InvalidArgumentException('translation_memory_threshold requires translation_memory');
             }
             $threshold = $options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD];
-            if (!is_int($threshold) || $threshold < 0 || $threshold > 100) {
-                throw new \InvalidArgumentException(
-                    'translation_memory_threshold must be an integer between 0 and 100'
-                );
+            if ($threshold < 0 || $threshold > 100) {
+                throw new \InvalidArgumentException('translation_memory_threshold must be between 0 and 100');
             }
             $params['translation_memory_threshold'] = $threshold;
         }

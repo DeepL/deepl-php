@@ -267,6 +267,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`null` still means not set). A spoken terms response without `lang` throws an
   `InvalidContentException`. Catch `\InvalidArgumentException` where you handled
   the API's error for an empty language code.
+- Breaking: `translateText()`, `rephraseText()` and `correctText()` send a text
+  that is not a string as given; only an empty string is rejected.
+  `translation_memory_threshold` is only checked to be between 0 and 100, so
+  `'80'` is sent. A `glossary_ids` entry, `style_rule`, `style_profile` or
+  `translation_memory` that is neither an ID nor its object throws the empty-ID
+  `\InvalidArgumentException`. `translateDocumentWaitUntilDone()` and
+  `translateDocument()` no longer reject a `timeout` that is not a number before
+  the request; PHP raises its own error when it is used.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

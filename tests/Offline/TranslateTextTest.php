@@ -393,8 +393,6 @@ class TranslateTextTest extends OfflineTestCase
             'empty source language' => ['a', '', [], 'langCode must be a non-empty string'],
             'an empty text' => ['', null, [], 'text must not be empty'],
             'an empty text inside the texts' => [['a', ''], null, [], 'text must not be empty'],
-            'a number instead of text' => [42, null, [], 'texts parameter'],
-            'a number inside the texts' => [[42], null, [], 'texts parameter'],
             'glossary together with glossary_ids' => [
                 'Hello',
                 'en',
@@ -404,18 +402,6 @@ class TranslateTextTest extends OfflineTestCase
             'more than five glossary_ids' => [
                 'Hello', 'en', [TranslateTextOptions::GLOSSARY_IDS => ['1', '2', '3', '4', '5', '6']],
                 'maximum of 5',
-            ],
-            'glossary_ids entry of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::GLOSSARY_IDS => [42]], 'Each glossary_ids entry',
-            ],
-            'style_rule of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::STYLE_RULE => 5], 'style_rule must be',
-            ],
-            'style_profile_id of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::STYLE_PROFILE => 5], 'style_profile must be',
-            ],
-            'translation_memory of the wrong type' => [
-                'Hello', 'en', [TranslateTextOptions::TRANSLATION_MEMORY => 5], 'translation_memory must be',
             ],
             'glossary object without ID' => [
                 'Hello', 'en', [TranslateTextOptions::GLOSSARY => $noIdGlossary],
