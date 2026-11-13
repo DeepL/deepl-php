@@ -446,6 +446,39 @@ class AdminClientTest extends OfflineTestCase
     }
 
     /**
+     * @dataProvider provideCallsWithNullOptions
+     */
+    public function testTreatsNullOptionsAsNoOptions(callable $call): void
+    {
+        $this->reply(['message' => 'denied'], 403);
+
+        try {
+            $call($this->makeAdminClient());
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertRequestCount(1);
+        }
+    }
+
+    public static function provideCallsWithNullOptions(): array
+    {
+        return [
+            'createDeveloperKey' => [function (DeepLAdminClient $c) {
+                $c->createDeveloperKey(null);
+            }],
+            'deactivateDeveloperKey' => [function (DeepLAdminClient $c) {
+                $c->deactivateDeveloperKey(self::KEY_ID, null);
+            }],
+            'renameDeveloperKey' => [function (DeepLAdminClient $c) {
+                $c->renameDeveloperKey(self::KEY_ID, 'n', null);
+            }],
+            'setDeveloperKeyUsageLimits' => [function (DeepLAdminClient $c) {
+                $c->setDeveloperKeyUsageLimits(self::KEY_ID, [DeveloperKeyUsageLimitsOptions::CHARACTERS => 0], null);
+            }],
+        ];
+    }
+
+    /**
      * @dataProvider provideInvalidArguments
      */
     public function testRejectsInvalidArgumentsBeforeSending(callable $call, string $message): void

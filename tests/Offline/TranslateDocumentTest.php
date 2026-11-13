@@ -637,7 +637,7 @@ class TranslateDocumentTest extends OfflineTestCase
                 string $inputFile,
                 ?string $sourceLang,
                 string $targetLang,
-                array $options = []
+                ?array $options = null
             ): DocumentHandle {
                 throw new \RuntimeException('disk gone');
             }

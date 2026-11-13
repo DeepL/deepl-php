@@ -411,12 +411,14 @@ class TranslationMemoriesTest extends OfflineTestCase
     {
         $this->reply('', 200);
         $this->reply('', 200);
+        $this->reply('', 200);
         $client = $this->makeDeepLClient(['headers' => ['X-Custom' => 'secret']]);
 
         $client->uploadTranslationMemoryFile(new TranslationMemoryImport('job1', self::STORAGE_URL), '<tmx/>');
         $client->uploadTranslationMemoryFile(self::STORAGE_URL, '<tmx/>', 'text/xml');
+        $client->uploadTranslationMemoryFile(self::STORAGE_URL, '<tmx/>', null);
 
-        foreach ([0 => 'application/xml', 1 => 'text/xml'] as $index => $contentType) {
+        foreach ([0 => 'application/xml', 1 => 'text/xml', 2 => 'application/xml'] as $index => $contentType) {
             $request = $this->request($index);
             $this->assertSame('PUT', $request->getMethod());
             $this->assertSame('storage.example.com', $request->getUri()->getHost());

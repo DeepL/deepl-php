@@ -33,13 +33,14 @@ class DeepLClient
      * Construct a DeepLClient object wrapping the DeepL API using your authentication key.
      * This does not connect to the API, and returns immediately.
      * @param string $authKey Authentication key as specified in your account.
-     * @param array $options Additional options controlling DeepLClient behaviour.
+     * @param array|null $options Additional options controlling DeepLClient behaviour. null is the same as no options.
      * @throws \InvalidArgumentException If the auth key is empty or an option is invalid, including an unknown
      * option key.
      * @see TranslatorOptions for a list of available request options.
      */
-    public function __construct(string $authKey, array $options = [])
+    public function __construct(string $authKey, ?array $options = null)
     {
+        $options = $options ?? [];
         $authKey = trim($authKey);
         if ($authKey === '') {
             throw new \InvalidArgumentException('authKey must be a non-empty string');
@@ -151,7 +152,8 @@ class DeepLClient
      * @param string|string[] $texts A single string or array of strings containing input texts to translate.
      * @param string|null $sourceLang Language code of input text language, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
-     * @param array $options Translation options to apply. See \DeepL\TranslateTextOptions.
+     * @param array|null $options Translation options to apply. See \DeepL\TranslateTextOptions.
+     *     null is the same as no options.
      * @return TextResult|TextResult[] A TextResult or array of TextResult objects containing translated texts.
      * @phpstan-return ($texts is array ? TextResult[] : TextResult)
      * @throws \InvalidArgumentException If a text is empty or an argument or option is invalid, checked before
@@ -159,8 +161,9 @@ class DeepLClient
      * @throws DeepLException
      * @see \DeepL\TranslateTextOptions
      */
-    public function translateText($texts, ?string $sourceLang, string $targetLang, array $options = [])
+    public function translateText($texts, ?string $sourceLang, string $targetLang, ?array $options = null)
     {
+        $options = $options ?? [];
         self::checkOptionKeys($options, TranslateTextOptions::class, 'translate text');
         $params = $this->buildBodyParams(
             $sourceLang,
@@ -232,7 +235,8 @@ class DeepLClient
      * @param string $outputFile String containing file path to create translated document.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
-     * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
+     * @param array|null $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
+     *     null is the same as no options.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
      * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
@@ -250,8 +254,9 @@ class DeepLClient
         string $outputFile,
         ?string $sourceLang,
         string $targetLang,
-        array $options = []
+        ?array $options = null
     ): DocumentStatus {
+        $options = $options ?? [];
         $handle = null;
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
@@ -297,7 +302,8 @@ class DeepLClient
      * @param string $inputFile String containing file path of document to be translated.
      * @param string|null $sourceLang Language code of input document, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
-     * @param array $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
+     * @param array|null $options Translation options to apply. See \DeepL\TranslateDocumentOptions.
+     *     null is the same as no options.
      * @return DocumentHandle Handle associated with the in-progress document translation.
      * @throws \InvalidArgumentException If no file exists at the input file path, checked before any request is
      * sent.
@@ -308,8 +314,9 @@ class DeepLClient
         string $inputFile,
         ?string $sourceLang,
         string $targetLang,
-        array $options = []
+        ?array $options = null
     ): DocumentHandle {
+        $options = $options ?? [];
         self::checkOptionKeys($options, TranslateDocumentOptions::class, 'translate document');
         if (!file_exists($inputFile)) {
             throw new \InvalidArgumentException("File does not exist at input file path $inputFile");
@@ -435,18 +442,19 @@ class DeepLClient
      * Returns when the given document translation completes, or throws an exception if there was an error
      * communicating with the DeepL API, the document translation failed, or the timeout expired.
      * @param DocumentHandle $handle Handle to the document translation.
-     * @param array $options Wait options: only TranslateDocumentOptions::TIMEOUT, the maximum time to wait in
+     * @param array|null $options Wait options: only TranslateDocumentOptions::TIMEOUT, the maximum time to wait in
      *     seconds (float). Unset or null waits without limit. Zero or negative: the status is requested once and the
      *     wait times out if the translation is not done. The status is polled every 5 seconds; the last sleep is
-     *     cut short to the deadline, so the wait does not run past the timeout.
+     *     cut short to the deadline, so the wait does not run past the timeout. null is the same as no options.
      * @return DocumentStatus DocumentStatus object for the completed translation. You can use the billedCharacters
      *     property to check how many characters were billed for the document.
      * @throws \InvalidArgumentException If an option key other than TIMEOUT is given, checked before any request
      *     is sent.
      * @throws DeepLException If a request fails, the translation fails or the timeout expires.
      */
-    public function translateDocumentWaitUntilDone(DocumentHandle $handle, array $options = []): DocumentStatus
+    public function translateDocumentWaitUntilDone(DocumentHandle $handle, ?array $options = null): DocumentStatus
     {
+        $options = $options ?? [];
         foreach (array_keys($options) as $key) {
             if ($key !== TranslateDocumentOptions::TIMEOUT) {
                 throw new \InvalidArgumentException("Unknown translate document wait option: $key");
@@ -941,16 +949,17 @@ class DeepLClient
      * Rephrases the given text using DeepL's API.
      * @param string|string[] $texts A single string or array of strings to rephrase
      * @param string|null $targetLang Optional target language code
-     * @param array $options Rephrase options to apply, see \DeepL\RephraseTextOptions: WRITING_STYLE, TONE
-     *  and EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Rephrase options to apply, see \DeepL\RephraseTextOptions: WRITING_STYLE, TONE
+     *  and EXTRA_BODY_PARAMETERS. null is the same as no options.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing rephrased texts
      * @throws \InvalidArgumentException If a text is empty, checked before any request is sent.
      * @throws DeepLException
      * @see \DeepL\RephraseTextOptions
      */
-    public function rephraseText($texts, ?string $targetLang = null, array $options = [])
+    public function rephraseText($texts, ?string $targetLang = null, ?array $options = null)
     {
+        $options = $options ?? [];
         self::checkOptionKeys($options, RephraseTextOptions::class, 'rephrase text');
         $params = $this->buildRephraseBodyParams(
             $targetLang,
@@ -970,14 +979,16 @@ class DeepLClient
      * Corrects spelling and grammar in the given text using DeepL's API.
      * @param string|string[] $texts A single string or array of strings to correct
      * @param string|null $targetLang Optional target language code
-     * @param array $options Correct options to apply, see \DeepL\CorrectTextOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Correct options to apply, see \DeepL\CorrectTextOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return RephraseTextResult|RephraseTextResult[] A RephraseTextResult or array of
      * RephraseTextResult objects containing corrected texts
      * @throws \InvalidArgumentException If a text is empty, checked before any request is sent.
      * @throws DeepLException If the request fails.
      */
-    public function correctText($texts, ?string $targetLang = null, array $options = [])
+    public function correctText($texts, ?string $targetLang = null, ?array $options = null)
     {
+        $options = $options ?? [];
         self::checkOptionKeys($options, CorrectTextOptions::class, 'correct text');
         $params = [];
         if ($targetLang !== null) {
@@ -1049,15 +1060,17 @@ class DeepLClient
      * @param string $name User-defined name to assign to the glossary.
      * @param MultilingualGlossaryDictionaryEntries[] $dictionaries A list of MultilingualGlossaryDictionaryEntries
      *      which each contains entries for a particular language pair
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws DeepLException
      */
     public function createMultilingualGlossary(
         string $name,
         array $dictionaries,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
             throw new \InvalidArgumentException('glossary name must be a non-empty string');
@@ -1083,7 +1096,8 @@ class DeepLClient
      * @param string $sourceLang Language code of the glossary source terms.
      * @param string $targetLang Language code of the glossary target terms.
      * @param string $csvContent String containing CSV content.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryInfo Details about the created glossary.
      * @throws \InvalidArgumentException If a language code is empty.
      * @throws DeepLException
@@ -1093,8 +1107,9 @@ class DeepLClient
         string $sourceLang,
         string $targetLang,
         string $csvContent,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         if (strlen($name) === 0) {
             throw new \InvalidArgumentException('glossary name must be a non-empty string');
@@ -1131,13 +1146,15 @@ class DeepLClient
      * the given language pair, or adds new ones to the dictionary if not.
      * Without a name and dictionaries, the body is {}.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: NAME (new name for the
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: NAME (new name for the
      *  glossary), DICTIONARIES (MultilingualGlossaryDictionaryEntries[] to update or add) and EXTRA_BODY_PARAMETERS.
+     *  null is the same as no options.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws DeepLException
      */
-    public function updateMultilingualGlossary($glossary, array $options = []): MultilingualGlossaryInfo
+    public function updateMultilingualGlossary($glossary, ?array $options = null): MultilingualGlossaryInfo
     {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions(
             $options,
             [MultilingualGlossaryOptions::NAME, MultilingualGlossaryOptions::DICTIONARIES]
@@ -1158,15 +1175,17 @@ class DeepLClient
      * Renames a glossary.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
      * @param string $name New name for the glossary.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws DeepLException
      */
     public function updateMultilingualGlossaryName(
         $glossary,
         string $name,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         if ($name === '') {
             throw new \InvalidArgumentException('glossary name must be a non-empty string');
@@ -1180,15 +1199,17 @@ class DeepLClient
      * none for that language pair.
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to update.
      * @param MultilingualGlossaryDictionaryEntries $dictionaryEntries Language pair and entries to merge.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws DeepLException
      */
     public function updateMultilingualGlossaryDictionary(
         $glossary,
         MultilingualGlossaryDictionaryEntries $dictionaryEntries,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         $params = ['dictionaries' => [$dictionaryEntries->toObject()]];
         return $this->patchMultilingualGlossary($glossary, $params, $options);
@@ -1201,7 +1222,8 @@ class DeepLClient
      * @param string $sourceLang Language code of the source terms.
      * @param string $targetLang Language code of the target terms.
      * @param string $csvContent String containing CSV content.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryInfo Info about the updated glossary.
      * @throws \InvalidArgumentException If a language code or the CSV content is empty, checked before any request
      *  is sent.
@@ -1212,8 +1234,9 @@ class DeepLClient
         string $sourceLang,
         string $targetLang,
         string $csvContent,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         if (trim($csvContent) === '') {
             throw new \InvalidArgumentException('csvContent must be a non-empty string');
@@ -1245,15 +1268,17 @@ class DeepLClient
      * @param string|MultilingualGlossaryInfo $glossary Glossary ID or MultilingualGlossaryInfo of glossary to
      *  update.
      * @param MultilingualGlossaryDictionaryEntries $dictionaryEntries Replacement dictionary with entries.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
      * @throws DeepLException
      */
     public function replaceMultilingualGlossaryDictionary(
         $glossary,
         MultilingualGlossaryDictionaryEntries $dictionaryEntries,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryDictionaryInfo {
+        $options = $options ?? [];
         self::checkMultilingualGlossaryOptions($options, []);
         return $this->putMultilingualGlossaryDictionary($glossary, $dictionaryEntries->toObject(), $options);
     }
@@ -1266,7 +1291,8 @@ class DeepLClient
      * @param string $sourceLang Language code of the source terms.
      * @param string $targetLang Language code of the target terms.
      * @param string $csvContent String containing CSV content.
-     * @param array $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\MultilingualGlossaryOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return MultilingualGlossaryDictionaryInfo Info about the dictionary.
      * @throws \InvalidArgumentException If a language code or the CSV content is empty, checked before any request
      *  is sent.
@@ -1277,8 +1303,9 @@ class DeepLClient
         string $sourceLang,
         string $targetLang,
         string $csvContent,
-        array $options = []
+        ?array $options = null
     ): MultilingualGlossaryDictionaryInfo {
+        $options = $options ?? [];
         if (trim($csvContent) === '') {
             throw new \InvalidArgumentException('csvContent must be a non-empty string');
         }
@@ -1502,12 +1529,14 @@ class DeepLClient
      * response body cut off mid-read.
      * @param string $name User-defined name to assign to the collection.
      * @param SpokenTermsEntries[] $termLists Term lists to add, one per language.
-     * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return SpokenTerms Details about the created collection.
      * @throws DeepLException
      */
-    public function createSpokenTerms(string $name, array $termLists, array $options = []): SpokenTerms
+    public function createSpokenTerms(string $name, array $termLists, ?array $options = null): SpokenTerms
     {
+        $options = $options ?? [];
         self::checkSpokenTermsOptions($options, []);
         $params = ['name' => $name, 'term_lists' => self::spokenTermsListsToObjects($termLists)];
         $response = $this->client->sendRequestWithBackoff(
@@ -1555,13 +1584,14 @@ class DeepLClient
      * language not yet in the collection is added. Options that are not set, or null, are not sent;
      * without any, the body is {}.
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
-     * @param array $options Fields to change, see \DeepL\SpokenTermsOptions: NAME (new name), TERM_LISTS
-     *  (SpokenTermsEntries[] to merge) and EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Fields to change, see \DeepL\SpokenTermsOptions: NAME (new name), TERM_LISTS
+     *  (SpokenTermsEntries[] to merge) and EXTRA_BODY_PARAMETERS. null is the same as no options.
      * @return SpokenTerms Details about the updated collection.
      * @throws DeepLException
      */
-    public function updateSpokenTerms($spokenTerms, array $options = []): SpokenTerms
+    public function updateSpokenTerms($spokenTerms, ?array $options = null): SpokenTerms
     {
+        $options = $options ?? [];
         self::checkSpokenTermsOptions($options, [SpokenTermsOptions::NAME, SpokenTermsOptions::TERM_LISTS]);
         $params = [];
         if (isset($options[SpokenTermsOptions::NAME])) {
@@ -1604,15 +1634,17 @@ class DeepLClient
      * collection has no list for that language.
      * @param string|SpokenTerms $spokenTerms Spoken terms ID or SpokenTerms object.
      * @param SpokenTermsEntries $entries Language and terms of the replacement list.
-     * @param array $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\SpokenTermsOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return SpokenTermsList Details about the term list.
      * @throws DeepLException
      */
     public function replaceSpokenTermsList(
         $spokenTerms,
         SpokenTermsEntries $entries,
-        array $options = []
+        ?array $options = null
     ): SpokenTermsList {
+        $options = $options ?? [];
         self::checkSpokenTermsOptions($options, []);
         $params = self::spokenTermsEntriesToObject($entries);
         $response = $this->client->sendRequestWithBackoff(
@@ -1791,7 +1823,8 @@ class DeepLClient
      * @param array|null $configuredRules Optional configured rules to apply.
      * @param array|null $customInstructions List of custom instruction objects (`label`, `prompt`, optional
      *     `source_language`); keys are ignored.
-     * @param array $options Request options, see \DeepL\CreateStyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\CreateStyleRuleOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return StyleRuleInfo Details about the created style rule.
      * @throws \InvalidArgumentException If a custom instruction has an empty source_language.
      * @throws DeepLException
@@ -1801,8 +1834,9 @@ class DeepLClient
         string $language,
         ?array $configuredRules = null,
         ?array $customInstructions = null,
-        array $options = []
+        ?array $options = null
     ): StyleRuleInfo {
+        $options = $options ?? [];
         self::checkStyleRuleOptions($options);
         if (strlen($name) === 0) {
             throw new \InvalidArgumentException('name must be a non-empty string');
@@ -1863,13 +1897,15 @@ class DeepLClient
      * Updates the name of an existing style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param string $name New name for the style rule.
-     * @param array $options Request options, see \DeepL\UpdateStyleRuleNameOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\UpdateStyleRuleNameOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
      */
-    public function updateStyleRuleName($styleRule, string $name, array $options = []): StyleRuleInfo
+    public function updateStyleRuleName($styleRule, string $name, ?array $options = null): StyleRuleInfo
     {
+        $options = $options ?? [];
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
@@ -1910,8 +1946,8 @@ class DeepLClient
      * Replaces the configured rules for a style rule.
      * @param string|StyleRuleInfo $styleRule Style rule ID or StyleRuleInfo of style rule to update.
      * @param array $configuredRules The new configured rules to set.
-     * @param array $options Request options, see \DeepL\UpdateStyleRuleConfiguredRulesOptions: only
-     *  EXTRA_BODY_PARAMETERS, added as further keys of the configured rules object.
+     * @param array|null $options Request options, see \DeepL\UpdateStyleRuleConfiguredRulesOptions: only
+     *  EXTRA_BODY_PARAMETERS, added as further keys of the configured rules object. null is the same as no options.
      * @return StyleRuleInfo Updated StyleRuleInfo.
      * @throws DeepLException
      * @throws NotFoundException If the style rule is not found.
@@ -1919,8 +1955,9 @@ class DeepLClient
     public function updateStyleRuleConfiguredRules(
         $styleRule,
         array $configuredRules,
-        array $options = []
+        ?array $options = null
     ): StyleRuleInfo {
+        $options = $options ?? [];
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
@@ -1946,8 +1983,8 @@ class DeepLClient
      * @param string $label Label for the custom instruction.
      * @param string $prompt Prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
-     * @param array $options Request options, see \DeepL\CreateStyleRuleCustomInstructionOptions: only
-     *  EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\CreateStyleRuleCustomInstructionOptions: only
+     *  EXTRA_BODY_PARAMETERS. null is the same as no options.
      * @return CustomInstruction The created custom instruction.
      * @throws \InvalidArgumentException If sourceLanguage is an empty string.
      * @throws DeepLException
@@ -1958,8 +1995,9 @@ class DeepLClient
         string $label,
         string $prompt,
         ?string $sourceLanguage = null,
-        array $options = []
+        ?array $options = null
     ): CustomInstruction {
+        $options = $options ?? [];
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
@@ -2024,8 +2062,8 @@ class DeepLClient
      * @param string $label New label for the custom instruction.
      * @param string $prompt New prompt text for the custom instruction.
      * @param string|null $sourceLanguage Optional source language code.
-     * @param array $options Request options, see \DeepL\UpdateStyleRuleCustomInstructionOptions: only
-     *  EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see \DeepL\UpdateStyleRuleCustomInstructionOptions: only
+     *  EXTRA_BODY_PARAMETERS. null is the same as no options.
      * @return CustomInstruction The updated custom instruction.
      * @throws \InvalidArgumentException If sourceLanguage is an empty string.
      * @throws DeepLException
@@ -2037,8 +2075,9 @@ class DeepLClient
         string $label,
         string $prompt,
         ?string $sourceLanguage = null,
-        array $options = []
+        ?array $options = null
     ): CustomInstruction {
+        $options = $options ?? [];
         self::checkStyleRuleOptions($options);
         $styleId = StyleRuleInfo::getStyleId($styleRule);
         if (strlen($styleId) === 0) {
@@ -2166,13 +2205,15 @@ class DeepLClient
      * A failed request throws an exception whose shouldRetry is true only for these failures and for a
      * response body cut off mid-read.
      * @param string $name Name of the style profile.
-     * @param array $options Optional fields, see \DeepL\CreateStyleProfileOptions. Options that are
+     * @param array|null $options Optional fields, see \DeepL\CreateStyleProfileOptions. Options that are
      *  null are not sent. If any of the linked component IDs cannot be used, no style profile is created.
+     *  null is the same as no options.
      * @return StyleProfile Details about the created style profile.
      * @throws DeepLException
      */
-    public function createStyleProfile(string $name, array $options = []): StyleProfile
+    public function createStyleProfile(string $name, ?array $options = null): StyleProfile
     {
+        $options = $options ?? [];
         $params = self::buildStyleProfileBody(['name' => $name], $options, [
             CreateStyleProfileOptions::DESCRIPTION,
             CreateStyleProfileOptions::INDUSTRY,
@@ -2214,13 +2255,15 @@ class DeepLClient
      * clears the description or industry; an ID list replaces the linked list in full, and an empty
      * array unlinks all components of that kind. Without options, an empty update ({}) is sent.
      * @param string|StyleProfile $styleProfile Style profile ID or StyleProfile object.
-     * @param array $options Fields to change, see \DeepL\UpdateStyleProfileOptions.
+     * @param array|null $options Fields to change, see \DeepL\UpdateStyleProfileOptions.
+     *     null is the same as no options.
      * @return StyleProfile Details about the updated style profile.
      * @throws DeepLException
      * @throws NotFoundException If the style profile is not found.
      */
-    public function updateStyleProfile($styleProfile, array $options = []): StyleProfile
+    public function updateStyleProfile($styleProfile, ?array $options = null): StyleProfile
     {
+        $options = $options ?? [];
         $styleProfileId = StyleProfile::getStyleProfileId($styleProfile);
         $params = self::buildStyleProfileBody([], $options, [
             UpdateStyleProfileOptions::NAME,
@@ -2420,14 +2463,16 @@ class DeepLClient
      * by the filter text.
      * @param string|TranslationMemoryInfo $translationMemory Translation memory ID or
      *  TranslationMemoryInfo of the translation memory to retrieve segments of.
-     * @param array $options Pagination and filtering options. See \DeepL\TranslationMemorySegmentsOptions.
+     * @param array|null $options Pagination and filtering options. See \DeepL\TranslationMemorySegmentsOptions.
+     *     null is the same as no options.
      * @return TranslationMemorySegments One page of segments.
      * @throws DeepLException
      * @throws NotFoundException If the translation memory is not found.
      * @see \DeepL\TranslationMemorySegmentsOptions
      */
-    public function listTranslationMemorySegments($translationMemory, array $options = []): TranslationMemorySegments
+    public function listTranslationMemorySegments($translationMemory, ?array $options = null): TranslationMemorySegments
     {
+        $options = $options ?? [];
         self::checkOptionKeys($options, TranslationMemorySegmentsOptions::class, 'translation memory segments');
         $translationMemoryId = $this->getTranslationMemoryId($translationMemory);
 
@@ -2553,15 +2598,16 @@ class DeepLClient
      * @param string|TranslationMemoryImport $translationMemoryImport The import returned by
      *  createTranslationMemoryImport(), or its upload URL.
      * @param string $fileContent Content of the TMX file.
-     * @param string $contentType MIME type of the file, which must match the content type declared
-     *  when the import job was created. Defaults to 'application/xml'.
+     * @param string|null $contentType MIME type of the file, which must match the content type declared
+     *  when the import job was created. Defaults to 'application/xml' if omitted or null.
      * @throws DeepLException
      */
     public function uploadTranslationMemoryFile(
         $translationMemoryImport,
         string $fileContent,
-        string $contentType = 'application/xml'
+        ?string $contentType = null
     ): void {
+        $contentType = $contentType ?? 'application/xml';
         $uploadUrl = is_string($translationMemoryImport)
             ? $translationMemoryImport
             : $translationMemoryImport->uploadUrl;

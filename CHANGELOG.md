@@ -294,6 +294,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$sourceLang`. A language code set to `null` on a
   `MultilingualGlossaryDictionaryEntries` or `SpokenTermsEntries` is no longer
   rejected by the library; an empty one still is.
+- Breaking: every optional `$options` parameter of `DeepLClient` and
+  `DeepLAdminClient`, the constructors' included, and the `$contentType` of
+  `uploadTranslationMemoryFile()` accept `null`, meaning not given, instead of
+  raising a `TypeError`. Subclasses that override these methods must declare
+  `?array $options = null` (`?string $contentType = null`). A `null` `timeout`
+  or `proxy` client option with `http_client` no longer logs the 'is ignored'
+  warning.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in

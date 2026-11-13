@@ -26,14 +26,15 @@ class DeepLAdminClient
      * Construct a DeepLAdminClient using your admin API key.
      * This does not connect to the API, and returns immediately.
      * @param string $adminKey Admin API key as found in your DeepL account.
-     * @param array $options Additional options controlling client behaviour, see TranslatorOptions. The
-     * server URL defaults to TranslatorOptions::DEFAULT_SERVER_URL for all admin keys.
+     * @param array|null $options Additional options controlling client behaviour, see TranslatorOptions. The
+     * server URL defaults to TranslatorOptions::DEFAULT_SERVER_URL for all admin keys. null is the same as no options.
      * @throws \InvalidArgumentException If the admin key is empty or an option is invalid, including an unknown
      * option key.
      * @see TranslatorOptions for a list of available request options.
      */
-    public function __construct(string $adminKey, array $options = [])
+    public function __construct(string $adminKey, ?array $options = null)
     {
+        $options = $options ?? [];
         if (trim($adminKey) === '') {
             throw new \InvalidArgumentException('adminKey must be a non-empty string');
         }
@@ -115,13 +116,15 @@ class DeepLAdminClient
      * With a custom HTTP client, only HTTP 429 is retried.
      * A failed request throws an exception whose shouldRetry is true only for these failures and for a
      * response body cut off mid-read.
-     * @param array $options Request options, see CreateDeveloperKeyOptions: LABEL and EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see CreateDeveloperKeyOptions: LABEL and EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return DeveloperKey The created key.
      * @throws DeepLException
      * @see CreateDeveloperKeyOptions
      */
-    public function createDeveloperKey(array $options = []): DeveloperKey
+    public function createDeveloperKey(?array $options = null): DeveloperKey
     {
+        $options = $options ?? [];
         self::checkOptions($options, [CreateDeveloperKeyOptions::LABEL]);
         $params = [];
         if (isset($options[CreateDeveloperKeyOptions::LABEL])) {
@@ -158,12 +161,14 @@ class DeepLAdminClient
     /**
      * Deactivates a developer key. Deactivation is permanent.
      * @param string|DeveloperKey $key Key ID or DeveloperKey to deactivate.
-     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return DeveloperKey The deactivated key.
      * @throws DeepLException
      */
-    public function deactivateDeveloperKey($key, array $options = []): DeveloperKey
+    public function deactivateDeveloperKey($key, ?array $options = null): DeveloperKey
     {
+        $options = $options ?? [];
         self::checkOptions($options, []);
         return $this->sendDeveloperKeyRequest(
             'PUT',
@@ -177,12 +182,14 @@ class DeepLAdminClient
      * Changes the label of a developer key.
      * @param string|DeveloperKey $key Key ID or DeveloperKey to rename.
      * @param string $label New label for the key.
-     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return DeveloperKey The renamed key.
      * @throws DeepLException
      */
-    public function renameDeveloperKey($key, string $label, array $options = []): DeveloperKey
+    public function renameDeveloperKey($key, string $label, ?array $options = null): DeveloperKey
     {
+        $options = $options ?? [];
         self::checkOptions($options, []);
         $keyId = self::keyId($key);
         return $this->sendDeveloperKeyRequest(
@@ -200,15 +207,17 @@ class DeepLAdminClient
      * @param array $limits Usage limits to change, keyed by the DeveloperKeyUsageLimitsOptions constants; any
      * other key throws \InvalidArgumentException before the request. Each value is an int or null. The limits are
      * sent to the API as given. Send other fields with DeveloperKeyOptions::EXTRA_BODY_PARAMETERS.
-     * @param array $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     * @param array|null $options Request options, see DeveloperKeyOptions: only EXTRA_BODY_PARAMETERS.
+     *     null is the same as no options.
      * @return DeveloperKey The modified key.
      * @throws \InvalidArgumentException If a key of $limits or $options is unknown or the key ID is empty, checked
      * before any request is sent.
      * @throws DeepLException If the request fails.
      * @see DeveloperKeyUsageLimitsOptions
      */
-    public function setDeveloperKeyUsageLimits($key, array $limits, array $options = []): DeveloperKey
+    public function setDeveloperKeyUsageLimits($key, array $limits, ?array $options = null): DeveloperKey
     {
+        $options = $options ?? [];
         self::checkOptions($options, []);
         $knownLimits = [
             DeveloperKeyUsageLimitsOptions::CHARACTERS,

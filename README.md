@@ -68,7 +68,10 @@ An invalid argument, such as an empty text, language code, name or resource ID,
 an option key the function or the client constructor does not know, or a value
 that cannot be JSON-encoded (invalid UTF-8, INF/NAN), throws PHP's
 `\InvalidArgumentException` before any request is sent. It is not a
-`DeepLException`.
+`DeepLException`. The library does not check argument types beyond PHP's
+declared parameter types; PHP raises its own `TypeError` for those. Every
+optional `$options` parameter, the client constructors' included, also takes
+`null`, which means no options.
 
 Every other exception this library throws is a `DeepL\DeepLException`. Its
 subclasses tell the cause apart:
@@ -1327,7 +1330,8 @@ $job = $deeplClient->waitUntilTranslationMemoryJobDone($created->jobId, [WaitOpt
 `CreateTranslationMemoryImportOptions` keys `CONTENT_TYPE`, `DISPLAY_NAME` and
 `EXTRA_BODY_PARAMETERS` as its third argument;
 the released positional form, a content type and a display name, is still
-accepted.
+accepted. `uploadTranslationMemoryFile()` takes the file's MIME type as an
+optional third argument, `'application/xml'` if omitted or `null`.
 
 `waitUntilTranslationMemoryJobDone()` polls the job every 5 seconds until its
 status is `completed`, and throws a `DeepLException` with the

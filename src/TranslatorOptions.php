@@ -152,7 +152,7 @@ class TranslatorOptions
         array $options,
         ?LoggerInterface $maybe_logger
     ): bool {
-        if (array_key_exists($keyToCheck, $options)) {
+        if (isset($options[$keyToCheck])) {
             if ($maybe_logger !== null) {
                 $maybe_logger->warning("Option $keyToCheck is ignored as a custom HTTP client is used.");
             }

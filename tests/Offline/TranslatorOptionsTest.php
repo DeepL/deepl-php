@@ -10,6 +10,10 @@ use DeepL\AppInfo;
 use DeepL\DeepLAdminClient;
 use DeepL\DeepLException;
 use DeepL\DeepLClient;
+use DeepL\DocumentHandle;
+use DeepL\Fixtures;
+use DeepL\MultilingualGlossaryDictionaryEntries;
+use DeepL\SpokenTermsEntries;
 use DeepL\TranslatorOptions;
 
 class TranslatorOptionsTest extends OfflineTestCase
@@ -281,6 +285,20 @@ class TranslatorOptionsTest extends OfflineTestCase
         $this->assertStringContainsString('Option proxy is ignored as a custom HTTP client is used.', $logger->content);
     }
 
+    public function testDoesNotWarnAboutANullTimeoutOrProxyWithACustomHttpClient(): void
+    {
+        $this->reply(self::USAGE);
+        $logger = new TestLogger();
+
+        $this->makeDeepLClient([
+            TranslatorOptions::LOGGER => $logger,
+            TranslatorOptions::TIMEOUT => null,
+            TranslatorOptions::PROXY => null,
+        ])->getUsage();
+
+        $this->assertStringNotContainsString('is ignored', $logger->content);
+    }
+
     public function testThrowsForAnUnknownOptionKey(): void
     {
         foreach ([
@@ -298,6 +316,112 @@ class TranslatorOptionsTest extends OfflineTestCase
                 $this->assertSame('Unknown client option: no_such_option', $exception->getMessage());
             }
         }
+    }
+
+    public function testConstructorsTreatNullOptionsAsNoOptions(): void
+    {
+        $this->assertInstanceOf(DeepLClient::class, new DeepLClient('k', null));
+        $this->assertInstanceOf(DeepLAdminClient::class, new DeepLAdminClient('k', null));
+    }
+
+    /**
+     * @dataProvider provideCallsWithNullOptions
+     */
+    public function testTreatsNullOptionsAsNoOptions(callable $call): void
+    {
+        $this->reply(['message' => 'denied'], 403);
+
+        try {
+            $call($this->makeDeepLClient());
+            $this->fail('expected a DeepLException');
+        } catch (DeepLException $exception) {
+            $this->assertRequestCount(1);
+        }
+    }
+
+    public static function provideCallsWithNullOptions(): array
+    {
+        $dictionary = function (): MultilingualGlossaryDictionaryEntries {
+            return new MultilingualGlossaryDictionaryEntries('en', 'de', ['Hello' => 'Hallo']);
+        };
+        return [
+            'translateText' => [function (DeepLClient $c) {
+                $c->translateText('Hello', null, 'de', null);
+            }],
+            'translateDocument' => [function (DeepLClient $c) {
+                $input = Fixtures::tempFile('in.txt', 'Hello');
+                $c->translateDocument($input, Fixtures::tempDir() . '/o', null, 'de', null);
+            }],
+            'translateDocumentUpload' => [function (DeepLClient $c) {
+                $c->translateDocumentUpload(Fixtures::tempFile('in.txt', 'Hello'), null, 'de', null);
+            }],
+            'translateDocumentWaitUntilDone' => [function (DeepLClient $c) {
+                $c->translateDocumentWaitUntilDone(new DocumentHandle('doc1', 'k'), null);
+            }],
+            'rephraseText' => [function (DeepLClient $c) {
+                $c->rephraseText('Hello', 'en-GB', null);
+            }],
+            'correctText' => [function (DeepLClient $c) {
+                $c->correctText('Hello', null, null);
+            }],
+            'createMultilingualGlossary' => [function (DeepLClient $c) use ($dictionary) {
+                $c->createMultilingualGlossary('n', [$dictionary()], null);
+            }],
+            'createMultilingualGlossaryFromCsv' => [function (DeepLClient $c) {
+                $c->createMultilingualGlossaryFromCsv('n', 'en', 'de', "Hello,Hallo\n", null);
+            }],
+            'updateMultilingualGlossary' => [function (DeepLClient $c) {
+                $c->updateMultilingualGlossary('gid', null);
+            }],
+            'updateMultilingualGlossaryName' => [function (DeepLClient $c) {
+                $c->updateMultilingualGlossaryName('gid', 'n', null);
+            }],
+            'updateMultilingualGlossaryDictionary' => [function (DeepLClient $c) use ($dictionary) {
+                $c->updateMultilingualGlossaryDictionary('gid', $dictionary(), null);
+            }],
+            'updateMultilingualGlossaryDictionaryFromCsv' => [function (DeepLClient $c) {
+                $c->updateMultilingualGlossaryDictionaryFromCsv('gid', 'en', 'de', "Hello,Hallo\n", null);
+            }],
+            'replaceMultilingualGlossaryDictionary' => [function (DeepLClient $c) use ($dictionary) {
+                $c->replaceMultilingualGlossaryDictionary('gid', $dictionary(), null);
+            }],
+            'replaceMultilingualGlossaryDictionaryFromCsv' => [function (DeepLClient $c) {
+                $c->replaceMultilingualGlossaryDictionaryFromCsv('gid', 'en', 'de', "Hello,Hallo\n", null);
+            }],
+            'createSpokenTerms' => [function (DeepLClient $c) {
+                $c->createSpokenTerms('n', [new SpokenTermsEntries('en', ['a'])], null);
+            }],
+            'updateSpokenTerms' => [function (DeepLClient $c) {
+                $c->updateSpokenTerms('sid', null);
+            }],
+            'replaceSpokenTermsList' => [function (DeepLClient $c) {
+                $c->replaceSpokenTermsList('sid', new SpokenTermsEntries('en', ['a']), null);
+            }],
+            'createStyleRule' => [function (DeepLClient $c) {
+                $c->createStyleRule('n', 'de', null, null, null);
+            }],
+            'updateStyleRuleName' => [function (DeepLClient $c) {
+                $c->updateStyleRuleName('sid', 'n', null);
+            }],
+            'updateStyleRuleConfiguredRules' => [function (DeepLClient $c) {
+                $c->updateStyleRuleConfiguredRules('sid', [], null);
+            }],
+            'createStyleRuleCustomInstruction' => [function (DeepLClient $c) {
+                $c->createStyleRuleCustomInstruction('sid', 'l', 'p', null, null);
+            }],
+            'updateStyleRuleCustomInstruction' => [function (DeepLClient $c) {
+                $c->updateStyleRuleCustomInstruction('sid', 'iid', 'l', 'p', null, null);
+            }],
+            'createStyleProfile' => [function (DeepLClient $c) {
+                $c->createStyleProfile('n', null);
+            }],
+            'updateStyleProfile' => [function (DeepLClient $c) {
+                $c->updateStyleProfile('pid', null);
+            }],
+            'listTranslationMemorySegments' => [function (DeepLClient $c) {
+                $c->listTranslationMemorySegments('tmid', null);
+            }],
+        ];
     }
 
     public function testIsFreeAccountAuthKey(): void
