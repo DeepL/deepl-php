@@ -2891,7 +2891,8 @@ class DeepLClient
      * @param array|string|null $options
      * @param mixed $second
      * @param string[] $allowed Option keys the method accepts besides EXTRA_BODY_PARAMETERS.
-     * @throws DeepLException
+     * @throws \InvalidArgumentException If options are passed both in the array and as further arguments, or an
+     *     option key is unknown.
      */
     private static function translationMemoryOptions(
         $options,
@@ -2901,9 +2902,6 @@ class DeepLClient
         array $allowed
     ): array {
         if (!is_array($options)) {
-            if ($options !== null && !is_string($options)) {
-                throw new \InvalidArgumentException('options must be an array, a string or null');
-            }
             return array_filter([$scalarKey => $options, $secondKey => $second], function ($value) {
                 return $value !== null;
             });
@@ -2924,7 +2922,7 @@ class DeepLClient
     /**
      * Returns the timeout in seconds of a wait helper, from a number or a WaitOptions array.
      * @param array|float|int|null $timeout
-     * @throws DeepLException
+     * @throws \InvalidArgumentException For a wait option key other than TIMEOUT.
      */
     private static function translationMemoryTimeout($timeout): ?float
     {
@@ -2936,13 +2934,7 @@ class DeepLClient
             }
             $timeout = $timeout[WaitOptions::TIMEOUT] ?? null;
         }
-        if ($timeout === null) {
-            return null;
-        }
-        if (!is_numeric($timeout)) {
-            throw new \InvalidArgumentException('timeout must be a number of seconds');
-        }
-        return (float)$timeout;
+        return $timeout;
     }
 
     /**

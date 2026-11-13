@@ -275,6 +275,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `\InvalidArgumentException`. `translateDocumentWaitUntilDone()` and
   `translateDocument()` no longer reject a `timeout` that is not a number before
   the request; PHP raises its own error when it is used.
+- `waitUntilTranslationMemoryJobDone()`, `importTranslationMemoryFromFilepath()`
+  and `exportTranslationMemoryToFilepath()` convert a numeric timeout and raise
+  PHP's `TypeError` for any other value (wrapped in a
+  `TranslationMemoryJobException` by the file helpers).
+  `createTranslationMemoryImport()` and `importTranslationMemoryFromFilepath()`
+  take any options value that is not an array as the positional form.
 
 ### Removed
 - Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
