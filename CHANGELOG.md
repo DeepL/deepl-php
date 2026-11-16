@@ -142,7 +142,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   handshake or the proxy tunnel, and after a proxy that reset or closed the
   connection before answering, because the request was not sent. Before, it
   threw a `ConnectionException` with `shouldRetry` `false` at once (for a
-  timeout, depending on the libcurl version).
+  timeout, depending on the libcurl version). A reset or other socket failure
+  during the TLS handshake (`CURLE_SSL_CONNECT_ERROR` with an OS error) is now
+  retried like other connection failures; a TLS error (alert, wrong version,
+  certificate) is still not retried.
 - Breaking: every argument check throws PHP's `\InvalidArgumentException`
   instead of `DeepLException`, before any request is sent: an empty auth or
   admin key, an invalid `server_url` or negative `max_retries` option, an empty

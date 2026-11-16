@@ -1659,30 +1659,32 @@ the next retry are not applied. Retries and `max_retries` still apply.
 
 Requests to the DeepL API that fail due to transient conditions will be retried:
 HTTP 429, any 5xx status, and network failures such as DNS resolution errors,
-refused connections, timeouts, connection resets and broken pipes, also on the
-way to a proxy and inside its tunnel. An error answer from the proxy (a non-2xx
-answer to `CONNECT`, 407 included) is not retried. A response body cut off
-mid-read (cURL errors 18 and 92) is retried as well, except for the functions
-that create a resource listed below; a downloaded file is rewritten from the
-start on each attempt. If no attempt succeeds, a `ConnectionException` with
-`shouldRetry` set to `true` is thrown.
+refused connections, timeouts, connection resets (also during the TLS handshake)
+and broken pipes, also on the way to a proxy and inside its tunnel. An error
+answer from the proxy (a non-2xx answer to `CONNECT`, 407 included) and a TLS
+error (alert, wrong version, certificate) are not retried. A response body cut
+off mid-read (cURL errors 18 and 92) is retried as well, except for the
+functions that create a resource listed below; a downloaded file is rewritten
+from the start on each attempt. If no attempt succeeds, a `ConnectionException`
+with `shouldRetry` set to `true` is thrown.
 
 To avoid creating duplicates, functions that create a resource are retried only
 when the request was not processed: after HTTP 429, or when the connection
 failed before any byte of the request was written (a DNS resolution failure of
 the host or proxy, a refused connection, a reset by the proxy before it
-answered, or a timeout while connecting, in the TLS handshake or in the proxy
-tunnel). These are `translateDocumentUpload()` (and the upload of
-`translateDocument()`), `createGlossary()`, `createGlossaryFromCsv()`,
-`createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`,
-`createSpokenTerms()`, `createStyleRule()`,
-`createStyleRuleCustomInstruction()`, `createStyleProfile()`,
-`createTranslationMemoryImport()`, `createTranslationMemoryExport()` and
-`createDeveloperKey()`. With a custom HTTP client, only HTTP 429 is retried for
-them. When one of them fails, the exception's `shouldRetry` is `true` only for
-these failures and for a response body cut off mid-read; after a 5xx status, a
-timeout after the request was written, an empty reply, a reset connection or a
-broken pipe it is `false`, as the resource may already have been created.
+answered, a reset during the TLS handshake, or a timeout while connecting, in
+the TLS handshake or in the proxy tunnel). These are `translateDocumentUpload()`
+(and the upload of `translateDocument()`), `createGlossary()`,
+`createGlossaryFromCsv()`, `createMultilingualGlossary()`,
+`createMultilingualGlossaryFromCsv()`, `createSpokenTerms()`,
+`createStyleRule()`, `createStyleRuleCustomInstruction()`,
+`createStyleProfile()`, `createTranslationMemoryImport()`,
+`createTranslationMemoryExport()` and `createDeveloperKey()`. With a custom HTTP
+client, only HTTP 429 is retried for them. When one of them fails, the
+exception's `shouldRetry` is `true` only for these failures and for a response
+body cut off mid-read; after a 5xx status, a timeout after the request was
+written, an empty reply, a reset connection or a broken pipe it is `false`, as
+the resource may already have been created.
 
 The maximum number of
 retries after the first attempt can be configured when constructing the `DeepLClient` object using the
