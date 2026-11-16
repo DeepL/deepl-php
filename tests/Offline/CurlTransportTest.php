@@ -319,16 +319,67 @@ class CurlTransportTest extends OfflineTestCase
         return ['partial body' => [CURLE_PARTIAL_FILE], 'HTTP/2 stream reset' => [92]];
     }
 
-    public function testDoesNotRetryAProxyResolutionFailure(): void
+    /**
+     * @dataProvider provideProxyErrorAnswers
+     */
+    public function testDoesNotRetryAnErrorAnswerOfTheProxy(int $connectCode): void
     {
         $this->useFakeClock();
-        $this->failCurlWith([CURLE_COULDNT_RESOLVE_PROXY], $attempts);
+        $this->failCurlWith(
+            [CURLE_RECV_ERROR],
+            $attempts,
+            '{"character_count":1,"character_limit":2}',
+            0.0,
+            $connectCode
+        );
 
         try {
             (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
             $this->fail('expected a ConnectionException');
         } catch (ConnectionException $exception) {
-            $this->assertSame(CURLE_COULDNT_RESOLVE_PROXY, $exception->getCode());
+            $this->assertSame(CURLE_RECV_ERROR, $exception->getCode());
+            $this->assertFalse($exception->shouldRetry);
+            $this->assertCount(1, $attempts);
+        }
+    }
+
+    public static function provideProxyErrorAnswers(): array
+    {
+        return ['proxy authentication required' => [407], 'bad gateway' => [502]];
+    }
+
+    public function testRetriesAResetDuringTheTlsHandshake(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith(
+            [CURLE_SSL_CONNECT_ERROR],
+            $attempts,
+            '{"character_count":1,"character_limit":2}',
+            0.0,
+            0,
+            104
+        );
+
+        (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+
+        $this->assertCount(2, $attempts);
+    }
+
+    public function testDoesNotRetryATlsErrorWithoutSocketFailure(): void
+    {
+        $this->useFakeClock();
+        $this->failCurlWith(
+            [CURLE_SSL_CONNECT_ERROR],
+            $attempts,
+            '{"character_count":1,"character_limit":2}',
+            0.0
+        );
+
+        try {
+            (new DeepLClient('k', [TranslatorOptions::SERVER_URL => 'https://api.deepl.com']))->getUsage();
+            $this->fail('expected a ConnectionException');
+        } catch (ConnectionException $exception) {
+            $this->assertSame(CURLE_SSL_CONNECT_ERROR, $exception->getCode());
             $this->assertFalse($exception->shouldRetry);
             $this->assertCount(1, $attempts);
         }
@@ -340,7 +391,7 @@ class CurlTransportTest extends OfflineTestCase
     public function testRetriesKeyCreationAfterADnsFailure(int $errorCode): void
     {
         $this->useFakeClock();
-        $this->failCurlWith([$errorCode], $attempts, '{"key_id": "id"}');
+        $this->failCurlWith([$errorCode], $attempts, '{"key_id": "id"}', 0.0);
 
         $key = $this->makeCurlAdminClient()->createDeveloperKey();
 
@@ -350,18 +401,21 @@ class CurlTransportTest extends OfflineTestCase
 
     public static function provideDnsErrors(): array
     {
-        return ['host' => [CURLE_COULDNT_RESOLVE_HOST]];
+        return ['host' => [CURLE_COULDNT_RESOLVE_HOST], 'proxy' => [CURLE_COULDNT_RESOLVE_PROXY]];
     }
 
     /**
      * Lets curl_exec fail with the given cURL error codes in turn, then succeed, and collects the
-     * options of each attempt.
+     * options of each attempt. `$pretransferTime` 0.0 is a failure before the request was written,
+     * `$connectCode` the proxy's answer to CONNECT, `$osErrno` the socket error behind the failure.
      */
     private function failCurlWith(
         array $errorCodes,
         ?array &$attempts,
         string $body = '{}',
-        float $connectTime = 0.1
+        float $pretransferTime = 0.1,
+        int $connectCode = 0,
+        int $osErrno = 0
     ): void {
         $attempts = [];
         $this->getFunctionMock('DeepL', 'curl_setopt_array')->expects($this->any())
@@ -375,8 +429,14 @@ class CurlTransportTest extends OfflineTestCase
             ->willReturnOnConsecutiveCalls(...$errorCodes);
         $this->getFunctionMock('DeepL', 'curl_error')->expects($this->any())->willReturn('failed');
         $this->getFunctionMock('DeepL', 'curl_getinfo')->expects($this->any())
-            ->willReturnCallback(function ($handle, int $option) use ($connectTime) {
-                return $option === CURLINFO_CONNECT_TIME ? $connectTime : 200;
+            ->willReturnCallback(function ($handle, int $option) use ($pretransferTime, $connectCode, $osErrno) {
+                if ($option === CURLINFO_PRETRANSFER_TIME) {
+                    return $pretransferTime;
+                }
+                if ($option === CURLINFO_OS_ERRNO) {
+                    return $osErrno;
+                }
+                return $option === CURLINFO_HTTP_CONNECTCODE ? $connectCode : 200;
             });
     }
 
@@ -420,7 +480,7 @@ class CurlTransportTest extends OfflineTestCase
     public function testRetriesKeyCreationOnAFreshConnectionAfterAFailedConnect(): void
     {
         $this->useFakeClock();
-        $this->failCurlWith([CURLE_COULDNT_CONNECT], $attempts, '{"key_id": "id"}');
+        $this->failCurlWith([CURLE_COULDNT_CONNECT], $attempts, '{"key_id": "id"}', 0.0);
 
         $key = $this->makeCurlAdminClient()->createDeveloperKey();
 
@@ -431,15 +491,29 @@ class CurlTransportTest extends OfflineTestCase
         }
     }
 
-    public function testRetriesKeyCreationAfterATimeoutBeforeConnecting(): void
-    {
+    /**
+     * @dataProvider provideFailuresBeforeTheRequestWasWritten
+     */
+    public function testRetriesKeyCreationAfterAFailureBeforeTheRequestWasWritten(
+        int $errorCode,
+        int $osErrno = 0
+    ): void {
         $this->useFakeClock();
-        $this->failCurlWith([CURLE_OPERATION_TIMEDOUT], $attempts, '{"key_id": "id"}', 0.0);
+        $this->failCurlWith([$errorCode], $attempts, '{"key_id": "id"}', 0.0, 0, $osErrno);
 
         $key = $this->makeCurlAdminClient()->createDeveloperKey();
 
         $this->assertSame('id', $key->keyId);
         $this->assertCount(2, $attempts);
+    }
+
+    public static function provideFailuresBeforeTheRequestWasWritten(): array
+    {
+        return [
+            'timeout in the TLS handshake or the proxy tunnel' => [CURLE_OPERATION_TIMEDOUT],
+            'proxy reset or closed the connection before answering CONNECT' => [CURLE_RECV_ERROR],
+            'reset during the TLS handshake' => [CURLE_SSL_CONNECT_ERROR, 104],
+        ];
     }
 
     /**

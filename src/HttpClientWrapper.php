@@ -43,8 +43,9 @@ class HttpClientWrapper
     private $curlHandle;
 
     /**
-     * @var bool True if the last cURL request failed before it was sent: a refused connection, a DNS
-     * failure, or a timeout before the connection was established.
+     * @var bool True if the last cURL request failed before any request byte was written
+     * (CURLINFO_PRETRANSFER_TIME is 0): while resolving, connecting, setting up the proxy tunnel or in
+     * the TLS handshake.
      */
     private $lastCurlErrorUnsent = false;
 
@@ -60,8 +61,9 @@ class HttpClientWrapper
     public const OPTION_JSON = 'json';
     public const OPTION_RAW_BODY = 'raw_body';
     /**
-     * Retry only failures that show the request was not processed: HTTP 429, refused connections, DNS
-     * failures and timeouts before the connection was established. For requests that are unsafe to repeat.
+     * Retry only failures that show the request was not processed: HTTP 429 and failures while
+     * connecting, before any request byte was written (DNS, refused connection, proxy tunnel, TLS
+     * handshake). For requests that are unsafe to repeat.
      */
     public const OPTION_RETRY_ONLY_UNPROCESSED = 'retry_only_unprocessed';
 
@@ -454,7 +456,12 @@ class HttpClientWrapper
                 case \CURLE_SEND_ERROR: // includes broken pipes
                 case \CURLE_RECV_ERROR: // includes connection resets
                 case \CURLE_COULDNT_RESOLVE_HOST:
+                case \CURLE_COULDNT_RESOLVE_PROXY:
                     $shouldRetry = true;
+                    break;
+                case \CURLE_SSL_CONNECT_ERROR:
+                    // A socket failure (e.g. a reset) during the TLS handshake, not a TLS error.
+                    $shouldRetry = (int)curl_getinfo($this->curlHandle, CURLINFO_OS_ERRNO) !== 0;
                     break;
                 case \CURLE_PARTIAL_FILE: // body shorter than Content-Length, or a chunked body ended early
                 case self::CURLE_HTTP2_STREAM: // HTTP/2 stream reset, for example mid-body
@@ -466,12 +473,14 @@ class HttpClientWrapper
                     $shouldRetry = false;
                     break;
             }
-            $this->lastCurlErrorUnsent = in_array(
-                $errorCode,
-                [\CURLE_COULDNT_CONNECT, \CURLE_COULDNT_RESOLVE_HOST],
-                true
-            ) || ($errorCode === \CURLE_OPERATION_TIMEDOUT
-                && (float)curl_getinfo($this->curlHandle, CURLINFO_CONNECT_TIME) == 0.0);
+            $connectCode = (int)curl_getinfo($this->curlHandle, CURLINFO_HTTP_CONNECTCODE);
+            if ($connectCode !== 0 && ($connectCode < 200 || $connectCode > 299)) {
+                // An error answer of the proxy to CONNECT, 407 included, is final.
+                $shouldRetry = false;
+            }
+            // libcurl sets PRETRANSFER_TIME once it has handed the request to the connection: 0 means
+            // the failure came while connecting (DNS, TCP, proxy tunnel, TLS), before any request byte.
+            $this->lastCurlErrorUnsent = (float)curl_getinfo($this->curlHandle, CURLINFO_PRETRANSFER_TIME) == 0.0;
             throw new ConnectionException($errorMessage, $errorCode, null, $shouldRetry);
         }
     }
@@ -497,9 +506,8 @@ class HttpClientWrapper
     }
 
     /**
-     * Returns true if the connection error happened before the request was sent: a refused connection,
-     * a DNS failure, or a timeout before the connection was established. Only cURL tells this; errors of
-     * a custom HTTP client are treated as possibly sent.
+     * Returns true if the connection error happened before any request byte was written. Only cURL
+     * tells this; errors of a custom HTTP client are treated as possibly sent.
      */
     private function isUnsentRequestError(ConnectionException $exception): bool
     {

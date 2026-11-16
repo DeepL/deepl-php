@@ -106,11 +106,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   any finished job must check `done() || !ok()`.
 - Breaking: every function that creates a resource is retried only when the
   request was not processed, as `createDeveloperKey()` already was: after HTTP
-  429, or a DNS failure, refused connection or connect timeout. A 5xx response,
-  a read timeout or a reset connection is no longer retried, so the resource
-  is not created twice. This applies to `translateDocumentUpload()` (the
-  upload of `translateDocument()`), `createGlossary()`,
-  `createGlossaryFromCsv()`, `createMultilingualGlossary()`,
+  429, or a failure while connecting, before any byte of the request was written
+  (a DNS failure of the host or proxy, a refused connection, a reset by the
+  proxy before it answered, a timeout while connecting, in the TLS handshake or
+  in the proxy tunnel). A 5xx response, a read timeout or a reset connection is
+  no longer retried, so the resource is not created twice. This applies to
+  `translateDocumentUpload()` (the upload of `translateDocument()`),
+  `createGlossary()`, `createGlossaryFromCsv()`, `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `createSpokenTerms()`,
   `createStyleRule()`, `createStyleRuleCustomInstruction()`,
   `createStyleProfile()`, `createTranslationMemoryImport()` and
@@ -124,13 +126,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of `false`. A download to a file rewrites the file from the start on each
   attempt.
 - Breaking: when a function that creates a resource fails, the exception's
-  `shouldRetry` is `true` only if the request was not processed (HTTP 429, DNS
-  failure, refused connection, connect timeout) or the response body was cut
-  off mid-read. After a 5xx status, a timeout after connecting, an empty reply,
-  a reset connection or a broken pipe it is `false` instead of `true`, as
-  repeating the request may create a duplicate. This applies to the functions
-  listed above and to `createDeveloperKey()`, and to the
-  `DocumentTranslationException` of a failed `translateDocument()` upload.
+  `shouldRetry` is `true` only if the request was not processed (HTTP 429, or a
+  failure while connecting, before the request was written) or the response body
+  was cut off mid-read. After a 5xx status, a timeout after the request was
+  written, an empty reply, a reset connection or a broken pipe it is `false`
+  instead of `true`, as repeating the request may create a duplicate. This
+  applies to the functions listed above and to `createDeveloperKey()`, and to
+  the `DocumentTranslationException` of a failed `translateDocument()` upload.
+- Breaking: a failure on the way to a proxy is retried like one on a direct
+  connection, and an error answer from the proxy is not. A proxy whose name
+  cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`) is now retried; 1.21.0 did
+  not retry it. A non-2xx answer to `CONNECT`, 407 included, is no longer
+  retried, and its `ConnectionException` has `shouldRetry` `false`.
+  `createDeveloperKey()` is now also retried after a timeout in the TLS
+  handshake or the proxy tunnel, and after a proxy that reset or closed the
+  connection before answering, because the request was not sent. Before, it
+  threw a `ConnectionException` with `shouldRetry` `false` at once (for a
+  timeout, depending on the libcurl version).
 - Breaking: every argument check throws PHP's `\InvalidArgumentException`
   instead of `DeepLException`, before any request is sent: an empty auth or
   admin key, an invalid `server_url` or negative `max_retries` option, an empty
