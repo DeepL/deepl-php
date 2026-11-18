@@ -13,7 +13,10 @@ For the full list of changes, see the [CHANGELOG](CHANGELOG.md).
 
 - PHP 8.0 or later. PHP 7.3 and 7.4 are no longer supported; stay on the 1.x releases if you
   cannot upgrade PHP. `composer.json` now requires `"php": ">=8.0"`.
-- No other Composer dependency or autoload change.
+- `psr/http-client-implementation` and `psr/http-factory-implementation` are required as `^1.0`
+  instead of `*`. Both PSR interfaces only have a 1.x major, so any PSR-18 client and PSR-17
+  factory you use with 1.21.0, such as Guzzle 7, still works. No other Composer dependency or
+  autoload change.
 
 ## Quick checklist
 

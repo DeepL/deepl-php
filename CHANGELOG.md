@@ -71,6 +71,10 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
 - **Breaking:** PHP 8.0 or later is required; support for PHP 7.3 and 7.4 is dropped.
   Users on PHP 7 must upgrade PHP before updating, or stay on the 1.x
   releases.
+- `composer.json` requires `psr/http-client-implementation` and
+  `psr/http-factory-implementation` `^1.0` instead of `*`. Both PSR interfaces
+  only have a 1.x major, so every implementation that 1.21.0 accepted still
+  satisfies it.
 - **Breaking:** An HTTP 404 response on the v2 and v3 glossary endpoints throws
   `NotFoundException` with the message `Not found, ...` instead of
   `GlossaryNotFoundException` with `Glossary not found, ...`. So does
