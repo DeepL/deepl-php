@@ -616,11 +616,17 @@ Functions to get, list, and delete stored glossaries are also provided:
 
 ```php
 // Retrieve a stored glossary using the ID
-$glossaryId = '559192ed-8e23-...';
-$myGlossary = $deeplClient->getMultilingualGlossary($glossaryId);
+$glossaryId = $myGlossary->glossaryId; // for example '559192ed-8e23-...'
+$storedGlossary = $deeplClient->getMultilingualGlossary($glossaryId);
 
-$deeplClient->deleteMultilingualGlossaryDictionary($glossaryId, $myGlossary->dictionaries[0]);
-$deeplClient->deleteMultilingualGlossaryDictionary($glossaryId, 'en', 'fr');
+// Delete dictionaries, here of a glossary with en-de, en-fr and en-es dictionaries
+$oldGlossary = $deeplClient->createMultilingualGlossary('Old glossary', [
+    new MultilingualGlossaryDictionaryEntries('en', 'de', ['hello' => 'hallo']),
+    new MultilingualGlossaryDictionaryEntries('en', 'fr', ['hello' => 'bonjour']),
+    new MultilingualGlossaryDictionaryEntries('en', 'es', ['hello' => 'hola']),
+]);
+$deeplClient->deleteMultilingualGlossaryDictionary($oldGlossary, $oldGlossary->dictionaries[0]);
+$deeplClient->deleteMultilingualGlossaryDictionary($oldGlossary, 'en', 'fr');
 
 // Find and delete glossaries named 'Old glossary'
 $glossaries = $deeplClient->listMultilingualGlossaries();
@@ -688,25 +694,25 @@ Functions to edit stored glossaries are also provided:
 
 ```php
 // Update glossary
-$myGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['artist' => 'Maler', 'hello' => 'guten tag']);
-$myGlossary = $deeplClient->createMultilingualGlossary('My glossary', [$myGlossaryDict]);
+$editGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['artist' => 'Maler', 'hello' => 'guten tag']);
+$editGlossary = $deeplClient->createMultilingualGlossary('Edited glossary', [$editGlossaryDict]);
 
 $myUpdatedGlossaryDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['hello' => 'hallo', 'prize' => 'Gewinn']);
-$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary($myGlossary, [
+$myUpdatedGlossary = $deeplClient->updateMultilingualGlossary($editGlossary, [
     MultilingualGlossaryOptions::NAME => 'My updated glossary',
     MultilingualGlossaryOptions::DICTIONARIES => [$myUpdatedGlossaryDict],
 ]);
 echo $myUpdatedGlossary->dictionaries[0]->entryCount; // 3: artist, hello and prize
 
-$deeplClient->updateMultilingualGlossaryName($myGlossary, 'My renamed glossary');
-$deeplClient->updateMultilingualGlossaryDictionaryFromCsv($myGlossary, 'en', 'de', "car,Auto\n");
+$deeplClient->updateMultilingualGlossaryName($editGlossary, 'My renamed glossary');
+$deeplClient->updateMultilingualGlossaryDictionaryFromCsv($editGlossary, 'en', 'de', "car,Auto\n");
 
 // Replace glossary dictionary
 $myReplacementDict = new MultilingualGlossaryDictionaryEntries('en', 'de', ['hello' => 'hallo', 'prize' => 'Gewinn']);
-$myNewGlossaryDict = $deeplClient->replaceMultilingualGlossaryDictionary($myGlossary, $myReplacementDict);
+$myNewGlossaryDict = $deeplClient->replaceMultilingualGlossaryDictionary($editGlossary, $myReplacementDict);
 echo $myNewGlossaryDict->entryCount; // 2
 
-$myNewGlossaryDict = $deeplClient->replaceMultilingualGlossaryDictionaryFromCsv($myGlossary, 'en', 'de', "car,Auto\n");
+$myNewGlossaryDict = $deeplClient->replaceMultilingualGlossaryDictionaryFromCsv($editGlossary, 'en', 'de', "car,Auto\n");
 echo $myNewGlossaryDict->entryCount; // 1
 ```
 
@@ -734,7 +740,7 @@ option. The `sourceLang` argument must also be specified:
 ```php
 $deeplClient->translateDocument(
     $inFile, $outFile, 'en', 'de', ['glossary' => $myGlossary]
-)
+);
 ```
 
 The `translateDocument()`  and `translateDocumentUpload()` functions both
@@ -1117,21 +1123,23 @@ You can use a stored style rule for text translation by setting the `style_rule`
 option to either the style rule ID or a `StyleRuleInfo` object:
 
 ```php
+// A style rule applies to translations into its language
+$germanStyleRule = $deeplClient->createStyleRule('My German style', 'de');
+
 // Using a style rule ID
 $result = $deeplClient->translateText(
     'Hello, world!',
     'en',
     'de',
-    ['style_rule' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
+    ['style_rule' => $germanStyleRule->styleId]
 );
 
 // Using a StyleRuleInfo object
-$styleRules = $deeplClient->getAllStyleRules();
 $result = $deeplClient->translateText(
     'Hello, world!',
     'en',
     'de',
-    ['style_rule' => $styleRules[0]]
+    ['style_rule' => $germanStyleRule]
 );
 ```
 
@@ -1139,12 +1147,13 @@ Style rules are also supported for document translation. Set the `style_rule`
 option (`TranslateDocumentOptions::STYLE_RULE`) on `translateDocument()` (or `translateDocumentUpload()`) in the same way:
 
 ```php
+$englishStyleRule = $deeplClient->createStyleRule('My English style', 'en');
 $deeplClient->translateDocument(
     $inFile,
     $outFile,
     'de',
     'en-US',
-    ['style_rule' => 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4']
+    ['style_rule' => $englishStyleRule]
 );
 ```
 
