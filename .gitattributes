@@ -7,3 +7,4 @@
 /phpcs.xml export-ignore
 /phpunit.xml export-ignore
 /catalog-info.yaml export-ignore
+/renovate.json5 export-ignore
