@@ -37,79 +37,80 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `GlossaryEntries` as well as an array.
 
 ### Changed
-- `updateMultilingualGlossary($glossary, $name, $dictionaries)` takes
+- **Breaking:** `updateMultilingualGlossary($glossary, $name, $dictionaries)` takes
   `($glossary, array $options = [])`. Replace
   `updateMultilingualGlossary($g, $name, $dicts)` with
   `updateMultilingualGlossary($g, [MultilingualGlossaryOptions::NAME => $name, MultilingualGlossaryOptions::DICTIONARIES => $dicts])`.
-- `deleteMultilingualGlossaryDictionary()` takes
+- **Breaking:** `deleteMultilingualGlossaryDictionary()` takes
   `($glossary, $sourceLang, $targetLang)`, or
   `($glossary, MultilingualGlossaryDictionaryInfo $dictionary)`. Replace
   `deleteMultilingualGlossaryDictionary($g, null, 'en', 'de')` with
   `deleteMultilingualGlossaryDictionary($g, 'en', 'de')`.
-- `MultilingualGlossaryDictionaryEntries::$entries` is a `GlossaryEntries`
+- **Breaking:** `MultilingualGlossaryDictionaryEntries::$entries` is a `GlossaryEntries`
   instead of an array. Replace `$dictionary->entries` with
   `$dictionary->entries->getEntries()`.
-- `RephraseTextOptions` no longer extends `TranslateTextOptions`; it only
+- **Breaking:** `RephraseTextOptions` no longer extends `TranslateTextOptions`; it only
   defines `WRITING_STYLE`, `TONE` and `EXTRA_BODY_PARAMETERS`, the options
   `rephraseText()` reads. Use `TranslateTextOptions` for the translate option
   constants.
-- `Usage::anyLimitReached()` is replaced by `Usage::anyCharacterLimitReached()`:
+- **Breaking:** `Usage::anyLimitReached()` is replaced by `Usage::anyCharacterLimitReached()`:
   true if the account's character limit (`character`) or this API key's
   character limit (`apiKeyCharacter`) is reached. The speech minutes are not
   checked. Replace `$usage->anyLimitReached()` with
   `$usage->anyCharacterLimitReached()`.
-- The `formality` and `split_sentences` values are sent as given instead of
+- **Breaking:** The `formality` and `split_sentences` values are sent as given instead of
   lower-cased; the API rejects upper-case values. Pass them in lower case, for
   example with the `Formality` and `SentenceSplittingMode` constants.
-- Subclasses of `DeepLClient` that override `createMultilingualGlossary()`,
+- **Breaking:** Subclasses of `DeepLClient` that override `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `updateMultilingualGlossary()`,
   `replaceMultilingualGlossaryDictionary()`,
   `deleteMultilingualGlossaryDictionary()`, the style rule methods above, or
   `createTranslationMemoryImport()`, `importTranslationMemoryFromFilepath()`,
   `waitUntilTranslationMemoryJobDone()` and
   `exportTranslationMemoryToFilepath()` must update their signatures.
-- PHP 8.0 or later is required; support for PHP 7.3 and 7.4 is dropped.
+- **Breaking:** PHP 8.0 or later is required; support for PHP 7.3 and 7.4 is dropped.
   Users on PHP 7 must upgrade PHP before updating, or stay on the 1.x
   releases.
-- An HTTP 404 response on the v2 and v3 glossary endpoints throws
+- **Breaking:** An HTTP 404 response on the v2 and v3 glossary endpoints throws
   `NotFoundException` with the message `Not found, ...` instead of
   `GlossaryNotFoundException` with `Glossary not found, ...`. So does
   `getMultilingualGlossaryDictionaryEntries()` when the glossary has no
   dictionary for the language pair. Code that catches `NotFoundException` or
   `DeepLException` is unaffected.
-- The `split_sentences` values `'on'`, `'default'` and `'off'` are no longer
+- **Breaking:** The `split_sentences` values `'on'`, `'default'` and `'off'` are no longer
   translated to `'1'` and `'0'`; they are sent as given, and the API rejects
   `'on'` and `'default'`. Use `SentenceSplittingMode::ALL` (`'1'`) or
   `SentenceSplittingMode::OFF` (`'0'`).
-- `DeepLClient::buildRephraseBodyParams()` is private. It was an internal
+- **Breaking:** `DeepLClient::buildRephraseBodyParams()` is private. It was an internal
   request builder; call `rephraseText()`.
 - `GlossaryUtils` is marked `@internal` and is not part of the public API. Use
   `GlossaryEntries::fromTsv()`, `GlossaryEntries::fromEntries()` and
   `GlossaryEntries::convertToTsv()`.
-- The protected `DeepLClient::checkStatusCode()` no longer has the third
+- **Breaking:** The protected `DeepLClient::checkStatusCode()` no longer has the third
   parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
   receive `$usingGlossary`; the SDK calls it with two arguments.
+  Remove the third parameter from overrides.
 - The internal `ClientUtils::checkStatusCode()` no longer has the third
   parameter `$usingGlossary` either. `ClientUtils` and `HttpClientWrapper` are
   not part of the public API.
-- `StyleRuleInfo::$configuredRules` is the `configured_rules` array as the
+- **Breaking:** `StyleRuleInfo::$configuredRules` is the `configured_rules` array as the
   API returns it (category => rule => value, snake_case keys) instead of a
   `ConfiguredRules` object; categories the SDK did not know are no longer
   dropped. Replace `$info->configuredRules->datesAndTimes` with
   `$info->configuredRules['dates_and_times']`, and likewise for the other
   categories. The `StyleRuleInfo` constructor takes this array.
-- `translateDocument()`, `translateDocumentUpload()` and
+- **Breaking:** `translateDocument()`, `translateDocumentUpload()` and
   `importTranslationMemoryFromFilepath()` throw `\InvalidArgumentException`
   when no file exists at the input file path, before any request is sent.
   Previously `translateDocument()` threw `DocumentTranslationException`,
   `importTranslationMemoryFromFilepath()` threw `DeepLException`, and
   `translateDocumentUpload()` did not check and failed in the transport. Catch
   `\InvalidArgumentException` for a missing input file.
-- `TranslationMemoryJob::done()` and `TranslationMemoryJobResult::done()` return
+- **Breaking:** `TranslationMemoryJob::done()` and `TranslationMemoryJobResult::done()` return
   true only for the status `completed`, as `DocumentStatus::done()` does;
   `failed` and `expired` jobs return false. Code that used `done()` to detect
   any finished job must check `done() || !ok()`.
-- Breaking: every function that creates a resource is retried only when the
+- **Breaking:** every function that creates a resource is retried only when the
   request was not processed, as `createDeveloperKey()` already was: after HTTP
   429, or a failure while connecting, before any byte of the request was written
   (a DNS failure of the host or proxy, a refused connection, a reset by the
@@ -124,13 +125,14 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `createTranslationMemoryExport()`. With a custom HTTP client only HTTP 429 is
   retried for them. Catch the exception and check whether the resource exists
   before creating it again.
-- Breaking: a response body cut off mid-read (cURL errors 18 and 92, for
+- **Breaking:** a response body cut off mid-read (cURL errors 18 and 92, for
   example a short body or an HTTP/2 stream reset) is retried like a reset
   connection, except by the functions that create a resource. If no attempt
   succeeds, the `ConnectionException` has `shouldRetry` set to `true` instead
   of `false`. A download to a file rewrites the file from the start on each
   attempt.
-- Breaking: when a function that creates a resource fails, the exception's
+  Check `shouldRetry` before retrying such a failure yourself.
+- **Breaking:** when a function that creates a resource fails, the exception's
   `shouldRetry` is `true` only if the request was not processed (HTTP 429, or a
   failure while connecting, before the request was written) or the response body
   was cut off mid-read. After a 5xx status, a timeout after the request was
@@ -138,7 +140,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   instead of `true`, as repeating the request may create a duplicate. This
   applies to the functions listed above and to `createDeveloperKey()`, and to
   the `DocumentTranslationException` of a failed `translateDocument()` upload.
-- Breaking: a failure on the way to a proxy is retried like one on a direct
+  Check whether the resource exists before creating it again when `shouldRetry` is `false`.
+- **Breaking:** a failure on the way to a proxy is retried like one on a direct
   connection, and an error answer from the proxy is not. A proxy whose name
   cannot be resolved (`CURLE_COULDNT_RESOLVE_PROXY`) is now retried; 1.21.0 did
   not retry it. A non-2xx answer to `CONNECT`, 407 included, is no longer
@@ -151,7 +154,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   during the TLS handshake (`CURLE_SSL_CONNECT_ERROR` with an OS error) is now
   retried like other connection failures; a TLS error (alert, wrong version,
   certificate) is still not retried.
-- Breaking: every argument check throws PHP's `\InvalidArgumentException`
+  Fix the proxy setting instead of retrying an error answer from the proxy.
+- **Breaking:** every argument check throws PHP's `\InvalidArgumentException`
   instead of `DeepLException`, before any request is sent: an empty auth or
   admin key, an invalid `server_url` or negative `max_retries` option, an empty
   language code, text, name, label, prompt or resource ID, `glossary` together
@@ -166,11 +170,12 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   throw `DeepLException`;
   `translateDocument()` still wraps the argument errors of its upload in a
   `DocumentTranslationException`.
-- Breaking: `translateText()`, `rephraseText()` and `correctText()` throw an
+- **Breaking:** `translateText()`, `rephraseText()` and `correctText()` throw an
   `\InvalidArgumentException` for an empty text, alone or in the array, before
   any request is sent. `translateText()` and `rephraseText()` sent it, and
   `correctText()` only rejected a single empty string.
-- The multilingual glossary functions that take a glossary
+  Remove empty texts before the call.
+- **Breaking:** The multilingual glossary functions that take a glossary
   (`getMultilingualGlossary()`, `updateMultilingualGlossary()`,
   `updateMultilingualGlossaryName()`, the dictionary update, replace, entries
   and delete functions, and `deleteMultilingualGlossary()`) and the spoken
@@ -180,20 +185,24 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `\InvalidArgumentException` for an empty ID, or an object with an empty ID,
   before any request is sent. `MultilingualGlossaryInfo::getGlossaryId()` and
   `SpokenTerms::getSpokenTermsId()` throw it too.
-- `updateMultilingualGlossaryName()` throws an `\InvalidArgumentException` for
+  Catch `\InvalidArgumentException` for these.
+- **Breaking:** `updateMultilingualGlossaryName()` throws an `\InvalidArgumentException` for
   an empty name, `createMultilingualGlossary()` for an empty dictionary list,
   and `deleteMultilingualGlossaryDictionary()` for an empty source or target
   language, also from a `MultilingualGlossaryDictionaryInfo`, before any
   request is sent.
-- Breaking: `translateDocument()` throws a `DocumentTranslationException` with
+  Catch `\InvalidArgumentException` for these.
+- **Breaking:** `translateDocument()` throws a `DocumentTranslationException` with
   a `null` handle before uploading if the output file's directory does not
   exist or is not writable. Before, the document was uploaded and translated
   and the download failed, with the handle set.
-- Breaking: `translateDocumentUpload()` throws a `DeepLException` before any
+  Create the output directory before the call.
+- **Breaking:** `translateDocumentUpload()` throws a `DeepLException` before any
   request is sent if the input path is a directory or the file cannot be read.
   Before, the built-in cURL transport sent the request and failed with a
   `ConnectionException`.
-- Breaking: `translateText()`, `translateDocumentUpload()`,
+  Catch `DeepLException` for an unreadable input file.
+- **Breaking:** `translateText()`, `translateDocumentUpload()`,
   `translateDocumentWaitUntilDone()`, `rephraseText()`, `correctText()`,
   `getLanguagesForResource()` (options array form) and
   `listTranslationMemorySegments()` throw an `\InvalidArgumentException` for an
@@ -204,14 +213,15 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   keys were ignored. `translateDocument()` wraps it in a
   `DocumentTranslationException`. Pass extra request fields with
   `EXTRA_BODY_PARAMETERS`.
-- Breaking: the `DeepLClient` and `DeepLAdminClient` constructors throw an
+- **Breaking:** the `DeepLClient` and `DeepLAdminClient` constructors throw an
   `\InvalidArgumentException` for a `proxy` option that cURL cannot use: a
   value that is not a string, an empty string, a value with whitespace, a
   scheme other than `http`, `https`, `socks4`, `socks4a`, `socks5` and
   `socks5h`, or a URL without a host. Before, such a value was passed to cURL
   and every request failed with a `ConnectionException`. A `host:port` without
   a scheme is still accepted and used as `http`.
-- Breaking: added `TranslationMemoryJobException`, a `DeepLException` with an
+  Pass a valid proxy URL.
+- **Breaking:** added `TranslationMemoryJobException`, a `DeepLException` with an
   optional `jobId` and `job`. `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in it, except a
   missing input file, which still throws `\InvalidArgumentException`
@@ -229,38 +239,41 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   (a `DeepLException`) if an improvement in the response lacks
   `detected_source_language` or `target_language`, instead of a plain
   `DeepLException`.
-- Breaking: the `DeepLClient` and `DeepLAdminClient` constructors throw an
+- **Breaking:** the `DeepLClient` and `DeepLAdminClient` constructors throw an
   `\InvalidArgumentException` (`Unknown client option: <key>`) for an option
   key that is not a `TranslatorOptions` constant, instead of logging a warning
   and ignoring it.
-- Breaking: `DeepLAdminClient::setDeveloperKeyUsageLimits()` throws an
+  Remove option keys that are not `TranslatorOptions` constants.
+- **Breaking:** `DeepLAdminClient::setDeveloperKeyUsageLimits()` throws an
   `\InvalidArgumentException` (`Unknown developer key usage limit: <key>`)
   before the request for a key of the limits array other than the
   `DeveloperKeyUsageLimitsOptions` constants, `'key_id'` included, instead of
   sending it as given (or dropping `'key_id'`). Send other fields with
   `DeveloperKeyOptions::EXTRA_BODY_PARAMETERS`.
-- Breaking: `translateDocumentWaitUntilDone()` accepts only
+- **Breaking:** `translateDocumentWaitUntilDone()` accepts only
   `TranslateDocumentOptions::TIMEOUT` and throws an `\InvalidArgumentException`
   (`Unknown translate document wait option: <key>`) for any other key, such as
   `FORMALITY`, instead of accepting and ignoring every
   `TranslateDocumentOptions` key.
-- Breaking: `translateDocumentWaitUntilDone()` treats a negative `timeout` as
+  Pass only `TIMEOUT`.
+- **Breaking:** `translateDocumentWaitUntilDone()` treats a negative `timeout` as
   expired: it requests the status once and throws the timeout `DeepLException`
   if the translation is not done, instead of throwing an
   `\InvalidArgumentException` before any request. Through `translateDocument()`
   this is a `DocumentTranslationException` with the handle set.
-- Breaking: the second parameter of `waitUntilTranslationMemoryJobDone()` and
+  Pass a timeout of 0 or more.
+- **Breaking:** the second parameter of `waitUntilTranslationMemoryJobDone()` and
   the third parameter of `exportTranslationMemoryToFilepath()` are named
   `$options` instead of `$timeout`. They still take the timeout in seconds or
   `[WaitOptions::TIMEOUT => seconds]`. Replace the PHP 8 named argument
   `timeout: 300` with `options: 300`, or pass it positionally.
-- Breaking: `importTranslationMemoryFromFilepath()` no longer has the third
+- **Breaking:** `importTranslationMemoryFromFilepath()` no longer has the third
   parameter `$timeout`. Replace
   `importTranslationMemoryFromFilepath($file, 'Legal TM', 300)` with
   `importTranslationMemoryFromFilepath($file, [ImportTranslationMemoryOptions::DISPLAY_NAME => 'Legal TM', ImportTranslationMemoryOptions::TIMEOUT => 300])`.
   A third argument throws a `TranslationMemoryJobException` whose previous
   exception is an `\InvalidArgumentException`, before any request.
-- Breaking: the style rule functions that take a `StyleRuleInfo`, the
+- **Breaking:** the style rule functions that take a `StyleRuleInfo`, the
   translation memory functions that take a `TranslationMemoryInfo` or
   `TranslationMemoryJob`, throw an `\InvalidArgumentException` for an object,
   or `null`, without an ID, before any request is sent. They threw a
@@ -273,7 +286,7 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `TranslationMemoryJobException` whose previous exception is the
   `\InvalidArgumentException`. Catch `\InvalidArgumentException` instead of
   `\TypeError`.
-- Breaking: an empty language code throws an `\InvalidArgumentException` before
+- **Breaking:** an empty language code throws an `\InvalidArgumentException` before
   any request is sent, instead of being sent to the API: the `sourceLang` and
   `targetLang` of `MultilingualGlossaryDictionaryEntries` (when it is created
   and when it is sent), `createMultilingualGlossaryFromCsv()`,
@@ -287,7 +300,7 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   (`null` still means not set). A spoken terms response without `lang` throws an
   `InvalidContentException`. Catch `\InvalidArgumentException` where you handled
   the API's error for an empty language code.
-- Breaking: `translateText()`, `rephraseText()` and `correctText()` send a text
+- **Breaking:** `translateText()`, `rephraseText()` and `correctText()` send a text
   that is not a string as given; only an empty string is rejected.
   `translation_memory_threshold` is only checked to be between 0 and 100, so
   `'80'` is sent. A `glossary_ids` entry, `style_rule`, `style_profile` or
@@ -295,26 +308,28 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `\InvalidArgumentException`. `translateDocumentWaitUntilDone()` and
   `translateDocument()` no longer reject a `timeout` that is not a number before
   the request; PHP raises its own error when it is used.
+  Pass texts as strings and option IDs as strings or their objects.
 - `waitUntilTranslationMemoryJobDone()`, `importTranslationMemoryFromFilepath()`
   and `exportTranslationMemoryToFilepath()` convert a numeric timeout and raise
   PHP's `TypeError` for any other value (wrapped in a
   `TranslationMemoryJobException` by the file helpers).
   `createTranslationMemoryImport()` and `importTranslationMemoryFromFilepath()`
   take any options value that is not an array as the positional form.
-- Breaking: `getLanguagesForResource()` no longer checks that the `INCLUDE`
+- **Breaking:** `getLanguagesForResource()` no longer checks that the `INCLUDE`
   option is an array before the request; pass an array of include values. The
   style profile ID lists convert an entry that is not an ID or one of the
   expected objects to a string instead of throwing (PHP raises an `Error` if it
   cannot be converted). `getUsageAnalytics()` and `getCustomTagUsageAnalytics()`
   raise PHP's `TypeError` for a date that is neither a `DateTimeInterface` nor a
   string.
+  Pass `INCLUDE` as an array.
 - The `MultilingualGlossaryDictionaryEntries` constructor raises PHP's
   `TypeError` for entries that are neither an array nor a `GlossaryEntries`.
   `deleteMultilingualGlossaryDictionary()` no longer checks the type of
   `$sourceLang`. A language code set to `null` on a
   `MultilingualGlossaryDictionaryEntries` or `SpokenTermsEntries` is no longer
   rejected by the library; an empty one still is.
-- Breaking: every optional `$options` parameter of `DeepLClient` and
+- **Breaking:** every optional `$options` parameter of `DeepLClient` and
   `DeepLAdminClient`, the constructors' included, and the `$contentType` of
   `uploadTranslationMemoryFile()` accept `null`, meaning not given, instead of
   raising a `TypeError`. Subclasses that override these methods must declare
@@ -323,51 +338,52 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   warning.
 
 ### Removed
-- Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
+- **Breaking:** Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
   the string form of `Usage`; the API no longer returns them. `document_*`
   and `team_document_*` fields in a response are ignored.
-- Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
+  Remove code that reads them.
+- **Breaking:** Removed `DeepLClient::getMultilingualGlossaryEntries()`. Call
   `getMultilingualGlossaryDictionaryEntries()` with the same arguments; it
   returns the `MultilingualGlossaryDictionaryEntries` instead of a one-element
   array.
-- Removed `TranslateTextOptions::STYLE_ID` and
+- **Breaking:** Removed `TranslateTextOptions::STYLE_ID` and
   `TranslateTextOptions::TRANSLATION_MEMORY_ID` (`style_id`,
   `translation_memory_id`). Use `STYLE_RULE` and `TRANSLATION_MEMORY`, which
   take the same values.
-- Removed `TranslateDocumentOptions::STYLE_ID` and
+- **Breaking:** Removed `TranslateDocumentOptions::STYLE_ID` and
   `TranslateDocumentOptions::TRANSLATION_MEMORY_ID`. Use `STYLE_RULE` and
   `TRANSLATION_MEMORY`.
-- Removed the document translation step methods `uploadDocument()`,
+- **Breaking:** Removed the document translation step methods `uploadDocument()`,
   `getDocumentStatus()`, `downloadDocument()` and
   `waitUntilDocumentTranslationComplete()`. Use `translateDocumentUpload()`,
   `translateDocumentGetStatus()`, `translateDocumentDownload()` and
   `translateDocumentWaitUntilDone()`. `translateDocument()` no longer calls
   subclass overrides of the removed methods; override the new ones instead.
-- Removed document minification: the `enable_document_minification` option
+- **Breaking:** Removed document minification: the `enable_document_minification` option
   (`TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION`) and the classes
   `DocumentMinifier`, `DocumentMinificationException` and
   `DocumentDeminificationException`. The DeepL API accepts larger documents;
   drop the option and upload the document unchanged.
-- Removed `GlossaryNotFoundException`. Catch `NotFoundException`.
-- Removed `TranslationMemoryJobResult::STATUS_DOWNLOADED`. `'downloaded'` is
+- **Breaking:** Removed `GlossaryNotFoundException`. Catch `NotFoundException`.
+- **Breaking:** Removed `TranslationMemoryJobResult::STATUS_DOWNLOADED`. `'downloaded'` is
   not a job status the API reports; `waitUntilTranslationMemoryJobDone()` no
   longer counts it as finished and keeps polling, like any unknown status. Use
   `TranslationMemoryJobStatus::COMPLETED`.
-- Removed the `Translator` class. Its methods, the `VERSION` constant and
+- **Breaking:** Removed the `Translator` class. Its methods, the `VERSION` constant and
   the constructor moved into `DeepLClient`, which no longer extends it.
   Replace `new Translator(...)` with `new DeepLClient(...)` (same arguments),
   and `Translator` type hints, `instanceof` checks, `Translator::VERSION` and
   `Translator::isFreeAccountAuthKey()` with `DeepLClient`. Subclasses of
   `Translator` extend `DeepLClient` instead. `TranslatorOptions` remains.
-- Removed the `ConfiguredRules` class. `StyleRuleInfo::$configuredRules` is
+- **Breaking:** Removed the `ConfiguredRules` class. `StyleRuleInfo::$configuredRules` is
   a plain array; see Changed.
-- Removed `Translator::isAuthKeyFreeAccount()`. Use `isFreeAccountAuthKey()`,
+- **Breaking:** Removed `Translator::isAuthKeyFreeAccount()`. Use `isFreeAccountAuthKey()`,
   which also trims whitespace around the key.
-- Removed the constants `LanguageResource::RESOURCE_*` and
+- **Breaking:** Removed the constants `LanguageResource::RESOURCE_*` and
   `LanguageSupport::INCLUDE_BETA` / `INCLUDE_EXTERNAL`. Use the
   `LanguageResourceName` and `LanguageInclude` constants of the same names
   without the prefix, for example `LanguageResourceName::TRANSLATE_TEXT`.
-- Removed the language code constants of `LanguageCode`, for example
+- **Breaking:** Removed the language code constants of `LanguageCode`, for example
   `LanguageCode::GERMAN`. Pass the language code string, for example `'de'`,
   and use `getLanguagesForResource()`, `getSourceLanguages()` or
   `getTargetLanguages()` to list the supported languages.
