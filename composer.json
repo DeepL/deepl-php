@@ -16,8 +16,8 @@
         "ext-json": "*",
         "ext-curl": "*",
         "ext-mbstring": "*",
-        "psr/http-client-implementation": "*",
-        "psr/http-factory-implementation": "*",
+        "psr/http-client-implementation": "^1.0",
+        "psr/http-factory-implementation": "^1.0",
         "php-http/multipart-stream-builder": "^1.3"
     },
     "require-dev": {
