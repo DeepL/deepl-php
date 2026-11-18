@@ -30,12 +30,12 @@ For the full list of changes, see the [CHANGELOG](CHANGELOG.md).
 6. Replace removed glossary APIs: `getMultilingualGlossaryEntries()`,
    `GlossaryNotFoundException`, and the changed `updateMultilingualGlossary()` and
    `deleteMultilingualGlossaryDictionary()` ([section](#glossaries)).
-7. Catch `\InvalidArgumentException` as well as `DeepLException`
-   ([section](#argument-errors-throw-invalidargumentexception)).
+7. Catch `\InvalidArgumentException` as well as `DeepLException`, and instead of `\TypeError`
+   for objects without an ID ([section](#argument-errors-throw-invalidargumentexception)).
 8. Remove unknown keys from option arrays and send `formality` and `split_sentences` in lower case
    ([unknown keys](#unknown-option-keys-throw), [values](#formality-and-split_sentences-are-sent-as-given)).
-9. Check code that depends on retries of create functions
-   ([section](#retries-of-functions-that-create-resources)).
+9. Check code that depends on retries of create functions or of proxy errors
+   ([create functions](#retries-of-functions-that-create-resources), [proxies](#proxy-failures)).
 10. Update uses of `Usage`, `StyleRuleInfo::$configuredRules` and the translation memory helpers
     ([usage](#usage), [style rules](#style-rules), [translation memories](#translation-memories)).
 
@@ -365,6 +365,50 @@ try { $client->translateText('', null, 'de'); } catch (DeepLException | \Invalid
 API, I/O and wait failures still throw `DeepLException`. `translateDocument()` still wraps the
 argument errors of its upload in `DocumentTranslationException`.
 
+### Objects without an ID throw `InvalidArgumentException`
+
+The style rule functions that take a `StyleRuleInfo`, and the translation memory functions that
+take a `TranslationMemoryInfo` or `TranslationMemoryJob`, throw `\InvalidArgumentException` for an
+object, or `null`, without an ID, before any request. Before, they threw `\TypeError`. The
+`GLOSSARY`, `GLOSSARY_IDS`, `STYLE_RULE`, `STYLE_PROFILE` and `TRANSLATION_MEMORY` options of the
+translate and document functions throw it for an empty ID or an object without an ID instead of
+sending it; so does a `GLOSSARY_IDS` entry or a `STYLE_RULE`, `STYLE_PROFILE` or
+`TRANSLATION_MEMORY` value that is neither an ID nor its object.
+`exportTranslationMemoryToFilepath()` wraps it in `TranslationMemoryJobException`.
+
+```php
+// before
+catch (\TypeError $e) {}
+// after
+catch (\InvalidArgumentException $e) {}
+```
+
+### Empty language codes throw
+
+An empty language code throws `\InvalidArgumentException` before any request instead of being
+sent to the API: the languages of `MultilingualGlossaryDictionaryEntries` (when it is created and
+when it is sent), of the multilingual glossary CSV functions and of
+`getMultilingualGlossaryDictionaryEntries()`; the `lang` of `SpokenTermsEntries`,
+`getSpokenTermsEntries()` and `deleteSpokenTermsList()`; the custom instruction source language of
+`createStyleRule()`, `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
+(`null` still means not set). A spoken terms response without `lang` throws
+`InvalidContentException`.
+
+### Fewer type checks
+
+Some arguments are no longer type-checked by the library; pass the documented types.
+
+- `translateText()`, `rephraseText()` and `correctText()` send a text that is not a string as
+  given; only an empty string is rejected.
+- `translation_memory_threshold` is only checked to be between 0 and 100, so `'80'` is sent.
+- `translateDocumentWaitUntilDone()` and `translateDocument()` no longer reject a `timeout` that
+  is not a number before the request; PHP raises its own error when it is used.
+- `getLanguagesForResource()` no longer checks that `INCLUDE` is an array.
+- The style profile ID lists convert an entry that is not an ID or one of the expected objects to
+  a string instead of throwing.
+- `getUsageAnalytics()` and `getCustomTagUsageAnalytics()` raise PHP's `TypeError` for a date that
+  is neither a `DateTimeInterface` nor a string.
+
 ### Unknown option keys throw
 
 An option key that is not a constant of the options class throws `\InvalidArgumentException`;
@@ -376,30 +420,46 @@ before, it was ignored. This applies to `translateText()`, `translateDocumentUpl
 
 ### Retries of functions that create resources
 
-Functions that create a resource retry only when the request was not processed: HTTP 429, a DNS
-failure, a refused connection or a connect timeout. A 5xx response, a read timeout or a reset
-connection is no longer retried, and `shouldRetry` on the exception is `false` in those cases.
+Functions that create a resource retry only when the request was not processed: HTTP 429, or a
+failure while connecting, before any byte of the request was written (a DNS failure of the host or
+proxy, a refused connection, a reset by the proxy before it answered, a timeout while connecting,
+in the TLS handshake or in the proxy tunnel). A 5xx response, a read timeout or a reset connection
+is no longer retried, and `shouldRetry` on the exception is `false` in those cases.
 This covers `translateDocumentUpload()`, the `create*` glossary, spoken terms, style rule, style
-profile and translation memory functions. `createDeveloperKey()` already retried this way in
-1.21.0; for it only `shouldRetry` changes: it is now `false` after a 5xx, a timeout after connecting or a reset connection. With a custom HTTP client
-only HTTP 429 is retried. After such an error, check whether the resource exists before creating
-it again.
+profile and translation memory functions. `createDeveloperKey()` already retried only unprocessed
+requests in 1.21.0; its `shouldRetry` is now `false` after a 5xx, a timeout after the request was
+written or a reset connection, and it is now also retried after a timeout in the TLS handshake or
+the proxy tunnel and after a proxy that reset or closed the connection before answering. With a
+custom HTTP client only HTTP 429 is retried. After such an error, check whether the resource exists
+before creating it again.
 
 ### Cut-off response bodies are retried
 
 A body cut off mid-read (cURL errors 18 and 92) is retried like a reset connection, except by the
 create functions. If every attempt fails, `ConnectionException::$shouldRetry` is `true`.
 
+### Proxy failures
+
+A failure on the way to a proxy is retried like one on a direct connection, and an error answer
+from the proxy is not. A proxy whose name cannot be resolved is now retried. A non-2xx answer to
+`CONNECT`, 407 included, is no longer retried, and its `ConnectionException` has `shouldRetry`
+`false`; fix the proxy setting instead of retrying. A reset or other socket failure during the TLS
+handshake is retried like other connection failures; a TLS error (alert, wrong version,
+certificate) is still not retried.
+
 ## Types and signatures
 
 Unless noted, these changes only matter if you subclass `DeepLClient` and override the methods,
 or call them with unusual arguments.
 
-- A trailing `array $options = []` was added to `createMultilingualGlossary()`,
+- A trailing `?array $options = null` was added to `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `replaceMultilingualGlossaryDictionary()`,
   `createStyleRule()`, `updateStyleRuleName()`, `updateStyleRuleConfiguredRules()`,
   `createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`. Calls are
   unaffected; overrides must match.
+- Every optional `$options` parameter of `DeepLClient` and `DeepLAdminClient`, the constructors'
+  included, and the `$contentType` of `uploadTranslationMemoryFile()` accept `null`, meaning not
+  given. Overrides must declare `?array $options = null` (`?string $contentType = null`).
 - The `$instructionId` parameter of `getStyleRuleCustomInstruction()`,
   `updateStyleRuleCustomInstruction()` and `deleteStyleRuleCustomInstruction()` is untyped, as it
   accepts a `CustomInstruction` too.
