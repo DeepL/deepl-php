@@ -83,7 +83,10 @@ They also validate values before any request:
 - `server_url` must be an absolute `http` or `https` URL with a host (`api.deepl.com` without a
   scheme throws).
 - `proxy` must be a string without whitespace, with a host, and with a scheme of `http`, `https`,
-  `socks4`, `socks4a`, `socks5` or `socks5h` (or no scheme, which means `http`).
+  `socks4`, `socks4a`, `socks5` or `socks5h` (or no scheme, which means `http`); an empty string
+  throws. Before, an empty string meant no proxy, a non-string value raised a `TypeError`, and
+  other such values were passed to cURL so that every request failed with a
+  `ConnectionException`. Remove an empty `proxy` option or pass a valid proxy URL.
 - An empty key or a negative `max_retries` throws.
 
 ## Text translation
@@ -197,10 +200,11 @@ and upload the document unchanged.
 
 - `translateDocumentWaitUntilDone()` accepts only `TranslateDocumentOptions::TIMEOUT` and throws
   `\InvalidArgumentException` for other keys, such as `FORMALITY`. A negative timeout counts as
-  expired: it requests the status once and throws the timeout `DeepLException` instead of
-  `\InvalidArgumentException`.
-- A missing input file throws `\InvalidArgumentException` in `translateDocument()` and
-  `translateDocumentUpload()` (before: `DocumentTranslationException` or a transport error).
+  expired: it requests the status once and throws the timeout `DeepLException`. Before, it threw
+  a `DeepLException` (`timeout must be a non-negative number of seconds`) before any request.
+- A missing input file throws `\InvalidArgumentException` in `translateDocument()`,
+  `translateDocumentUpload()` and `importTranslationMemoryFromFilepath()` (before:
+  `DocumentTranslationException`, a transport error, or `DeepLException`).
 - `translateDocumentUpload()` throws `DeepLException` if the path is a directory or unreadable.
 - `translateDocument()` throws `DocumentTranslationException` with a `null` handle before the
   upload if the output directory does not exist or is not writable.
@@ -360,9 +364,15 @@ a `DeepLException`.
 
 ```php
 // before
-try { $client->translateText('', null, 'de'); } catch (DeepLException $e) {}
+try {
+    $client->translateText('Hello', null, 'de',
+        [TranslateTextOptions::GLOSSARY => 'a', TranslateTextOptions::GLOSSARY_IDS => ['b']]);
+} catch (DeepLException $e) {}
 // after
-try { $client->translateText('', null, 'de'); } catch (DeepLException | \InvalidArgumentException $e) {}
+try {
+    $client->translateText('Hello', null, 'de',
+        [TranslateTextOptions::GLOSSARY => 'a', TranslateTextOptions::GLOSSARY_IDS => ['b']]);
+} catch (DeepLException | \InvalidArgumentException $e) {}
 ```
 
 API, I/O and wait failures still throw `DeepLException`. `translateDocument()` still wraps the
@@ -474,13 +484,10 @@ or call them with unusual arguments.
 - `GlossaryUtils` is `@internal`. Use `GlossaryEntries::fromTsv()`, `fromEntries()` and
   `convertToTsv()`.
 
-## Internal classes
+## Helper classes
 
-These were public by accident and are not part of the API. They changed or were removed without
-notice in this release:
-
-- `ClientUtils::checkStatusCode()` lost its `$usingGlossary` parameter.
-- `HttpClientWrapper`: the destructor was removed.
-- `TranslatorOptions::isValid()` no longer returns false for unknown keys; the constructor throws
-  earlier through `TranslatorOptions::checkOptionKeys()`.
+- `ClientUtils::checkStatusCode()` no longer has the third parameter `$usingGlossary`.
+- `HttpClientWrapper` no longer has a destructor.
+- `TranslatorOptions::isValid()` no longer returns `false` or logs a warning for an unknown option
+  key, because the constructors throw for it first (through `TranslatorOptions::checkOptionKeys()`).
 - `GlossaryUtils` is marked `@internal`; see [Types and signatures](#types-and-signatures).
