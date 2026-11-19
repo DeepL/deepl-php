@@ -64,7 +64,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
 - **Breaking:** Subclasses of `DeepLClient` that override `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `updateMultilingualGlossary()`,
   `replaceMultilingualGlossaryDictionary()`,
-  `deleteMultilingualGlossaryDictionary()`, the style rule methods above, or
+  `deleteMultilingualGlossaryDictionary()`, the style rule methods above,
+  `getStyleRuleCustomInstruction()`, `deleteStyleRuleCustomInstruction()`, or
   `createTranslationMemoryImport()`, `importTranslationMemoryFromFilepath()`,
   `waitUntilTranslationMemoryJobDone()` and
   `exportTranslationMemoryToFilepath()` must update their signatures.
@@ -94,9 +95,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   parameter `$usingGlossary`. A third argument is ignored. Overrides no longer
   receive `$usingGlossary`; the SDK calls it with two arguments.
   Remove the third parameter from overrides.
-- The internal `ClientUtils::checkStatusCode()` no longer has the third
-  parameter `$usingGlossary` either. `ClientUtils` and `HttpClientWrapper` are
-  not part of the public API.
+- **Breaking:** `ClientUtils::checkStatusCode()` no longer has the third parameter
+  `$usingGlossary`.
 - **Breaking:** `StyleRuleInfo::$configuredRules` is the `configured_rules` array as the
   API returns it (category => rule => value, snake_case keys) instead of a
   `ConfiguredRules` object; categories the SDK did not know are no longer
@@ -153,8 +153,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `createDeveloperKey()` is now also retried after a timeout in the TLS
   handshake or the proxy tunnel, and after a proxy that reset or closed the
   connection before answering, because the request was not sent. Before, it
-  threw a `ConnectionException` with `shouldRetry` `false` at once (for a
-  timeout, depending on the libcurl version). A reset or other socket failure
+  threw the `ConnectionException` at once, without retrying (for a timeout,
+  depending on the libcurl version). A reset or other socket failure
   during the TLS handshake (`CURLE_SSL_CONNECT_ERROR` with an OS error) is now
   retried like other connection failures; a TLS error (alert, wrong version,
   certificate) is still not retried.
@@ -221,10 +221,11 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `\InvalidArgumentException` for a `proxy` option that cURL cannot use: a
   value that is not a string, an empty string, a value with whitespace, a
   scheme other than `http`, `https`, `socks4`, `socks4a`, `socks5` and
-  `socks5h`, or a URL without a host. Before, such a value was passed to cURL
-  and every request failed with a `ConnectionException`. A `host:port` without
-  a scheme is still accepted and used as `http`.
-  Pass a valid proxy URL.
+  `socks5h`, or a URL without a host. Before, an empty string meant no proxy,
+  a non-string value raised a `TypeError`, and other such values were passed
+  to cURL so that every request failed with a `ConnectionException`. A
+  `host:port` without a scheme is still accepted and used as `http`.
+  Remove an empty `proxy` option or pass a valid proxy URL.
 - **Breaking:** added `TranslationMemoryJobException`, a `DeepLException` with an
   optional `jobId` and `job`. `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in it, except a
@@ -262,8 +263,8 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   Pass only `TIMEOUT`.
 - **Breaking:** `translateDocumentWaitUntilDone()` treats a negative `timeout` as
   expired: it requests the status once and throws the timeout `DeepLException`
-  if the translation is not done, instead of throwing an
-  `\InvalidArgumentException` before any request. Through `translateDocument()`
+  if the translation is not done, instead of throwing a `DeepLException`
+  (`timeout must be a non-negative number of seconds`) before any request. Through `translateDocument()`
   this is a `DocumentTranslationException` with the handle set.
   Pass a timeout of 0 or more.
 - **Breaking:** the second parameter of `waitUntilTranslationMemoryJobDone()` and
@@ -271,6 +272,11 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `$options` instead of `$timeout`. They still take the timeout in seconds or
   `[WaitOptions::TIMEOUT => seconds]`. Replace the PHP 8 named argument
   `timeout: 300` with `options: 300`, or pass it positionally.
+- **Breaking:** the second parameter of `importTranslationMemoryFromFilepath()` and
+  the third parameter of `createTranslationMemoryImport()` are named
+  `$options` instead of `$displayName` and `$contentType`; replace the named
+  arguments `displayName:` and `contentType:` with `options:`, or pass the
+  value positionally.
 - **Breaking:** `importTranslationMemoryFromFilepath()` no longer has the third
   parameter `$timeout`. Replace
   `importTranslationMemoryFromFilepath($file, 'Legal TM', 300)` with
@@ -313,12 +319,6 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `translateDocument()` no longer reject a `timeout` that is not a number before
   the request; PHP raises its own error when it is used.
   Pass texts as strings and option IDs as strings or their objects.
-- `waitUntilTranslationMemoryJobDone()`, `importTranslationMemoryFromFilepath()`
-  and `exportTranslationMemoryToFilepath()` convert a numeric timeout and raise
-  PHP's `TypeError` for any other value (wrapped in a
-  `TranslationMemoryJobException` by the file helpers).
-  `createTranslationMemoryImport()` and `importTranslationMemoryFromFilepath()`
-  take any options value that is not an array as the positional form.
 - **Breaking:** `getLanguagesForResource()` no longer checks that the `INCLUDE`
   option is an array before the request; pass an array of include values. The
   style profile ID lists convert an entry that is not an ID or one of the
@@ -327,12 +327,6 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   raise PHP's `TypeError` for a date that is neither a `DateTimeInterface` nor a
   string.
   Pass `INCLUDE` as an array.
-- The `MultilingualGlossaryDictionaryEntries` constructor raises PHP's
-  `TypeError` for entries that are neither an array nor a `GlossaryEntries`.
-  `deleteMultilingualGlossaryDictionary()` no longer checks the type of
-  `$sourceLang`. A language code set to `null` on a
-  `MultilingualGlossaryDictionaryEntries` or `SpokenTermsEntries` is no longer
-  rejected by the library; an empty one still is.
 - **Breaking:** every optional `$options` parameter of `DeepLClient` and
   `DeepLAdminClient`, the constructors' included, and the `$contentType` of
   `uploadTranslationMemoryFile()` accept `null`, meaning not given, instead of
@@ -340,6 +334,10 @@ See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes
   `?array $options = null` (`?string $contentType = null`). A `null` `timeout`
   or `proxy` client option with `http_client` no longer logs the 'is ignored'
   warning.
+- **Breaking:** `TranslatorOptions::isValid()` no longer returns `false` or logs a
+  warning for an unknown option key, because the constructors throw for it
+  first, and `HttpClientWrapper` no longer has a destructor.
+- The Composer package no longer contains `renovate.json5`.
 
 ### Removed
 - **Breaking:** Removed `Usage::$document` and `Usage::$teamDocument`, and their lines in
