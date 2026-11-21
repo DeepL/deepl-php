@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '40 0 * * *'
+
+env:
+  COMPOSER_HOME: /.composer
+  SECRET_DETECTION_JSON_REPORT_FILE: "gitleaks.json"
+
+jobs:
+  # TODO: Enable building and testing the library against different PHP versions in GitHub
+  # Both for `build_image` and `code_sniffer`
+  # build_image:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       php-version:
+  #         - 7.3-alpine
+  #         - 7.4-alpine
+  #         - 8.0-alpine
+  #         - 8.1-alpine
+  #   steps:
+  #     - name: Login to Docker Hub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+  #     - name: Build Docker image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         context: .
+  #         file: ./Dockerfile
+  #         push: true
+  #         tags: deepl-php-${{ matrix.php-version }}:latest
+
+  code_sniffer:
+    # strategy:
+    #   matrix:
+    #     php-version:
+    #       - '7.3-alpine'
+    #       - '7.4-alpine'
+    #       - '8.0-alpine'
+    #       - '8.1-alpine'
+    # runs-on: deepl-php-${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PHP
+        run: sudo apt-get update && sudo apt-get install php composer
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: composer install
+      - name: Code sniffer check
+        run: vendor/bin/phpcs
+
+  license_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: License check
+        run: |
+          ./license_checker.sh '*.php' | tee license_check_output.txt
+          [ ! -s license_check_output.txt ]
+
+  secret_detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install and run secret detection
+        run: |
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.4_linux_x64.tar.gz
+          EXITCODE=0
+          ./gitleaks detect -r ${SECRET_DETECTION_JSON_REPORT_FILE} --source . --log-opts="--all --full-history" || EXITCODE=$?
+          if [[ $EXITCODE -ne 0 ]]; then
+            exit $EXITCODE
+          fi
+      - name: Upload secret detection artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: secret-detection-results
+          path: gitleaks.json
+
+# Test stage is disabled for now. Code needs to be tested
+
+#######################################################
+# test:
+#   strategy:
+#     matrix:
+#       php-version:
+#         - '7.3-alpine'
+#         - '7.4-alpine'
+#         - '8.0-alpine'
+#         - '8.1-alpine'
+#       use-mock-server:
+#         - ''
+#         - 'use mock server'
+#   runs-on: deepl-php-${{ matrix.php-version }}
+#   env:
+#     DEEPL_SERVER_URL: http://deepl-mock:3000
+#     DEEPL_MOCK_SERVER_PORT: 3000
+#     DEEPL_PROXY_URL: http://deepl-mock:3001
+#     DEEPL_MOCK_PROXY_SERVER_PORT: 3001
+#   steps:
+#     - name: Checkout
+#       uses: actions/checkout@v4
+#     - name: Test
+#       run: |
+#         if [[ ! -z "${{ matrix.use-mock-server }}" ]]; then
+#           echo "Using mock server"
+#           export DEEPL_SERVER_URL=http://deepl-mock:3000
+#           export DEEPL_MOCK_SERVER_PORT=3000
+#           export DEEPL_PROXY_URL=http://deepl-mock:3001
+#           export DEEPL_MOCK_PROXY_SERVER_PORT=3001
+#         fi
+#         vendor/bin/phpunit
+#     - name: Upload test results
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: test-results
+#         path: |
+#           reports/cobertura.xml
+#           reports/junit.xml
