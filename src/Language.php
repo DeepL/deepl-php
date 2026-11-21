@@ -36,6 +36,12 @@ class Language
         $this->supportsFormality = $supportsFormality;
     }
 
+    public static function __set_state(array $array)
+    {
+        $object = new Language($array['name'], $array['code'], $array['supportsFormality']);
+        return $object;
+    }
+
     public function __toString(): string
     {
         return "$this->name ($this->code)";
