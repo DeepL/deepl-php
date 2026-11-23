@@ -269,10 +269,11 @@ catch (NotFoundException $e) {}
 
 ### Empty IDs and names
 
-Glossary and spoken terms functions throw `\InvalidArgumentException` for an empty ID (or an
-object with one), and `updateMultilingualGlossaryName()`, `createMultilingualGlossary()` and
-`deleteMultilingualGlossaryDictionary()` do so for an empty name, dictionary list or language.
-Empty CSV content in the dictionary update and replace functions throws as well.
+Multilingual glossary and spoken terms functions throw `\InvalidArgumentException` for an
+empty ID (or an object with one), and `updateMultilingualGlossaryName()`,
+`createMultilingualGlossary()` and `deleteMultilingualGlossaryDictionary()` do so for an empty
+name, dictionary list or language. Empty CSV content in the dictionary update and replace
+functions throws as well. The v2 glossary functions do not check the glossary ID.
 
 ## Style rules
 
