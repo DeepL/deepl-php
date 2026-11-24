@@ -14,7 +14,7 @@ class DeepLClient
     /**
      * Library version.
      */
-    public const VERSION = '1.21.0';
+    public const VERSION = '2.0.0';
 
     /**
      * Implements all HTTP requests and retries.
