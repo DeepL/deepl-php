@@ -2,7 +2,7 @@
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/deeplcom/deepl-php.svg)](https://packagist.org/packages/deeplcom/deepl-php)
 [![Minimum PHP version](https://img.shields.io/packagist/php-v/deeplcom/deepl-php)](https://packagist.org/packages/deeplcom/deepl-php)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepLcom/deepl-php/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepL/deepl-php/blob/main/LICENSE)
 
 Official PHP client library for the DeepL API.
 
@@ -1763,7 +1763,7 @@ For formatting and fixing code style issues, run this command:
 
 [curl-proxy-docs]: https://www.php.net/manual/en/function.curl-setopt.php
 
-[issues]: https://www.github.com/DeepLcom/deepl-php/issues
+[issues]: https://github.com/DeepL/deepl-php/issues
 
 [php-version-list]: https://www.php.net/supported-versions.php
 

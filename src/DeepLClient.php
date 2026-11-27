@@ -188,7 +188,7 @@ class DeepLClient
         list(, $content) = $response;
 
         // Deepl API responses might have invalid UTF8 sequence
-        // @see https://github.com/DeepLcom/deepl-php/pull/43
+        // @see https://github.com/DeepL/deepl-php/pull/43
         // The substitute character is a process-wide setting, so the caller's value is restored.
         $previousSubstitute = mb_substitute_character();
         mb_substitute_character(0xFFFD);

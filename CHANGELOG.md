@@ -917,7 +917,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 - Fixed `DeepLClientOptions` wrongly inheriting from `TranslateTextOptions`,
   when it should be `TranslatorOptions`.
   * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for the
-    [report](https://github.com/DeepLcom/deepl-php/issues/59)
+    [report](https://github.com/DeepL/deepl-php/issues/59)
 
 ## [1.11.0] - 2025-01-16
 ### Added
@@ -935,13 +935,13 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 - Fixed the `TextResult` constructor to be compatible with pre-1.10 versions, to
   facilitate mocking
   * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for
-    [#56](https://github.com/DeepLcom/deepl-php/pull/56)
+    [#56](https://github.com/DeepL/deepl-php/pull/56)
 - Fixed a bug when generating the platform information with `php_uname`.
   * Thanks to [jochensengier](https://github.com/jochensengier) for
-    [#57](https://github.com/DeepLcom/deepl-php/pull/57) and
+    [#57](https://github.com/DeepL/deepl-php/pull/57) and
     [that-guy-iain](https://github.com/that-guy-iain) +
     [jimwins](https://github.com/jimwins) for the
-    [report](https://github.com/DeepLcom/deepl-php/issues/54).
+    [report](https://github.com/DeepL/deepl-php/issues/54).
 
 ## [1.10.0] - 2024-11-15
 ### Added
@@ -968,7 +968,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
   [replacement character](https://en.wikipedia.org/wiki/Replacement_character)
   "�" (U+FFFD) will replace invalid sequences.
   * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for
-    [#43](https://github.com/DeepLcom/deepl-php/pull/43)
+    [#43](https://github.com/DeepL/deepl-php/pull/43)
 
 ## [1.7.1] - 2024-02-28
 ### Fixed
@@ -984,7 +984,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 
 ### Fixed
 - Improve type of `translateText` function in `Translator`
-  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for [#41](https://github.com/DeepLcom/deepl-php/pull/41)
+  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for [#41](https://github.com/DeepL/deepl-php/pull/41)
 
 ## [1.6.0] - 2023-11-03
 ### Added
@@ -997,18 +997,18 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [1.5.1] - 2023-09-11
 ### Fixed
 - Add `.gitattributes` file to exclude irrelevant files from package download.
-  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for [#30](https://github.com/DeepLcom/deepl-php/pull/30)
+  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for [#30](https://github.com/DeepL/deepl-php/pull/30)
 - Internal CI improvements.
 
 ## [1.5.0] - 2023-06-26
 ### Added
 - Allow users to supply their own custom HTTP client to the `Translator` object, in order to configure timeouts, security features etc more granularly.
-  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for the good input and work in [#22](https://github.com/DeepLcom/deepl-php/pull/22)
+  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for the good input and work in [#22](https://github.com/DeepL/deepl-php/pull/22)
 - Add curl version to the platform info in the user-agent header (will not be added if the user opts out).
 
 ### Fixed
 - Allow users to translate empty strings without throwing an error.
-  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for the work in [#24](https://github.com/DeepLcom/deepl-php/pull/24)
+  * Thanks to [VincentLanglet](https://github.com/VincentLanglet) for the work in [#24](https://github.com/DeepL/deepl-php/pull/24)
 - Catch any exception thrown when computing the user-agent header and continue without failing the request.
 
 ## [1.4.0] - 2023-05-24
@@ -1039,7 +1039,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ### Fixed
 - Change the type of the `TranslatorOptions::LOGGER` option to
   `Psr\Log\LoggerInterface`, to correctly support PSR-3 loggers.
-  * Pull request [#12](https://github.com/DeepLcom/deepl-php/pull/12)
+  * Pull request [#12](https://github.com/DeepL/deepl-php/pull/12)
     thanks to [Schleuse](https://github.com/Schleuse).
 
 ## [1.1.0] - 2022-09-28
@@ -1068,7 +1068,7 @@ Stable release.
 ### Fixed
 - Fix GitLab CI config.
 - Fix a typo in the readme.
-  * Pull request [#5](https://github.com/DeepLcom/deepl-php/pull/5)
+  * Pull request [#5](https://github.com/DeepL/deepl-php/pull/5)
     thanks to [MartkCz](https://github.com/MartkCz).
 
 ## [0.4.0] - 2022-05-24
