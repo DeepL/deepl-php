@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<ruleset name="deeplcom/deepl-php">
+<ruleset name="deepl/deepl-php">
     <description>The coding standard of deepl-php package</description>
 
     <file>src</file>

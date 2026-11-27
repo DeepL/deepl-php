@@ -1,5 +1,5 @@
 {
-    "name": "deeplcom/deepl-php",
+    "name": "deepl/deepl-php",
     "type": "library",
     "description": "Official DeepL API Client Library",
     "keywords": [

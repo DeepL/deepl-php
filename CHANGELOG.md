@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- The package is published on Packagist as `deepl/deepl-php`.
+  `deeplcom/deepl-php` receives no new versions; replace it in `composer.json`.
+  The `DeepL\` namespace and the API are unchanged.
 
 ## [2.0.0] - 2026-11-24
 See [Upgrading to 2.0.0](upgrading_to_v2.md) for a guide to the breaking changes since 1.21.0.

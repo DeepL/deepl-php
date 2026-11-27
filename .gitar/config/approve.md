@@ -55,7 +55,7 @@ logic or content were added since that approval.
   what already exists. Do not auto-approve a removed or renamed public class,
   method, parameter, constant, or error type, a behavior change in an existing
   method, a raised minimum supported PHP version, or a change to the runtime dependencies in
-  `composer.json`. This library is published to Packagist as `deeplcom/deepl-php`, so a break here
+  `composer.json`. This library is published to Packagist as `deepl/deepl-php`, so a break here
   lands in user code with the next release.
 
 **Action:** Approve the merge request automatically and add the label
